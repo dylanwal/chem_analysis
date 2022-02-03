@@ -5,12 +5,30 @@ from functools import wraps
 import numpy as np
 import pandas as pd
 
-from src.chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods
-from src.chem_analysis.analysis.utils import ObjList
+from src.chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods, \
+    peak_picking_methods, bound_detection_methods
+from src.chem_analysis.analysis.utils import ObjList, Pipeline
 from src.chem_analysis.analysis.utils.plot_format import plot_series
 
 
 array_like = (np.ndarray, list, tuple)
+
+
+class Peak:
+    def __init__(self, id_: int, low_bound: float, high_bound: float):
+        self.id_ = id_
+
+        self.low_bound = low_bound
+        self.high_bound = high_bound
+
+        self.max = None
+        self.area = None
+        self.std = None
+        self.skew = None
+        self.k = None
+
+    def __repr__(self):
+        return f"peak: {self.id_} at {self.max}"
 
 
 class ProcessType(Enum):
@@ -66,7 +84,8 @@ class Trace:
             mes = "Provide either a pandas Series (df=) or two numpy arrays x and y (x=,y=)."
             raise ValueError(mes + f" (df:{type(ser)}, x:{type(x)}, y:{type(y)})")
 
-        self.pipeline = ObjList(ProcessStep)
+        self.pipeline = Pipeline()
+        self.peaks = ObjList(Peak)
         self._result = None
         self._result_up_to_date = False
 
@@ -114,10 +133,36 @@ class Trace:
         if callable(method):
             func = method
         else:
-            func: callable = smoothing_methods[method]
+            try:
+                func: callable = smoothing_methods[method]
+            except KeyError:
+                raise ValueError(f"Not a valid 'peak_picking' method. (given: {method})")
 
         self.pipeline.add(ProcessStep(func, ProcessType.SMOOTH, kwargs))
         self._result_up_to_date = False
+
+    def peak_picking(self, method_peak="scipy", method_bound="rolling_value", **kwargs):
+        if callable(method_peak):
+            func_peak = method_peak
+        else:
+            try:
+                func_peak: callable = peak_picking_methods[method_peak]
+            except KeyError:
+                raise ValueError(f"Not a valid 'peak_picking' method. (given: {method_peak})")
+
+        if callable(method_bound):
+            func_bound = method_bound
+        else:
+            try:
+                func_bound: callable = bound_detection_methods[method_bound]
+            except KeyError:
+                raise ValueError(f"Not a valid 'bound_detection' method. (given: {method_bound})")
+
+        peaks = func_peak(self.result, **kwargs)
+        bounds = []
+        for peak in peaks:
+            lb, ub = func_bound(self.result, peak_index=peak,)
+
 
     @wraps(plot_series)
     def plot(self, **kwargs):
@@ -128,7 +173,7 @@ class Trace:
 def local_run():
     trace = Trace(
         x=np.linspace(0, 100, 100),
-        y=np.linspace(0, 100, 100) + 30 * np.random.random(100),
+        y=np.linspace(0, 100, 100) + 30 * np.random.random(100) + 50 * np.random.normal(50, 10, 100),
         x_label="x_test",
         y_label="y_test"
     )

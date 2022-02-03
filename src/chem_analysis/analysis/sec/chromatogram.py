@@ -1,13 +1,8 @@
-from typing import Union, Tuple, List, Any
-import re
+from typing import Union
 
 import pandas as pd
-import plotly.graph_objs as go
 
 from src.chem_analysis.analysis.sec.trace import Trace
-
-
-
 
 
 class Chromatogram:

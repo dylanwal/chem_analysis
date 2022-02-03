@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 from numpy import ndarray
 
@@ -38,6 +36,9 @@ def despike(x: np.ndarray, y: np.ndarray, window: int = 20, m: float = 2) -> tup
             out[i] = window_calc(y[i-span:i+span], span, m)
 
     return x, out
+
+
+despike_methods = {"default": despike}
 
 
 def test():

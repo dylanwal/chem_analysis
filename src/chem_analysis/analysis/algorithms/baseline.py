@@ -13,3 +13,6 @@ def poly_baseline(x: np.ndarray, y: np.ndarray, deg: int = 0, mask: np.ndarray =
     y_baseline = func_baseline(x)
     y = y - y_baseline
     return x, y, y_baseline
+
+
+baseline_methods = {"polynomial": poly_baseline}
