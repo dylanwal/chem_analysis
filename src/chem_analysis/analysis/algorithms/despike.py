@@ -1,10 +1,9 @@
+from typing import Tuple
+
 import numpy as np
-from numba import njit, config
-
-config.DISABLE_JIT = True
+from numpy import ndarray
 
 
-@njit
 def detect_outliers(data: np.ndarray, m: float = 2):
     dist_from_median = np.abs(data - np.median(data))
     median_deviation = np.median(dist_from_median)
@@ -15,7 +14,6 @@ def detect_outliers(data: np.ndarray, m: float = 2):
     return np.zeros_like(data)  # no outliers
 
 
-# @njit
 def window_calc(data: np.ndarray, pos: int, m: float = 2) -> float:
     outlier = detect_outliers(data, m)
     if outlier[pos]:
@@ -24,8 +22,7 @@ def window_calc(data: np.ndarray, pos: int, m: float = 2) -> float:
         return data[pos]
 
 
-# @njit
-def despike(y: np.ndarray, window: int = 20, m: float = 2) -> np.ndarray:
+def despike(x: np.ndarray, y: np.ndarray, window: int = 20, m: float = 2) -> tuple[ndarray, ndarray]:
     out = np.empty_like(y)
 
     if window % 2 != 0:
@@ -40,7 +37,7 @@ def despike(y: np.ndarray, window: int = 20, m: float = 2) -> np.ndarray:
         else:  # middle
             out[i] = window_calc(y[i-span:i+span], span, m)
 
-    return out
+    return x, out
 
 
 def test():
@@ -62,7 +59,7 @@ def test():
     y[702] = -0.5
     y[703] = -1
 
-    y_new = despike(y)
+    x, y_new = despike(x, y)
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=x, y=y, mode="lines"))

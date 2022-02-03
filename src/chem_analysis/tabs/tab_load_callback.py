@@ -1,7 +1,8 @@
 
 import pandas as pd
 from dash.dependencies import Input, Output, State
-from dash import html
+from dash.dash_table.Format import Format, Scheme
+from dash.exceptions import PreventUpdate
 
 from src.chem_analysis.server import app
 from src.chem_analysis.analysis.utils.load_csv import load_csv
@@ -21,18 +22,36 @@ def upload_file(list_of_contents, filename):
 
 
 @app.callback([Output('data_table', 'data'), Output('data_table', 'columns')],
-              [Input('dataframe', 'data'), Input("data_table", "columns")])
-def set_table(json_data, _):
+              [Input('dataframe', 'data')])
+def set_table(json_data):
     if json_data:
         print("hi")
         df = pd.read_json(json_data, orient='split')
         data = df.iloc[:10, :].to_dict('records')
-        columns = [{"name": i, "id": i, "renamable": True, "deletable": True, "format": {"specifier": ".3f"}} for i
-                   in df.columns]
-        
+        columns = []
+        for i in df.columns:
+            columns.append({
+                "name": i,
+                "id": i,
+                "renamable": True,
+                "deletable": True,
+                "type": 'numeric',
+                "format": Format(precision=2, scheme=Scheme.exponent) #precision=2, scheme=Scheme.fixed  https://dash.plotly.com/datatable/data-formatting
+            })
+
         return data, columns
-    return None, None
+    raise PreventUpdate
 
 
+@app.callback(Output("ri_time", "options"),
+              Input('dataframe', 'data'))
+def update_radio(json_data):
+    if json_data:
+        df = pd.read_json(json_data, orient='split')
+        options = []
+        for col in df.columns:
+            options.append({"label": col, "value": col})
 
+        return options
 
+    raise PreventUpdate

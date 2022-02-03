@@ -15,10 +15,10 @@ app.layout = html.Div([
         value='tab-Load',
         id='tabs'
     ),
-    html.Div(id='tabs-content-example'),
+    html.Div(id='tabs-content'),
 
     dcc.Store(id='dataframe'),
-    dcc.Store(id='tab_load_layout'),
+    dcc.Store(id='tab_load_reload'),
 ])
 
 from src.chem_analysis.tabs.tab_load import tab_load_layout
@@ -27,7 +27,7 @@ from src.chem_analysis.tabs.tab_analysis import tab_analysis_layout
 
 
 # callbacks
-@app.callback(Output('tabs-content-example', 'children'),
+@app.callback(Output('tabs-content', 'children'),
               [Input('tabs', 'value')])
 def render_content(tab):
     if tab == 'tab-load':
@@ -36,6 +36,8 @@ def render_content(tab):
         return tab_process_layout
     elif tab == 'tab-analysis':
         return tab_analysis_layout
+
+    return tab_load_layout
 
 from src.chem_analysis.tabs.tab_load_callback import *
 from src.chem_analysis.tabs.tab_process_callback import *

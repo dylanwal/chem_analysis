@@ -1,81 +1,128 @@
+from typing import Union, Callable
+from enum import Enum
+from functools import wraps
 
 import numpy as np
-import plotly.graph_objs as go
+import pandas as pd
 
-from Dylan.sec.src.sec.utils.plot_format import layout_figure, layout_xaxis, layout_yaxis, get_plot_color
+from src.chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods
+from src.chem_analysis.analysis.utils import ObjList
+from src.chem_analysis.analysis.utils.plot_format import plot_series
+
+
+array_like = (np.ndarray, list, tuple)
+
+
+class ProcessType(Enum):
+    RAW = 0
+    DESPIKE = 1
+    BASELINE = 2
+    SMOOTH = 3
+
+
+class ProcessStep:
+    def __init__(self, func: Callable, type_: ProcessType, kwargs: dict = None):
+        self.func = func
+        self.current_type = type_
+        self.kwargs = kwargs
+
+    def __repr__(self):
+        return f"{self.func.__name__}; type:{self.current_type}"
+
+    def __call__(self, *args, **kwargs):
+        if kwargs is not None:
+            kwargs = {**kwargs, **self.kwargs}
+
+        return self.func(*args, **kwargs)
 
 
 class Trace:
+    despike_methods = despike_methods
+    baseline_methods = baseline_methods
+    smoothing_methods = smoothing_methods
+
     def __init__(self,
-                 x: np.ndarray,
-                 y: np.ndarray,
+                 ser: pd.Series = None,
+                 x: Union[np.ndarray, pd.Series] = None,
+                 y: np.ndarray = None,
                  x_label: str = None,
                  y_label: str = None,
-                 x_unit: str = None,
-                 y_unit: str = None,
-                 **kwargs
                  ):
-        self.x = x
-        self.y = y
-        self.x_label = x_label if x_label is not None else "x_axis"
-        self.y_label = y_label if y_label is not None else "y_axis"
-        self.x_unit = x_unit
-        self.y_unit = y_unit
 
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        self.x_label = x_label
+        self.y_label = y_label
+
+        if ser is not None and isinstance(ser, pd.Series) and x is None and y is None:
+            self.ser = ser
+            self.x_label = self.ser.index.name if self.x_label is None else "x_axis"
+            self.y_label = self.ser.index.name if self.y_label is None else "y_axis"
+        elif ser is None and isinstance(x, array_like) and isinstance(y, array_like):
+            self.x_label = x_label if x_label is not None else "x_axis"
+            self.y_label = y_label if y_label is not None else "y_axis"
+            self.ser = pd.Series(data=y, index=x, name=self.y_label)
+            self.ser.index.names = [self.x_label]
+
+        if not hasattr(self, "ser"):
+            mes = "Provide either a pandas Series (df=) or two numpy arrays x and y (x=,y=)."
+            raise ValueError(mes + f" (df:{type(ser)}, x:{type(x)}, y:{type(y)})")
+
+        self.pipeline = ObjList(ProcessStep)
+        self._result = None
+        self._result_up_to_date = False
 
     def __repr__(self):
         text = ""
         text += f"{self.x_label} vs {self.y_label}"
-        text += f" (pts: {len(self.x)})"
+        text += f" (pts: {len(self.ser)})"
         return text
 
-    def plot(self, fig=None, auto_open: bool = True, auto_format: bool = True, **kwargs):
+    @property
+    def result(self):
+        if not self._result_up_to_date:
+            self.calc()
+        return self._result
+
+    def calc(self):
+        x = self.ser.index.to_numpy()
+        y = self.ser.to_numpy()
+        for func in self.pipeline:
+            x, y, z = func(x, y)
+
+        self._result = pd.Series(y, x, name=self.y_label)
+        self._result.index.names = [self.x_label]
+        self._result_up_to_date = True
+
+    def despike(self, method="default", **kwargs):
+        if callable(method):
+            func = method
+        else:
+            func: callable = despike_methods[method]
+
+        self.pipeline.add(ProcessStep(func, ProcessType.DESPIKE, kwargs))
+        self._result_up_to_date = False
+
+    def baseline(self, method="polynomial", **kwargs):
+        if callable(method):
+            func = method
+        else:
+            func: callable = baseline_methods[method]
+
+        self.pipeline.add(ProcessStep(func, ProcessType.BASELINE, kwargs))
+        self._result_up_to_date = False
+
+    def smooth(self, method="default", **kwargs):
+        if callable(method):
+            func = method
+        else:
+            func: callable = smoothing_methods[method]
+
+        self.pipeline.add(ProcessStep(func, ProcessType.SMOOTH, kwargs))
+        self._result_up_to_date = False
+
+    @wraps(plot_series)
+    def plot(self, **kwargs):
         """ Basic plotting """
-        if fig is None:
-            fig = go.Figure()
-
-        if kwargs:
-            if "line" in kwargs:
-                if "color" not in kwargs["line"]:
-                    kwargs["line"] = {"color": get_plot_color(1)}
-            else:
-                kwargs["line"] = {"color": get_plot_color(1)}
-        else:
-            kwargs = {"line": {"color": get_plot_color(1)}}
-
-        fig.add_trace(
-            go.Scatter(x=self.x, y=self.y, mode="lines", **kwargs)
-        )
-
-        if auto_format:
-            self._plot_format(fig)
-
-        if auto_open:
-            fig.write_html(f'temp.html', auto_open=True)
-
-        return fig
-
-    def _plot_format(self, fig):
-        """ Add default format to plot. """
-        fig.update_layout(layout_figure)
-
-        # x-axis
-        if self.x_unit is not None:
-            x_axis_format = {"title": f"<b>{self.x_label}<b> ({self.x_unit})"}
-        else:
-            x_axis_format = {"title": self.x_label}
-        x_axis_format = {**x_axis_format, **layout_xaxis}
-        fig.update_xaxes(x_axis_format)
-
-        # y-axis
-        if self.y_unit is not None:
-            y_axis_format = {"title": f"<b>{self.y_label}<b> ({self.y_unit})"}
-        else:
-            y_axis_format = {"title": self.y_label}
-        y_axis_format = {**y_axis_format, **layout_yaxis}
-        fig.update_yaxes(y_axis_format)
+        return plot_series(data=self.result, **kwargs)
 
 
 def local_run():
@@ -83,11 +130,11 @@ def local_run():
         x=np.linspace(0, 100, 100),
         y=np.linspace(0, 100, 100) + 30 * np.random.random(100),
         x_label="x_test",
-        y_label="y_test",
-        x_unit="per",
-        y_unit="mm"
+        y_label="y_test"
     )
+    trace.baseline(deg=1)
     trace.plot()
+    print("done")
 
 
 if __name__ == '__main__':

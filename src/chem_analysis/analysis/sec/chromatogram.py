@@ -1,122 +1,76 @@
-from typing import Union
+from typing import Union, Tuple, List, Any
+import re
 
-import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
-from Dylan.sec.plot_format import layout_figure, layout_xaxis, layout_yaxis
-from Dylan.sec.trace import Trace
+from src.chem_analysis.analysis.sec.trace import Trace
+
+
+
 
 
 class Chromatogram:
     """
     traces need
     """
-    def __init__(self, df: pd.DataFrame):
-        self.df = df
-
-    def plot(self, fig=None, auto_open: bool = True, auto_format: bool = True, sep_y_axis: Union[bool, list] = False,
-              kwargs_lines: dict = None, kwargs_layout: dict = None, kwargs_x_axes: dict = None, kwargs_y_axes: dict =
-             None):
-        """ Basic plotting """
-        if fig is None:
-            fig = go.Figure()
-
-        # generate lines
-        traces = self._get_traces(kwargs_lines)
-        for trace in traces:
-            fig.add_trace(trace)
-
-        #  add format
-        if auto_format:
-            self._plot_format(fig)
-
-
-
-            fig.add_trace(go.Scatter(**plot_kwargs))
-
-        if separate_y_axis:
-            spread = .20
-            gap = spread / (len(columns) - 1)
-            axis_format = {
-                "xaxis": {"domain": [spread, 1], 'tickformat': '%I:%M %p \n %b %d'},
-                # https://github.com/d3/d3-time-format/tree/v2.2.3#locale_format
-                "yaxis1": {
-                    "title": {"text": f"{columns[0]}", "standoff": 0},
-                    "titlefont": {"color": colors[0]},
-                    "tickfont": {"color": colors[0]},
-                    "tickangle": -45
-                }
-            }
-            for i in range(1, len(columns)):
-                axis_format[f"yaxis{i + 1}"] = {
-                    "title": {"text": f"{columns[i]}", "standoff": 0},
-                    "titlefont": {"color": colors[i]},
-                    "tickfont": {"color": colors[i]},
-                    "anchor": "free",
-                    "overlaying": "y",
-                    "side": "left",
-                    "position": spread - gap * i,
-                    "tickangle": -45
-                }
-
-            fig.update_layout(**axis_format)
-
-        if auto_open:
-            fig.write_html("temp.html", auto_open=True)
-
-        return fig
-
-    def _get_traces(self):
-        if kwargs:
-            if "line" in kwargs:
-                if "color" not in kwargs["line"]:
-                    kwargs["line"] = {"color": get_plot_color(1)}
+    def __init__(self, data: Union[pd.DataFrame, Trace, list[Trace]]):
+        super().__init__()
+        if isinstance(data, pd.DataFrame):
+            data = self._load_from_df(data)
+        elif isinstance(data, Trace):
+            data = {data.y_label if data.y_label is not None else "y_axis": data}
+        elif isinstance(data, list):
+            if all(isinstance(dat, Trace) for dat in data):
+                data = {dat.y_label if dat.y_label is not None else f"y_axis{i}": dat for i, dat in enumerate(data)}
             else:
-                kwargs["line"] = {"color": get_plot_color(1)}
-        else:
-            kwargs = {"line": {"color": get_plot_color(1)}}
+                raise ValueError("Invalid type in list")
 
-        colors = get_color_for_plotting(len(columns))
-        for i, col in enumerate(columns):
-            plot_kwargs = {
-                "x": data[x_axis],
-                "y": data[col],
-                "mode": 'lines',
-                "connectgaps": True,
-                "name": col,
-                "line": dict(color=colors[i])
-            }
-            if separate_y_axis:
-                plot_kwargs["yaxis"] = f"y{i + 1}"
+        self.traces = data
+        for k, v in self.traces.items():
+            setattr(self, k, v)
 
+    @property
+    def labels(self):
+        return list(self.traces.keys())
 
-    def _plot_format(self, fig):
-        """ Add default format to plot. """
-        fig.update_layout(layout_figure)
+    @property
+    def num_traces(self):
+        return len(self.traces)
 
-        # x-axis
-        if self.x_unit is not None:
-            x_axis_format = {"title": f"<b>{self.x_label}<b> ({self.x_unit})"}
-        else:
-            x_axis_format = {"title": self.x_label}
-        x_axis_format = {**x_axis_format, **layout_xaxis}
-        fig.update_xaxes(x_axis_format)
+    def _load_from_df(self, df: pd.DataFrame):
+        """ Converts pandas dataframe into traces. """
+        traces = {}
+        x_label, x_unit = parse_label(df.index.name)
+        for col in df.columns:
+            y_label, y_unit = parse_label(col)
+            traces[col] = Trace(
+                x=df.index.to_numpy(),
+                y=df[col].to_numpy(),
+                x_label=x_label,
+                y_label=y_label,
+                x_unit=x_unit,
+                y_unit=y_unit
+            )
 
-        # y-axis
-        if self.y_unit is not None:
-            y_axis_format = {"title": f"<b>{self.y_label}<b> ({self.y_unit})"}
-        else:
-            y_axis_format = {"title": self.y_label}
-        y_axis_format = {**y_axis_format, **layout_yaxis}
-        fig.update_yaxes(y_axis_format)
+        return traces
 
-    def plot_2D_df(data: pd.DataFrame, x_axis: str = None, fig: go.Figure = None, layout_kwargs: dict = None,
-                   xaxes_kwargs: dict = None, yaxes_kwargs: dict = None, separate_y_axis: bool = False,
-                   auto_open: bool =
-                   True) -> go.Figure:
-
-        if fig is None:
-            fig = go.Figure()
+    def to_dataframe(self, level=):
 
 
+
+
+
+def local_run():
+    path = r"C:\Users\nicep\Desktop\Reseach_Post\Data\Polyester\DW1_3\SEC\DW1-3-2[DW1-3].csv"
+    df = pd.read_csv(path, header=0, index_col=0)
+    df = df.iloc[:, :10]
+    df.columns = ["LS1", "LS2", "LS3", "LS4", "LS5", "LS6", "LS7", "LS8", "UV", "RI"]
+    df.index.names = ["time (min)"]
+
+    chro = Chromatogram(df)
+    chro.plot_sep_y()
+
+
+if __name__ == "__main__":
+    local_run()
