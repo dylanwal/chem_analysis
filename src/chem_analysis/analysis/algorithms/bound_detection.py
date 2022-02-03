@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 
 
-def rolling_value(x: np.ndarray, peak_index: int, peak_value: Union[float, int],
+def rolling_value(x: np.ndarray, peak_index: int = None, peak_value: Union[float, int] = None,
                   sensitivity: float = 0.03, cut_off: Union[None, float, int] = 0) -> tuple[int, int]:
     """
 
@@ -46,9 +46,9 @@ def rolling_value(x: np.ndarray, peak_index: int, peak_value: Union[float, int],
     else:
         cut_off_value = -10e-50
     if cut_off is not None:
-        sensitivity_value = sensitivity * cut_off
+        sensitivity_value = peak_value * sensitivity
     else:
-        sensitivity_value = -10e-50
+        sensitivity_value = 10e-50
 
     # lower bound
     if peak_index == 0:
@@ -64,7 +64,7 @@ def rolling_value(x: np.ndarray, peak_index: int, peak_value: Union[float, int],
                 min_index = peak_index - i
                 if min_ < cut_off_value:
                     break
-                if v - x[min_index+1] > sensitivity_value:
+                if v - x[min_index] > sensitivity_value:
                     break
 
         lb = min_index
@@ -75,18 +75,18 @@ def rolling_value(x: np.ndarray, peak_index: int, peak_value: Union[float, int],
     elif len(x) - peak_index < 5:
         ub = np.argmin(x[peak_index:])
     else:
-        max_ = x[peak_index]
-        max_index = peak_index
+        min_ = x[peak_index]
+        min_index = peak_index
         for i, v in enumerate(x[peak_index:]):
-            if v < max_:
-                max_ = v
-                max_index = peak_index + i
-                if max_ < cut_off_value:
+            if v < min_:
+                min_ = v
+                min_index = peak_index + i
+                if min_ < cut_off_value:
                     break
-                if v - x[max_index + 1] < sensitivity_value:
+                if v - x[min_index] > sensitivity_value:
                     break
 
-        ub = max_index
+        ub = min_index
 
     return lb, ub
 

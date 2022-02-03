@@ -131,6 +131,9 @@ class ObjList:
                 self._logger.warning(f"'{obj}' already in list.")
                 continue
 
+            if hasattr(obj, "id_") and obj.id_ is None:
+                obj.id_ = self.count + len(add)
+
             add.append(obj)
 
         self._objs += add

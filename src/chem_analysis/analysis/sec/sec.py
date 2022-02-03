@@ -1,10 +1,22 @@
+from functools import wraps
 
 import numpy as np
 import plotly.graph_objs as go
 
-from Dylan.sec.plot_format import layout_figure, layout_xaxis, layout_yaxis
-from Dylan.sec.trace import Trace
-from Dylan.sec.chromatogram import Chromatogram
+from src.chem_analysis.analysis.base_obj.peak import Peak
+from src.chem_analysis.analysis.base_obj.chromatogram import Chromatogram
+
+
+class SECPeak(Peak):
+    @wraps(Peak.__init__)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.mn = None
+        self.mw = None
+        self.d = None
+        self.std = None
+        self.skew = None
 
 
 class SECChromo(Chromatogram):
