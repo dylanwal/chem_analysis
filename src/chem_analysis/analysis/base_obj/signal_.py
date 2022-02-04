@@ -8,6 +8,7 @@ import plotly.graph_objs as go
 from src.chem_analysis.analysis.base_obj.peak import Peak
 from src.chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods
 import src.chem_analysis.analysis.algorithms as algorithms
+from src.chem_analysis.analysis.logger import logger_analysis
 from src.chem_analysis.analysis.utils import ObjList
 from src.chem_analysis.analysis.utils.plot_format import get_plot_color, get_similar_color, add_plot_format
 
@@ -38,37 +39,37 @@ class ProcessStep:
 
 
 class Signal:
-    _count = 0
+    __count = 0
 
     def __init__(self,
                  name: str = None,
-                 raw: pd.Series = None,
+                 ser: pd.Series = None,
                  x: Union[np.ndarray, pd.Series] = None,
                  y: np.ndarray = None,
                  x_label: str = None,
                  y_label: str = None,
                  ):
         if name is None:
-            name = f"trace_{Signal._count}"
-            Signal._count += 1
+            name = f"trace_{Signal.__count}"
+            Signal.__count += 1
 
         self.name = name
         self.x_label = x_label
         self.y_label = y_label
 
-        if raw is not None and isinstance(raw, pd.Series) and x is None and y is None:
-            self.raw = raw
-            self.x_label = self.raw.index.name if self.x_label is None else "x_axis"
-            self.y_label = self.raw.index.name if self.y_label is None else "y_axis"
-        elif raw is None and isinstance(x, array_like) and isinstance(y, array_like):
+        if ser is not None and isinstance(ser, pd.Series) and x is None and y is None:
+            self.raw = ser
+            self.x_label = self.raw.index.name if self.x_label is not None else "x_axis"
+            self.y_label = self.raw.index.name if self.y_label is not None else "y_axis"
+        elif ser is None and isinstance(x, array_like) and isinstance(y, array_like):
             self.x_label = x_label if x_label is not None else "x_axis"
             self.y_label = y_label if y_label is not None else "y_axis"
             self.raw = pd.Series(data=y, index=x, name=self.y_label)
             self.raw.index.names = [self.x_label]
 
-        if not hasattr(self, "ser"):
-            mes = "Provide either a pandas Series (df=) or two numpy arrays x and y (x=,y=)."
-            raise ValueError(mes + f" (df:{type(raw)}, x:{type(x)}, y:{type(y)})")
+        if not hasattr(self, "raw"):
+            mes = "Provide either a pandas Series (ser=) or two numpy arrays x and y (x=,y=)."
+            raise ValueError(mes + f" (df:{type(ser)}, x:{type(x)}, y:{type(y)})")
 
         self.pipeline = ObjList(ProcessStep)
         self.peaks = ObjList(Peak)
@@ -87,6 +88,10 @@ class Signal:
             self.calc()
         return self._result
 
+    @property
+    def num_peaks(self) -> int:
+        return len(self.peaks)
+
     def calc(self):
         x = self.raw.index.to_numpy()
         y = self.raw.to_numpy()
@@ -98,6 +103,17 @@ class Signal:
         self._result_up_to_date = True
 
     def despike(self, method="default", **kwargs):
+        """ despike
+
+        Parameters
+        ----------
+        method
+        kwargs
+
+        Returns
+        -------
+
+        """
         if callable(method):
             func = method
         else:
@@ -105,6 +121,8 @@ class Signal:
 
         self.pipeline.add(ProcessStep(func, ProcessType.DESPIKE, kwargs))
         self._result_up_to_date = False
+
+        logger_analysis.debug(f"Despiking ({method}) done on: '{self.name}'.")
 
     def baseline(self, method="polynomial", **kwargs):
         if callable(method):
@@ -114,6 +132,8 @@ class Signal:
 
         self.pipeline.add(ProcessStep(func, ProcessType.BASELINE, kwargs))
         self._result_up_to_date = False
+
+        logger_analysis.debug(f"Baseline correction ({method}) done on: '{self.name}'.")
 
     def smooth(self, method="default", **kwargs):
         if callable(method):
@@ -127,6 +147,8 @@ class Signal:
         self.pipeline.add(ProcessStep(func, ProcessType.SMOOTH, kwargs))
         self._result_up_to_date = False
 
+        logger_analysis.debug(f"Smooth ({method}) done on: '{self.name}'.")
+
     def auto_peak_picking(self, **kwargs):
         kwargs_ = {"width": self.raw.index[-1] / 50}
         if kwargs:
@@ -138,7 +160,9 @@ class Signal:
                                                   cut_off=0.05)
                 self.peaks.add(Peak(self, lb, ub))
         else:
-            print("No peaks found. ")
+            logger_analysis.warning(f"No peaks found in signal '{self.name}'.")
+
+        logger_analysis.debug(f"Auto peak picking done on: '{self.name}'. Peaks found: {self.num_peaks}")
 
     def stats(self, op_print: bool = True):
         text = ""
@@ -163,21 +187,23 @@ class Signal:
         else:
             color = 'rgb(0,0,0)'
 
+        group = self.name
+
         # add peaks
         if op_peaks:
             if len(self.peaks) > 0:
                 if color == 'rgb(0,0,0)':
-                    peak_color = get_plot_color(len(self.peaks))
+                    peak_color = get_plot_color(self.num_peaks)
                 else:
-                    peak_color = get_similar_color(color, len(self.peaks))
+                    peak_color = get_similar_color(color, self.num_peaks)
 
                 for peak, color_ in zip(self.peaks, peak_color):
-                    peak._plot(fig, color=color_)
+                    peak._plot(fig, color=color_, group=group)
 
         # add main trace
         fig.add_trace(
             go.Scatter(x=self.result.index, y=self.result, mode="lines", connectgaps=True, name=self.result.name,
-                       line=dict(color=color)))
+                       line=dict(color=color), legendgroup=group))
 
         if auto_format:
             add_plot_format(fig, self.result.index.name, self.result.name)

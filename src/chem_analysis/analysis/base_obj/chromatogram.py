@@ -2,15 +2,20 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+import plotly.graph_objs as go
 
-from src.chem_analysis.analysis.base_obj.signal import Signal
+from src.chem_analysis.analysis.base_obj.signal_ import Signal
+from src.chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format
 
 
 class Chromatogram:
     """
     A grouping of Signals.
     """
-    def __init__(self, data: Union[pd.DataFrame, Signal, list[Signal]]):
+
+    __count = 0
+
+    def __init__(self, data: Union[pd.DataFrame, Signal, list[Signal]], name: str = None):
         super().__init__()
         if isinstance(data, pd.DataFrame):
             data = self._load_from_df(data)
@@ -23,45 +28,89 @@ class Chromatogram:
                 raise ValueError("Invalid type in list")
 
         self.signals = data
-        for k, v in self.signals.items():
-            setattr(self, k, v)
+        for sig in self.signals:
+            setattr(self, sig.name, sig)
+
+        if name is None:
+            name = f"Chromat_{Chromatogram.__count}"
+            Chromatogram.__count += 1
+        self.name = name
+
+    def __repr__(self) -> str:
+        text = f"{self.name}: "
+        text += "; ".join(self.names)
+        return text
+
+    def __iter__(self) -> Signal:
+        for sig in self.signals:
+            yield sig
 
     @property
-    def labels(self):
-        return list(self.signals.keys())
+    def names(self):
+        return [i.name for i in self.signals]
 
     @property
-    def num_traces(self):
+    def y_labels(self):
+        return [i.y_label for i in self.signals]
+
+    @property
+    def x_label(self):
+        return self.signals[0].x_label
+
+    @property
+    def num_signals(self):
         return len(self.signals)
 
     def _load_from_df(self, df: pd.DataFrame) -> list[Signal]:
         """ Converts pandas dataframe into traces. """
         signals = []
         for col in df.columns:
-            signals[col] = Signal(raw=df[col])
+            signals.append(Signal(ser=df[col]))
 
         return signals
 
     def to_dataframe(self):
         pass
 
-    def baseline(self):
-        pass
+    def baseline(self, **kwargs):
+        for sig in self:
+            sig.baseline(**kwargs)
 
-    def despike(self):
-        pass
+    def despike(self, **kwargs):
+        for sig in self:
+            sig.despike(**kwargs)
 
-    def smooth(self):
-        pass
+    def smooth(self, **kwargs):
+        for sig in self:
+            sig.smooth(**kwargs)
 
-    def auto_peak_picking(self):
-        pass
+    def auto_peak_picking(self, **kwargs):
+        for sig in self:
+            sig.auto_peak_picking(**kwargs)
 
     def stats(self):
         pass
 
-    def plot(self):
-        pass
+    def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
+             op_peaks: bool = True, **kwargs) -> go.Figure:
+        if fig is None:
+            fig = go.Figure()
+
+        colors = get_plot_color(self.num_signals)
+
+        for sig, color in zip(self, colors):
+            kwargs_ = {"color": color}
+            if kwargs:
+                kwargs_ = {**kwargs_, **kwargs}
+            fig = sig.plot(fig, auto_open=False, auto_format=False, op_peaks=op_peaks, **kwargs_)
+
+        if auto_format:
+            add_plot_format(fig, self.x_label, "; ".join(self.y_labels))
+
+        if auto_open:
+            fig.write_html(f'temp.html', auto_open=True)
+
+        return fig
 
     def plot_sep_y(self):
         pass
@@ -71,14 +120,18 @@ def local_run():
     from scipy.stats import norm
     nx = 1000
     ny = 3
-    rv = norm(loc=nx/2, scale=10)
     x = np.linspace(0, nx, nx)
-    y = np.empty((nx, ny))
+    y = np.empty((ny, nx))
     for i in range(ny):
-        y[i] = np.linspace(0, nx, nx) + 20 * np.random.random(nx) + 5000 * rv.pdf(x) * np.random.random(1)
+        rv = norm(loc=nx * np.random.random(1), scale=10)
+        y[i, :] = np.linspace(0, nx, nx) + 20 * np.random.random(nx) * np.random.random(1) + 5000 * rv.pdf(x) * \
+                  np.random.random(1)
 
-    df = pd.DataFrame(data=y, index=x)
+    df = pd.DataFrame(data=y.T, index=x)
+    df.columns = ["RI", "UV", "LS"]
     chro = Chromatogram(df)
+    chro.baseline(deg=1)
+    chro.auto_peak_picking()
     chro.plot()
     print("done")
 

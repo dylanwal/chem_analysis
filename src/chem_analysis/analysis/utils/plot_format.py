@@ -95,6 +95,22 @@ def get_similar_color(color_in: str, num_colors: int, mode: str = "dark") -> lis
 
     return colors
 
+
+def add_plot_format(fig: go.Figure, x_axis: str, y_axis: str):
+    """ Add default format to plot. """
+    fig.update_layout(layout_figure)
+
+    # x-axis
+    x_axis_format = {"title": x_axis}
+    x_axis_format = {**x_axis_format, **layout_xaxis}
+    fig.update_xaxes(x_axis_format)
+
+    # y-axis
+    y_axis_format = {"title": y_axis}
+    y_axis_format = {**y_axis_format, **layout_yaxis}
+    fig.update_yaxes(y_axis_format)
+
+
 #######################################################################################################################
 ########################### Pandas ####################################################################################
 def plot(df: pd.DataFrame, fig=None, auto_open: bool = True, auto_format: bool = True):
@@ -140,19 +156,7 @@ def get_traces(df: pd.DataFrame, colors: list[str], y_axis_labels: dict = None):
     return traces
 
 
-def add_plot_format(fig: go.Figure, x_axis: str, y_axis: str):
-    """ Add default format to plot. """
-    fig.update_layout(layout_figure)
 
-    # x-axis
-    x_axis_format = {"title": x_axis}
-    x_axis_format = {**x_axis_format, **layout_xaxis}
-    fig.update_xaxes(x_axis_format)
-
-    # y-axis
-    y_axis_format = {"title": y_axis}
-    y_axis_format = {**y_axis_format, **layout_yaxis}
-    fig.update_yaxes(y_axis_format)
 
 
 def plot_sep_y(df: pd.DataFrame, fig=None, separate_y_axis=None,

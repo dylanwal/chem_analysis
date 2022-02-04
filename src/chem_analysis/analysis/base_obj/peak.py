@@ -1,10 +1,11 @@
-from typing import Protocol
+from typing import Protocol, Union
 
 import numpy as np
 import pandas as pd
 import scipy.interpolate as scipy_interpolate
 import plotly.graph_objs as go
 
+from src.chem_analysis.analysis.logger import logger_analysis
 from src.chem_analysis.analysis.utils.sig_fig import sig_figs
 
 
@@ -59,32 +60,41 @@ class Peak:
         self.fwhm = self.get_fwhm(self._parent.result.index.to_numpy(), self._parent.result.to_numpy())
 
     @staticmethod
-    def get_fwhm(x: np.ndarray, y: np.ndarray, k: int = 3) -> int:
+    def get_fwhm(x: np.ndarray, y: np.ndarray, k: int = 3) -> Union[None,int]:
         """ Determine full-with-half-maximum of a peaked set of points, x and y. """
         height_half_max = np.max(y) / 2
         s = scipy_interpolate.splrep(x, y - height_half_max, k=k)
         roots = scipy_interpolate.sproot(s)
 
         if len(roots) > 2:
-            raise ValueError("The dataset appears to have multiple peaks, and "
-                             "thus the FWHM can't be determined.")
+            msg = "The dataset appears to have multiple peaks, and thus the FWHM can't be determined."
+            logger_analysis.warn(msg)
+            return None
+
         elif len(roots) < 2:
-            raise ValueError("No proper peaks were found in the data set; likely "
-                             "the dataset is flat (e.g. all zeros).")
+            msg = "No proper peaks were found in the data set; likely the dataset is flat (e.g. all zeros)."
+            logger_analysis.warn(msg)
+            return None
+
         else:
             return abs(roots[1] - roots[0])
 
-    def _plot(self, fig: go.Figure, **kwargs):
-        self._plot_max(fig, **kwargs)
-        self._plot_bounds(fig, **kwargs)
-        self._plot_shade(fig, **kwargs)
+    def _plot(self, fig: go.Figure, group: str = None, **kwargs):
+        self._plot_max(fig, group, **kwargs)
+        # self._plot_bounds(fig, group, **kwargs)
+        self._plot_shade(fig, group, **kwargs)
 
-    def _plot_shade(self, fig: go.Figure, **kwargs):
+    def _plot_shade(self, fig: go.Figure, group: str = None, **kwargs):
         kwargs_ = {
             "width": 0
         }
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
+
+        if group:
+            kkwargs = {"legendgroup": group}
+        else:
+            kkwargs = {}
 
         fig.add_trace(go.Scatter(
             x=self._parent.result.index[self.slice_],
@@ -92,15 +102,21 @@ class Peak:
             mode="lines",
             fill='tozeroy',
             line=kwargs_,
-            showlegend=False
+            showlegend=False,
+            **kkwargs
         ))
 
-    def _plot_max(self, fig: go.Figure, **kwargs):
+    def _plot_max(self, fig: go.Figure, group: str = None, **kwargs):
         kwargs_ = {
             "size": 1
         }
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
+
+        if group:
+            kkwargs = {"legendgroup": group}
+        else:
+            kkwargs = {}
 
         fig.add_trace(go.Scatter(
             x=[self.max_loc],
@@ -109,15 +125,21 @@ class Peak:
             marker=kwargs_,
             text=[f"peak: {self.id_}"],
             textposition="top center",
-            showlegend=False
+            showlegend=False,
+            **kkwargs
         ))
 
-    def _plot_bounds(self, fig: go.Figure, height: float = 0.08, **kwargs):
+    def _plot_bounds(self, fig: go.Figure, group: str = None, height: float = 0.08, **kwargs):
         kwargs_ = {
             "width": 5
         }
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
+
+        if group:
+            kkwargs = {"legendgroup": group}
+        else:
+            kkwargs = {}
 
         bound_height = max(self._parent.result) * height
         # bounds
@@ -126,7 +148,8 @@ class Peak:
             y=[-bound_height / 2, bound_height / 2],
             mode="lines",
             line=kwargs_,
-            showlegend=False
+            showlegend=False,
+            **kkwargs
 
         ))
         fig.add_trace(go.Scatter(
@@ -134,14 +157,16 @@ class Peak:
             y=[-bound_height / 2, bound_height / 2],
             mode="lines",
             line=kwargs_,
-            showlegend=False
+            showlegend=False,
+            **kkwargs
         ))
         fig.add_trace(go.Scatter(
             x=[self.lb_loc, self.hb_loc],
             y=[0, 0],
             mode="lines",
             line=kwargs_,
-            showlegend=False
+            showlegend=False,
+            **kkwargs
         ))
 
     def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150):
