@@ -14,7 +14,7 @@ class Chromatogram:
     """
 
     __count = 0
-    __signal = Signal
+    _signal = Signal
 
     def __init__(self, data: Union[pd.DataFrame, Signal, list[Signal]], name: str = None):
         super().__init__()
@@ -66,7 +66,7 @@ class Chromatogram:
         """ Converts pandas dataframe into traces. """
         signals = []
         for col in df.columns:
-            signals.append(self.__signal(ser=df[col], _parent=self))
+            signals.append(self._signal(ser=df[col], _parent=self))
 
         return signals
 
@@ -88,6 +88,10 @@ class Chromatogram:
     def auto_peak_picking(self, **kwargs):
         for sig in self:
             sig.auto_peak_picking(**kwargs)
+
+    def auto_peak_baseline(self, **kwargs):
+        for sig in self:
+            sig.auto_peak_baseline(**kwargs)
 
     def stats(self, op_print: bool = True) -> str:
         text = ""

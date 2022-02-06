@@ -155,7 +155,7 @@ class ObjList:
             if isinstance(obj, (str, int, slice)):
                 obj = self[obj]
 
-            if objs not in self._objs:
+            if obj not in self._objs:
                 self._logger.error(f"'{self._obj}'is not in list, so it can't be removed.")
                 continue
 
@@ -168,6 +168,10 @@ class ObjList:
         for obj in remove:
             self._objs.remove(obj)
             self.count -= 1
+
+    def clear(self):
+        self._objs = []
+        self.count = 0
 
     def as_dict(self) -> list:
         """ Returns list of references for serialization."""

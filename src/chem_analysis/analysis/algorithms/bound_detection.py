@@ -64,8 +64,8 @@ def rolling_value(x: np.ndarray, peak_index: int = None, peak_value: Union[float
                 min_index = peak_index - i
                 if min_ < cut_off_value:
                     break
-                if v - x[min_index] > sensitivity_value:
-                    break
+            if v - x[min_index] > sensitivity_value:
+                break
 
         lb = min_index
 

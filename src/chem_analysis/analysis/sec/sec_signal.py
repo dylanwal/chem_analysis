@@ -13,7 +13,7 @@ from src.chem_analysis.analysis.utils.plot_format import add_plot_format
 class SECSignal(Signal):
     _peak = SECPeak
 
-    def __init__(self, cal: Union[Cal, Callable], **kwrags):
+    def __init__(self, cal: Union[Cal, Callable] = None, **kwrags):
         super().__init__(**kwrags)
 
         if cal is None and self._parent.cal is not None:
@@ -82,8 +82,8 @@ class SECSignal(Signal):
         kwargs_["dash"] = 'dash'
 
         # low limit
-        lb_time = time[np.argmin(np.abs(mw-self.cal.lb))]
         if self.cal.lb:
+            lb_time = time[np.argmin(np.abs(mw - self.cal.lb))]
             fig.add_trace(go.Scatter(
                 x=[lb_time, lb_time],
                 y=[0, np.max(mw)],
@@ -97,8 +97,8 @@ class SECSignal(Signal):
             ))
 
         # up limit
-        ub_time = time[np.argmin(np.abs(mw - self.cal.ub))]
         if self.cal.ub:
+            ub_time = time[np.argmin(np.abs(mw - self.cal.ub))]
             fig.add_trace(go.Scatter(
                 x=[ub_time, ub_time],
                 y=[0, np.max(mw)],
@@ -144,8 +144,7 @@ def local_run():
     y = 5 * np.linspace(0, 1, nx) + np.random.random(nx) + 100 * rv.pdf(x) + 20 * rv2.pdf(x)
 
     sig = SECSignal(name="RI data", x=x, y=y, x_label="time (min)", y_label="intensity", cal=cal)
-    sig.baseline(deg=1)
-    sig.auto_peak_picking()
+    sig.auto_peak_baseline(deg=1)
     sig.plot()
     sig.stats()
     print("done")

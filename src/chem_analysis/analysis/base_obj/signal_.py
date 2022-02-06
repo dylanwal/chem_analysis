@@ -182,13 +182,14 @@ class Signal:
         logger_analysis.debug(f"Smooth ({method}) done on: '{self.name}'.")
 
     def auto_peak_picking(self, **kwargs):
+        self.peaks.clear()
         kwargs_ = {"width": self.raw.index[-1] / 50, "prominence": 1}
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
         peaks_index = algorithms.scipy_find_peaks(self.result.to_numpy(), **kwargs_)
         if len(peaks_index) != 0:
             for peak in peaks_index:
-                lb, ub = algorithms.rolling_value(self.result.to_numpy(), peak_index=peak, sensitivity=0.5,
+                lb, ub = algorithms.rolling_value(self.result.to_numpy(), peak_index=peak, sensitivity=0.1,
                                                   cut_off=0.05)
                 self.peaks.add(self._peak(self, lb, ub))
         else:
@@ -196,10 +197,17 @@ class Signal:
 
         logger_analysis.debug(f"Auto peak picking done on: '{self.name}'. Peaks found: {self.num_peaks}")
 
-    def auto_peak_baseline(self, iterations: int = 3):
-        self.baseline()
+    def auto_peak_baseline(self, iterations: int = 3, **kwargs):
+        self.baseline(**kwargs)
         self.auto_peak_picking()
-
+        for i in range(iterations):
+            self.pipeline.remove(-1)
+            mask = np.ones_like(self.raw.to_numpy())
+            for peak in self.peaks:
+                mask[peak.slice_] = False
+            self.baseline(mask=mask, **kwargs)
+            self.auto_peak_picking()
+            logger_analysis.debug(f"'auto_peak_baseline' iteration {i} done.")
 
     def stats(self, op_print: bool = True, op_headers: bool = True) -> str:
         text = ""
