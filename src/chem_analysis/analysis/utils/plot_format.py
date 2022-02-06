@@ -11,7 +11,8 @@ layout_figure = {
         "width": 1200,
         "height": 600,
         "font": dict(family="Arial", size=18, color="black"),
-        "plot_bgcolor": "white"
+        "plot_bgcolor": "white",
+        "legend": {"x": 0.8, "y": 0.95}
     }
 
 layout_xaxis = {
@@ -96,23 +97,69 @@ def get_similar_color(color_in: str, num_colors: int, mode: str = "dark") -> lis
     return colors
 
 
-def add_plot_format(fig: go.Figure, x_axis: str, y_axis: str):
+def add_plot_format(fig: go.Figure, x_axis: str, y_axis: str, layout_kwargs: dict = None,
+                    x_kwargs: dict = None, y_kwargs: dict = None):
     """ Add default format to plot. """
-    fig.update_layout(layout_figure)
+    if layout_kwargs:
+        layout_format = {**layout_figure, **layout_kwargs}
+    else:
+        layout_format = layout_figure
+    fig.update_layout(layout_format)
 
     # x-axis
     x_axis_format = {"title": x_axis}
-    x_axis_format = {**x_axis_format, **layout_xaxis}
+    if x_kwargs:
+        x_axis_format = {**x_axis_format, **layout_xaxis, **x_kwargs}
+    else:
+        x_axis_format = {**x_axis_format, **layout_xaxis}
     fig.update_xaxes(x_axis_format)
 
     # y-axis
     y_axis_format = {"title": y_axis}
-    y_axis_format = {**y_axis_format, **layout_yaxis}
+    if y_kwargs:
+        y_axis_format = {**y_axis_format, **layout_yaxis, **y_kwargs}
+    else:
+        y_axis_format = {**y_axis_format, **layout_yaxis}
     fig.update_yaxes(y_axis_format)
 
 
+def get_multi_y_axis(colors: list[str], fig: go.Figure, spread: float = 0.2) -> dict:
+    y_axis_labels = {data.yaxis for data in fig.data}
+    y_axis_labels = [label for label in y_axis_labels if label is not None]
+    num_y_axis = len(y_axis_labels)
+
+    gap = spread / (num_y_axis - 1)
+    # first trace
+    axis_format = {
+        "xaxis": {"domain": [spread, 1]},  # 'tickformat': '%I:%M %p \n %b %d'
+        # https://github.com/d3/d3-time-format/tree/v2.2.3#locale_format
+        "yaxis1": {
+            "title": {"text": f"{y_axis_labels[0]}", "standoff": 0},
+            # "tickformat": ".4f",
+            # "titlefont": {"color": colors[0]},
+            # "tickfont": {"color": colors[0]},
+            "tickangle": -45
+        }
+    }
+    # the rest of the traces
+    for i in range(1, num_y_axis):
+        axis_format[f"yaxis{i + 1}"] = {
+            "title": {"text": f"{y_axis_labels[i]}", "standoff": 0},
+            # "tickformat": ".4f",
+            # "titlefont": {"color": colors[i]},
+            # "tickfont": {"color": colors[i]},
+            "anchor": "free",
+            "overlaying": "y",
+            "side": "left",
+            "position": spread - gap * i,
+            "tickangle": -45
+        }
+
+    return axis_format
+
+
 #######################################################################################################################
-########################### Pandas ####################################################################################
+#######################################################################################################################
 def plot(df: pd.DataFrame, fig=None, auto_open: bool = True, auto_format: bool = True):
     """ Basic plotting """
     if fig is None:
@@ -156,9 +203,6 @@ def get_traces(df: pd.DataFrame, colors: list[str], y_axis_labels: dict = None):
     return traces
 
 
-
-
-
 def plot_sep_y(df: pd.DataFrame, fig=None, separate_y_axis=None,
                auto_open: bool = True, auto_format: bool = True, spread=0.20):
 
@@ -181,43 +225,6 @@ def plot_sep_y(df: pd.DataFrame, fig=None, separate_y_axis=None,
 
     return fig
 
-
-def get_multi_y_axis(colors: list[str], fig: go.Figure, spread: float = 0.2) -> dict:
-    y_axis_labels = {data.yaxis for data in fig.data}
-    num_y_axis = len(y_axis_labels)
-
-    gap = spread / (num_y_axis - 1)
-    # first trace
-    axis_format = {
-        "xaxis": {"domain": [spread, 1]},  # 'tickformat': '%I:%M %p \n %b %d'
-        # https://github.com/d3/d3-time-format/tree/v2.2.3#locale_format
-        "yaxis1": {
-            "title": {"text": f"{y_axis_labels[0]}", "standoff": 0},
-            # "tickformat": ".4f",
-            # "titlefont": {"color": colors[0]},
-            # "tickfont": {"color": colors[0]},
-            "tickangle": -45
-        }
-    }
-    # the rest of the traces
-    for i in range(1, num_y_axis):
-        axis_format[f"yaxis{i + 1}"] = {
-            "title": {"text": f"{y_axis_labels[i]}", "standoff": 0},
-            # "tickformat": ".4f",
-            # "titlefont": {"color": colors[i]},
-            # "tickfont": {"color": colors[i]},
-            "anchor": "free",
-            "overlaying": "y",
-            "side": "left",
-            "position": spread - gap * i,
-            "tickangle": -45
-        }
-
-    return axis_format
-
-
-#######################################################################################################################
-########################### Pandas ####################################################################################
 
 def plot_series(data: pd.Series, fig=None, auto_open: bool = True, auto_format: bool = True):
     """ Basic plotting """

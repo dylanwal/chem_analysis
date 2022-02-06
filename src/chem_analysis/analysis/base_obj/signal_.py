@@ -39,7 +39,32 @@ class ProcessStep:
 
 
 class Signal:
+    """ signal
+
+
+    Attributes
+    ----------
+    name: str
+
+    raw: pd.Series
+        raw data
+    x_label: str
+
+    y_label: str
+
+    pipeline:
+        data processing pipeline
+    peaks: Peak
+
+    num_peaks: int
+        number of peaks
+    result: pd.Series
+        data process through pipeline
+
+
+    """
     __count = 0
+    _peak = Peak
 
     def __init__(self,
                  name: str = None,
@@ -48,6 +73,7 @@ class Signal:
                  y: np.ndarray = None,
                  x_label: str = None,
                  y_label: str = None,
+                 _parent=None
                  ):
         if name is None:
             name = f"trace_{Signal.__count}"
@@ -59,11 +85,11 @@ class Signal:
 
         if ser is not None and isinstance(ser, pd.Series) and x is None and y is None:
             self.raw = ser
-            self.x_label = self.raw.index.name if self.x_label is not None else "x_axis"
-            self.y_label = self.raw.index.name if self.y_label is not None else "y_axis"
+            if self.x_label is None:
+                self.x_label = self.raw.index.name
+            if self.y_label is None:
+                self.y_label = self.raw.name
         elif ser is None and isinstance(x, array_like) and isinstance(y, array_like):
-            self.x_label = x_label if x_label is not None else "x_axis"
-            self.y_label = y_label if y_label is not None else "y_axis"
             self.raw = pd.Series(data=y, index=x, name=self.y_label)
             self.raw.index.names = [self.x_label]
 
@@ -71,10 +97,16 @@ class Signal:
             mes = "Provide either a pandas Series (ser=) or two numpy arrays x and y (x=,y=)."
             raise ValueError(mes + f" (df:{type(ser)}, x:{type(x)}, y:{type(y)})")
 
+        if self.x_label is None:
+            self.x_label = "x_axis"
+        if self.y_label is None:
+            self.y_label = "y_axis"
+
         self.pipeline = ObjList(ProcessStep)
-        self.peaks = ObjList(Peak)
+        self.peaks = ObjList(self._peak)
         self._result = None
         self._result_up_to_date = False
+        self._parent = _parent
 
     def __repr__(self):
         text = f"{self.name}: "
@@ -150,7 +182,7 @@ class Signal:
         logger_analysis.debug(f"Smooth ({method}) done on: '{self.name}'.")
 
     def auto_peak_picking(self, **kwargs):
-        kwargs_ = {"width": self.raw.index[-1] / 50}
+        kwargs_ = {"width": self.raw.index[-1] / 50, "prominence": 1}
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
         peaks_index = algorithms.scipy_find_peaks(self.result.to_numpy(), **kwargs_)
@@ -158,26 +190,33 @@ class Signal:
             for peak in peaks_index:
                 lb, ub = algorithms.rolling_value(self.result.to_numpy(), peak_index=peak, sensitivity=0.5,
                                                   cut_off=0.05)
-                self.peaks.add(Peak(self, lb, ub))
+                self.peaks.add(self._peak(self, lb, ub))
         else:
             logger_analysis.warning(f"No peaks found in signal '{self.name}'.")
 
         logger_analysis.debug(f"Auto peak picking done on: '{self.name}'. Peaks found: {self.num_peaks}")
 
-    def stats(self, op_print: bool = True):
+    def auto_peak_baseline(self, iterations: int = 3):
+        self.baseline()
+        self.auto_peak_picking()
+
+
+    def stats(self, op_print: bool = True, op_headers: bool = True) -> str:
         text = ""
         for i, peak in enumerate(self.peaks):
             if i == 0:
-                text += peak.stats(op_print=False)
-            else:
-                text += peak.stats(op_print=False, op_headers=False)
+                if op_headers:
+                    text += peak.stats(op_print=False)
+                    continue
+
+            text += peak.stats(op_print=False, op_headers=False)
 
         if op_print:
             print(text)
         return text
 
     def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
-             op_peaks: bool = True, **kwargs) -> go.Figure:
+             op_peaks: bool = True, y_label: str = None, **kwargs) -> go.Figure:
         """ Basic plotting """
         if fig is None:
             fig = go.Figure()
@@ -198,15 +237,25 @@ class Signal:
                     peak_color = get_similar_color(color, self.num_peaks)
 
                 for peak, color_ in zip(self.peaks, peak_color):
-                    peak._plot(fig, color=color_, group=group)
+                    peak.plot(fig, color=color_, group=group, y_label=y_label)
 
         # add main trace
-        fig.add_trace(
-            go.Scatter(x=self.result.index, y=self.result, mode="lines", connectgaps=True, name=self.result.name,
-                       line=dict(color=color), legendgroup=group))
+        plot_kwargs = {
+            "x": self.result.index,
+            "y": self.result,
+            "mode": 'lines',
+            "connectgaps": True,
+            "name": self.result.name,
+            "legendgroup": group,
+            "line": dict(color=color)
+        }
+        if y_label is not None:
+            plot_kwargs["yaxis"] = y_label
+
+        fig.add_trace(go.Scatter(**plot_kwargs))
 
         if auto_format:
-            add_plot_format(fig, self.result.index.name, self.result.name)
+            add_plot_format(fig, self.result.index.name, str(self.result.name))
 
         if auto_open:
             fig.write_html(f'temp.html', auto_open=True)
@@ -220,11 +269,11 @@ def local_run():
     rv = norm(loc=n/2, scale=10)
     x = np.linspace(0, n, n)
     y = np.linspace(0, n, n) + 20 * np.random.random(n) + 5000 * rv.pdf(x)
-    trace = Signal(name="test", x=x, y=y, x_label="x_test", y_label="y_test")
-    trace.baseline(deg=1)
-    trace.auto_peak_picking()
-    trace.stats()
-    trace.plot()
+    signal = Signal(name="test", x=x, y=y, x_label="x_test", y_label="y_test")
+    signal.baseline(deg=1)
+    signal.auto_peak_picking()
+    signal.stats()
+    signal.plot()
     print("done")
 
 

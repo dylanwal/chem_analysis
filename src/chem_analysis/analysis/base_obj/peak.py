@@ -10,6 +10,7 @@ from src.chem_analysis.analysis.utils.sig_fig import sig_figs
 
 
 class PeakSupports(Protocol):
+    name: str
     result: pd.Series
 
 
@@ -21,6 +22,30 @@ def _length_limit(label: str, limit: int) -> str:
 
 
 class Peak:
+    """
+
+
+    Attributes
+    ----------
+    id_: int
+        id of peak
+    slice_: slice
+        slice of full signal for peak
+    lb_index: int
+        index of lower bound
+    hb_index: int
+        index of higher bound
+    lb_loc: float
+        x location of lower bound
+    hb_loc: float
+        x location of higher bound
+    lb_value: float
+        y location of lower bound
+    hb_value: float
+        y location of higher bound
+    max_index: int
+
+    """
     def __init__(self, parent: PeakSupports, lb_index: float, hb_index: float, id_: int = None):
         self.id_ = id_
         self._parent = parent
@@ -43,24 +68,31 @@ class Peak:
         self.calc()
 
     def __repr__(self):
-        return f"peak: {self.id_} at {self.max}"
+        return f"peak: {self.id_} at {self.max_loc}"
+
+    @property
+    def x(self) -> np.ndarray:
+        return self._parent.result.index[self.slice_].to_numpy()
+
+    @property
+    def y(self) -> np.ndarray:
+        return self._parent.result.iloc[self.slice_].to_numpy()
 
     def calc(self):
-        self.lb_value = self._parent.result.iloc[self.lb_index]
-        self.hb_value = self._parent.result.iloc[self.hb_index]
-        self.lb_loc = self._parent.result.index[self.lb_index]
-        self.hb_loc = self._parent.result.index[self.hb_index]
+        self.lb_value = self.y[0]
+        self.hb_value = self.y[-1]
+        self.lb_loc = self.x[0]
+        self.hb_loc = self.x[-1]
 
-        self.max_index = np.argmax(self._parent.result.iloc[self.slice_]) + self.lb_index
-        self.max = self._parent.result.iloc[self.max_index]
-        self.max_loc = self._parent.result.index[self.max_index]
+        self.max_index = np.argmax(self.y) + self.lb_index
+        self.max = self.y[self.max_index-self.lb_index]
+        self.max_loc = self.x[self.max_index-self.lb_index]
 
-        self.area = np.trapz(y=self._parent.result.iloc[self.slice_].to_numpy(),
-                             x=self._parent.result.iloc[self.slice_].index.to_numpy())
-        self.fwhm = self.get_fwhm(self._parent.result.index.to_numpy(), self._parent.result.to_numpy())
+        self.area = np.trapz(x=self.x, y=self.y)
+        self.fwhm = self.get_fwhm(x=self.x, y=self.y)
 
     @staticmethod
-    def get_fwhm(x: np.ndarray, y: np.ndarray, k: int = 3) -> Union[None,int]:
+    def get_fwhm(x: np.ndarray, y: np.ndarray, k: int = 3) -> Union[None, int]:
         """ Determine full-with-half-maximum of a peaked set of points, x and y. """
         height_half_max = np.max(y) / 2
         s = scipy_interpolate.splrep(x, y - height_half_max, k=k)
@@ -79,26 +111,27 @@ class Peak:
         else:
             return abs(roots[1] - roots[0])
 
-    def _plot(self, fig: go.Figure, group: str = None, **kwargs):
-        self._plot_max(fig, group, **kwargs)
+    def plot(self, fig: go.Figure, group: str = None, y_label: str = None, **kwargs):
+        self._plot_max(fig, group, y_label, **kwargs)
         # self._plot_bounds(fig, group, **kwargs)
-        self._plot_shade(fig, group, **kwargs)
+        self._plot_shade(fig, group, y_label, **kwargs)
 
-    def _plot_shade(self, fig: go.Figure, group: str = None, **kwargs):
+    def _plot_shade(self, fig: go.Figure, group: str = None, y_label: str = None, **kwargs):
         kwargs_ = {
             "width": 0
         }
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
 
+        kkwargs = {}
         if group:
-            kkwargs = {"legendgroup": group}
-        else:
-            kkwargs = {}
+            kkwargs["legendgroup"] = group
+        if y_label:
+            kkwargs["yaxis"] = y_label
 
         fig.add_trace(go.Scatter(
-            x=self._parent.result.index[self.slice_],
-            y=self._parent.result.iloc[self.slice_],
+            x=self.x,
+            y=self.y,
             mode="lines",
             fill='tozeroy',
             line=kwargs_,
@@ -106,40 +139,42 @@ class Peak:
             **kkwargs
         ))
 
-    def _plot_max(self, fig: go.Figure, group: str = None, **kwargs):
+    def _plot_max(self, fig: go.Figure, group: str = None, y_label: str = None, **kwargs):
         kwargs_ = {
             "size": 1
         }
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
 
+        kkwargs = {}
         if group:
-            kkwargs = {"legendgroup": group}
-        else:
-            kkwargs = {}
+            kkwargs["legendgroup"] = group
+        if y_label:
+            kkwargs["yaxis"] = y_label
 
         fig.add_trace(go.Scatter(
             x=[self.max_loc],
             y=[self.max],
             mode="text",
             marker=kwargs_,
-            text=[f"peak: {self.id_}"],
+            text=[f"{self._parent.name}: {self.id_}"],
             textposition="top center",
             showlegend=False,
             **kkwargs
         ))
 
-    def _plot_bounds(self, fig: go.Figure, group: str = None, height: float = 0.08, **kwargs):
+    def _plot_bounds(self, fig: go.Figure, group: str = None, height: float = 0.08, y_label: str = None, **kwargs):
         kwargs_ = {
             "width": 5
         }
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
 
+        kkwargs = {}
         if group:
-            kkwargs = {"legendgroup": group}
-        else:
-            kkwargs = {}
+            kkwargs["legendgroup"] = group
+        if y_label:
+            kkwargs["yaxis"] = y_label
 
         bound_height = max(self._parent.result) * height
         # bounds
@@ -169,11 +204,12 @@ class Peak:
             **kkwargs
         ))
 
-    def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150):
+    def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150, headers: dict = None):
         text = ""
-        headers = {  # attribute: print
-            "id_": "id", "lb_loc": "low bound", "max_loc": "max", "hb_loc": "high bound", "area": "area"
-        }
+        if headers is None:
+            headers = {  # attribute: print
+                "id_": "id", "lb_loc": "low bound", "max_loc": "max", "hb_loc": "high bound", "area": "area"
+            }
 
         # format
         width = int(window / len(headers))
@@ -187,6 +223,7 @@ class Peak:
 
         # values
         entries = [_length_limit(str(sig_figs(getattr(self, k), 3)), width) for k in headers]
+        entries[0] = f"{self._parent.name}: {entries[0]}"  # peak name: peak id
         text = text + row_format.format(*entries) + "\n"
 
         if op_print:

@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objs as go
 
 from src.chem_analysis.analysis.base_obj.signal_ import Signal
-from src.chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format
+from src.chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format, get_multi_y_axis
 
 
 class Chromatogram:
@@ -14,6 +14,7 @@ class Chromatogram:
     """
 
     __count = 0
+    __signal = Signal
 
     def __init__(self, data: Union[pd.DataFrame, Signal, list[Signal]], name: str = None):
         super().__init__()
@@ -65,7 +66,7 @@ class Chromatogram:
         """ Converts pandas dataframe into traces. """
         signals = []
         for col in df.columns:
-            signals.append(Signal(ser=df[col]))
+            signals.append(self.__signal(ser=df[col], _parent=self))
 
         return signals
 
@@ -88,8 +89,18 @@ class Chromatogram:
         for sig in self:
             sig.auto_peak_picking(**kwargs)
 
-    def stats(self):
-        pass
+    def stats(self, op_print: bool = True) -> str:
+        text = ""
+        for i, sig in enumerate(self):
+            if i == 0:
+                text += sig.stats(op_print=False)
+                continue
+
+            text += sig.stats(op_print=False, op_headers=False)
+
+        if op_print:
+            print(text)
+        return text
 
     def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
              op_peaks: bool = True, **kwargs) -> go.Figure:
@@ -112,8 +123,47 @@ class Chromatogram:
 
         return fig
 
-    def plot_sep_y(self):
-        pass
+    def plot_sep_y(self, fig: go.Figure = None, auto_open: bool = True,
+                   op_peaks: bool = True, spread: float = None, **kwargs) -> go.Figure:
+        """ Basic plotting """
+        if fig is None:
+            fig = go.Figure()
+
+        # generate lines
+        colors = get_plot_color(self.num_signals)
+        y_axis_labels = self._get_y_labels()
+
+        for sig, color, label in zip(self, colors, y_axis_labels):
+            kwargs_ = {"color": color}
+            if kwargs:
+                kwargs_ = {**kwargs_, **kwargs}
+
+            fig = sig.plot(fig, auto_open=False, auto_format=False, op_peaks=op_peaks, y_label=label, **kwargs_)
+
+        # adding multiple y-axis
+        if spread is None:
+            spread = 0.05 * len(set(y_axis_labels))
+        axis_format = get_multi_y_axis(colors, fig, spread)
+        fig.update_layout(**axis_format)
+
+        if auto_open:
+            fig.write_html("temp.html", auto_open=True)
+
+        return fig
+
+    def _get_y_labels(self) -> list[str]:
+        y_labels = []
+        seen = []
+        count = 1
+        for sig in self:
+            if sig.name[:2] in seen:
+                index = [i[:2] for i in seen].index(sig.name[:2])
+                y_labels.append(y_labels[index])
+            else:
+                y_labels.append(f"y{count}")
+                count += 1
+
+        return y_labels
 
 
 def local_run():
@@ -124,23 +174,19 @@ def local_run():
     y = np.empty((ny, nx))
     for i in range(ny):
         rv = norm(loc=nx * np.random.random(1), scale=10)
-        y[i, :] = np.linspace(0, nx, nx) + 20 * np.random.random(nx) * np.random.random(1) + 5000 * rv.pdf(x) * \
-                  np.random.random(1)
+        y[i, :] = np.linspace(0, nx, nx) + 20 * np.random.random(nx) * np.random.random(1) + \
+                  5000 * rv.pdf(x) * np.random.random(1)
 
     df = pd.DataFrame(data=y.T, index=x)
     df.columns = ["RI", "UV", "LS"]
+    df.index.names = ["time"]
     chro = Chromatogram(df)
     chro.baseline(deg=1)
     chro.auto_peak_picking()
     chro.plot()
+    chro.stats()
     print("done")
 
 
 if __name__ == "__main__":
     local_run()
-
-    # path = r"C:\Users\nicep\Desktop\Reseach_Post\Data\Polyester\DW1_3\SEC\DW1-3-2[DW1-3].csv"
-    # df = pd.read_csv(path, header=0, index_col=0)
-    # df = df.iloc[:, :10]
-    # df.columns = ["LS1", "LS2", "LS3", "LS4", "LS5", "LS6", "LS7", "LS8", "UV", "RI"]
-    # df.index.names = ["time (min)"]
