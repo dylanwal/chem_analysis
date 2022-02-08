@@ -8,6 +8,7 @@ from src.chem_analysis.analysis.base_obj.calibration import Cal
 from src.chem_analysis.analysis.base_obj.signal_ import Signal
 from src.chem_analysis.analysis.sec.sec_peak import SECPeak
 from src.chem_analysis.analysis.utils.plot_format import add_plot_format
+from src.chem_analysis.analysis.utils import fig_count
 
 
 class SECSignal(Signal):
@@ -36,8 +37,14 @@ class SECSignal(Signal):
         mol_weight = self.cal(self.result.index.to_numpy())
         self._result_weight = pd.Series(self.result.to_numpy(), mol_weight)
 
+    def auto_peak_baseline(self, iterations: int = 3, limit_range: list[float] = None, **kwargs):
+        # if limit_range is None and self.cal.lb and self.cal.ub:
+        #     limit_range = [self.cal.ub_loc, self.cal.lb_loc]
+
+        super().auto_peak_baseline(iterations=iterations, limit_range=limit_range, **kwargs)
+
     def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
-             op_peaks: bool = True, op_cal: bool = True, y_label: str = None, **kwargs) -> go.Figure:
+             op_peaks: bool = True, op_cal: bool = True, y_label: str = None, title: str = None, **kwargs) -> go.Figure:
         if fig is None:
             fig = go.Figure()
 
@@ -47,10 +54,14 @@ class SECSignal(Signal):
             self._plot_cal(fig)
 
         if auto_format:
+            if title is not None:
+                fig.update_layout(title=title)
             add_plot_format(fig, self.result.index.name, str(self.result.name))
 
         if auto_open:
-            fig.write_html(f'temp.html', auto_open=True)
+            global fig_count
+            fig.write_html(f'temp{fig_count}.html', auto_open=True)
+            fig_count += 1
 
         return fig
 
@@ -70,7 +81,7 @@ class SECSignal(Signal):
         fig.add_trace(go.Scatter(
             x=time,
             y=mw,
-            name="calibration",
+            name=self.cal.name if self.cal.name is not None else "calibration",
             mode="lines",
             line=kwargs_,
             yaxis="y2",
@@ -83,9 +94,8 @@ class SECSignal(Signal):
 
         # low limit
         if self.cal.lb:
-            lb_time = time[np.argmin(np.abs(mw - self.cal.lb))]
             fig.add_trace(go.Scatter(
-                x=[lb_time, lb_time],
+                x=[self.cal.lb_loc, self.cal.lb_loc],
                 y=[0, np.max(mw)],
                 name="calibration",
                 mode="lines",
@@ -98,9 +108,8 @@ class SECSignal(Signal):
 
         # up limit
         if self.cal.ub:
-            ub_time = time[np.argmin(np.abs(mw - self.cal.ub))]
             fig.add_trace(go.Scatter(
-                x=[ub_time, ub_time],
+                x=[self.cal.ub_loc, self.cal.ub_loc],
                 y=[0, np.max(mw)],
                 name="calibration",
                 mode="lines",

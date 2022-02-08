@@ -9,7 +9,7 @@ from src.chem_analysis.analysis.base_obj.peak import Peak
 from src.chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods
 import src.chem_analysis.analysis.algorithms as algorithms
 from src.chem_analysis.analysis.logger import logger_analysis
-from src.chem_analysis.analysis.utils import ObjList
+from src.chem_analysis.analysis.utils import ObjList, fig_count
 from src.chem_analysis.analysis.utils.plot_format import get_plot_color, get_similar_color, add_plot_format
 
 array_like = (np.ndarray, list, tuple)
@@ -105,6 +105,7 @@ class Signal:
         self.pipeline = ObjList(ProcessStep)
         self.peaks = ObjList(self._peak)
         self._result = None
+        self._result_norm = None
         self._result_up_to_date = False
         self._parent = _parent
 
@@ -121,6 +122,12 @@ class Signal:
         return self._result
 
     @property
+    def result_norm(self) -> pd.Series:
+        if not self._result_up_to_date:
+            self.calc()
+        return self._result_norm
+
+    @property
     def num_peaks(self) -> int:
         return len(self.peaks)
 
@@ -131,6 +138,7 @@ class Signal:
             x, y, z = func(x, y)
 
         self._result = pd.Series(y, x, name=self.y_label)
+        self._result_norm = self._result/np.max(self._result)
         self._result.index.names = [self.x_label]
         self._result_up_to_date = True
 
@@ -181,15 +189,26 @@ class Signal:
 
         logger_analysis.debug(f"Smooth ({method}) done on: '{self.name}'.")
 
-    def auto_peak_picking(self, **kwargs):
+    def auto_peak_picking(self, limit_range: list[float] = None, **kwargs):
         self.peaks.clear()
-        kwargs_ = {"width": self.raw.index[-1] / 50, "prominence": 1}
+
+        # find peaks
+        kwargs_ = {"width": self.raw.index[-1] / 100, "height": 0.03, "prominence": 0.03}
         if kwargs:
             kwargs_ = {**kwargs_, **kwargs}
-        peaks_index = algorithms.scipy_find_peaks(self.result.to_numpy(), **kwargs_)
+        if limit_range:
+            lb_index = np.argmin(np.abs(self.result.index.to_numpy() - limit_range[0]))
+            ub_index = np.argmin(np.abs(self.result.index.to_numpy() - limit_range[1]))
+            y = self.result_norm.iloc[lb_index:ub_index].to_numpy()
+            y = y/np.max(y)
+            peaks_index = algorithms.scipy_find_peaks(y, **kwargs_) + lb_index
+        else:
+            peaks_index = algorithms.scipy_find_peaks(self.result_norm.to_numpy(), **kwargs_)
+
+        # get bounds
         if len(peaks_index) != 0:
             for peak in peaks_index:
-                lb, ub = algorithms.rolling_value(self.result.to_numpy(), peak_index=peak, sensitivity=0.1,
+                lb, ub = algorithms.rolling_value(self.result_norm.to_numpy(), peak_index=peak, sensitivity=0.1,
                                                   cut_off=0.05)
                 self.peaks.add(self._peak(self, lb, ub))
         else:
@@ -197,9 +216,9 @@ class Signal:
 
         logger_analysis.debug(f"Auto peak picking done on: '{self.name}'. Peaks found: {self.num_peaks}")
 
-    def auto_peak_baseline(self, iterations: int = 3, **kwargs):
+    def auto_peak_baseline(self, iterations: int = 3, limit_range: list[float] = None, **kwargs):
         self.baseline(**kwargs)
-        self.auto_peak_picking()
+        self.auto_peak_picking(limit_range=limit_range)
         for i in range(iterations):
             self.pipeline.remove(-1)
             mask = np.ones_like(self.raw.to_numpy())
@@ -224,7 +243,7 @@ class Signal:
         return text
 
     def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
-             op_peaks: bool = True, y_label: str = None, **kwargs) -> go.Figure:
+             op_peaks: bool = True, y_label: str = None, title: str = None, **kwargs) -> go.Figure:
         """ Basic plotting """
         if fig is None:
             fig = go.Figure()
@@ -263,10 +282,14 @@ class Signal:
         fig.add_trace(go.Scatter(**plot_kwargs))
 
         if auto_format:
+            if title is not None:
+                fig.update_layout(title=title)
             add_plot_format(fig, self.result.index.name, str(self.result.name))
 
         if auto_open:
-            fig.write_html(f'temp.html', auto_open=True)
+            global fig_count
+            fig.write_html(f'temp{fig_count}.html', auto_open=True)
+            fig_count += 1
 
         return fig
 

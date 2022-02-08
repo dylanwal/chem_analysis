@@ -43,7 +43,8 @@ class SECPeak(Peak):
         self.mw_w = None
         self.mw_max = None
         self.mw_d = None
-        self.mw_std_dev = None
+        self.mw_mean = None
+        self.mw_std = None
         self.mw_skew = None
         self.mw_kurtosis = None
 
@@ -66,6 +67,14 @@ class SECPeak(Peak):
         self.mw_n, self.mw_d = cal_Mn_D_from_wi(mw_i=self.x_weight, wi=self.y_weight)
         self.mw_w = self.mw_n * self.mw_d
         self.mw_max = self._parent.cal(self.max_loc)
+
+        wi = self.y_weight
+        mw_i = self.x_weight
+        xi = wi*self.mw_n/self.x_weight
+
+        self.mw_mean = self.mw_n
+        self.mw_std = np.sqrt(np.sum(xi*(mw_i-self.mw_mean)**2))
+        self.mw_skew =
 
     def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150, headers: dict = None):
         if headers is None:

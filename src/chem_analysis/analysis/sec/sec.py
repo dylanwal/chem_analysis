@@ -8,6 +8,7 @@ from src.chem_analysis.analysis.base_obj.chromatogram import Chromatogram
 from src.chem_analysis.analysis.base_obj.signal_ import Signal
 from src.chem_analysis.analysis.sec.sec_signal import SECSignal
 from src.chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format
+from src.chem_analysis.analysis.utils import fig_count
 
 
 class SECChromo(Chromatogram):
@@ -42,7 +43,9 @@ class SECChromo(Chromatogram):
             add_plot_format(fig, self.x_label, "; ".join(self.y_labels))
 
         if auto_open:
-            fig.write_html(f'temp.html', auto_open=True)
+            global fig_count
+            fig.write_html(f'temp{fig_count}.html', auto_open=True)
+            fig_count += 1
 
         return fig
 
@@ -78,10 +81,6 @@ def local_run():
 if __name__ == "__main__":
     local_run()
 
-    # path = r"C:\Users\nicep\Desktop\Reseach_Post\Data\Polyester\DW1_3\SEC\DW1-3-2[DW1-3].csv"
-    # df = pd.read_csv(path, header=0, index_col=0)
-    # df = df.iloc[:, :10]
-    # df.columns = ["LS1", "LS2", "LS3", "LS4", "LS5", "LS6", "LS7", "LS8", "UV", "RI"]
-    # df.index.names = ["time (min)"]
+
 
 
