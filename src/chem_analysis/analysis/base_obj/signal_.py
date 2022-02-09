@@ -41,26 +41,28 @@ class ProcessStep:
 class Signal:
     """ signal
 
+    A signal is any x-y data.
 
     Attributes
     ----------
     name: str
-
+        Any name the user wants to add.
     raw: pd.Series
         raw data
     x_label: str
-
+        x-axis label
     y_label: str
-
+        y-axis label
     pipeline:
         data processing pipeline
     peaks: Peak
-
+        peaks found in signal
     num_peaks: int
         number of peaks
     result: pd.Series
         data process through pipeline
-
+    result_norm: pd.Series
+        data process through pipeline normalized (peak max = 1)
 
     """
     __count = 0
@@ -75,6 +77,28 @@ class Signal:
                  y_label: str = None,
                  _parent=None
                  ):
+        """
+
+        Parameters
+        ----------
+        name: str
+            user defined name
+        ser: pd.Series
+            x-y data in the form of a pandas Series
+        x: np.ndarray
+            x data
+        y: np.ndarray
+            y data
+        x_label: str
+            x-axis label
+        y_label: str
+            y-axis label
+
+        Notes
+        -----
+        * Either 'ser' or 'x' and 'y' are required but not both.
+
+        """
         if name is None:
             name = f"trace_{Signal.__count}"
             Signal.__count += 1
@@ -143,21 +167,13 @@ class Signal:
         self._result_up_to_date = True
 
     def despike(self, method="default", **kwargs):
-        """ despike
-
-        Parameters
-        ----------
-        method
-        kwargs
-
-        Returns
-        -------
-
-        """
         if callable(method):
             func = method
         else:
-            func: callable = despike_methods[method]
+            try:
+                func: callable = despike_methods[method]
+            except KeyError:
+                raise ValueError(f"Not a valid 'despiking' method. (given: {method})")
 
         self.pipeline.add(ProcessStep(func, ProcessType.DESPIKE, kwargs))
         self._result_up_to_date = False
@@ -168,7 +184,10 @@ class Signal:
         if callable(method):
             func = method
         else:
-            func: callable = baseline_methods[method]
+            try:
+                func: callable = baseline_methods[method]
+            except KeyError:
+                raise ValueError(f"Not a valid 'baseline' method. (given: {method})")
 
         self.pipeline.add(ProcessStep(func, ProcessType.BASELINE, kwargs))
         self._result_up_to_date = False
@@ -182,7 +201,7 @@ class Signal:
             try:
                 func: callable = smoothing_methods[method]
             except KeyError:
-                raise ValueError(f"Not a valid 'peak_picking' method. (given: {method})")
+                raise ValueError(f"Not a valid 'smooth' method. (given: {method})")
 
         self.pipeline.add(ProcessStep(func, ProcessType.SMOOTH, kwargs))
         self._result_up_to_date = False
@@ -205,7 +224,7 @@ class Signal:
         else:
             peaks_index = algorithms.scipy_find_peaks(self.result_norm.to_numpy(), **kwargs_)
 
-        # get bounds
+        # get bounds from peak maximums
         if len(peaks_index) != 0:
             for peak in peaks_index:
                 lb, ub = algorithms.rolling_value(self.result_norm.to_numpy(), peak_index=peak, sensitivity=0.1,
@@ -217,18 +236,24 @@ class Signal:
         logger_analysis.debug(f"Auto peak picking done on: '{self.name}'. Peaks found: {self.num_peaks}")
 
     def auto_peak_baseline(self, iterations: int = 3, limit_range: list[float] = None, **kwargs):
+        """
+        Does automatic baseline correction and peak detection.
+        It uses peak detection to create a mask for baseline correction in an iterative fashion.
+
+        """
         self.baseline(**kwargs)
         self.auto_peak_picking(limit_range=limit_range)
         for i in range(iterations):
             self.pipeline.remove(-1)
             mask = np.ones_like(self.raw.to_numpy())
             for peak in self.peaks:
-                mask[peak.slice_] = False
+                mask[peak.slice] = False
             self.baseline(mask=mask, **kwargs)
             self.auto_peak_picking()
             logger_analysis.debug(f"'auto_peak_baseline' iteration {i} done.")
 
     def stats(self, op_print: bool = True, op_headers: bool = True) -> str:
+        """ Print out signal/peak stats. """
         text = ""
         for i, peak in enumerate(self.peaks):
             if i == 0:
@@ -244,7 +269,31 @@ class Signal:
 
     def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
              op_peaks: bool = True, y_label: str = None, title: str = None, **kwargs) -> go.Figure:
-        """ Basic plotting """
+        """ Plot
+
+        General plotting
+
+        Parameters
+        ----------
+        fig: go.Figure
+            plotly figure; will automatically create if not provided
+        auto_open: bool
+            create "temp.html" and auto_open in browser
+        auto_format: bool
+            apply built-in formatting
+        op_peaks: bool
+            add peak plotting stuff
+        y_label: str
+            y_axis label (used for multiple y-axis)
+        title: str
+            title
+
+        Returns
+        -------
+        fig: go.Figure
+            plotly figure
+
+        """
         if fig is None:
             fig = go.Figure()
 
@@ -264,7 +313,7 @@ class Signal:
                     peak_color = get_similar_color(color, self.num_peaks)
 
                 for peak, color_ in zip(self.peaks, peak_color):
-                    peak.plot(fig, color=color_, group=group, y_label=y_label)
+                    peak.plot_add_on(fig, color=color_, group=group, y_label=y_label)
 
         # add main trace
         plot_kwargs = {

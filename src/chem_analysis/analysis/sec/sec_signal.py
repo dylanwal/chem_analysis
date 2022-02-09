@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Union, Callable
 
 import numpy as np
@@ -11,7 +12,27 @@ from src.chem_analysis.analysis.utils.plot_format import add_plot_format
 from src.chem_analysis.analysis.utils import fig_count
 
 
+class SECType(Enum):
+    RI = 0
+    UV = 1
+    LS = 2
+    VISC = 3
+
+
 class SECSignal(Signal):
+    """ SECSignal
+
+    Extends Signal for SEC (size exclusion chronograph)
+
+    Attributes
+    ----------
+    cal: Cal
+        calibration
+    peaks: List[SECPeak]
+
+
+    """
+
     _peak = SECPeak
 
     def __init__(self, cal: Union[Cal, Callable] = None, **kwrags):

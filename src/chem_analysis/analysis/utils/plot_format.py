@@ -99,7 +99,7 @@ def get_similar_color(color_in: str, num_colors: int, mode: str = "dark") -> lis
 
 def add_plot_format(fig: go.Figure, x_axis: str, y_axis: str, layout_kwargs: dict = None,
                     x_kwargs: dict = None, y_kwargs: dict = None):
-    """ Add default format to plot. """
+    """ Add default format to plot_add_on. """
     if layout_kwargs:
         layout_format = {**layout_figure, **layout_kwargs}
     else:

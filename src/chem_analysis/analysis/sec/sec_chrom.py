@@ -11,7 +11,7 @@ from src.chem_analysis.analysis.utils.plot_format import get_plot_color, add_plo
 from src.chem_analysis.analysis.utils import fig_count
 
 
-class SECChromo(Chromatogram):
+class SECChrom(Chromatogram):
 
     _signal = SECSignal
 
@@ -37,7 +37,7 @@ class SECChromo(Chromatogram):
                 kwargs_["op_cal"] = False
             if kwargs:
                 kwargs_ = {**kwargs_, **kwargs}
-            fig = sig.plot(fig, auto_open=False, auto_format=False, op_peaks=op_peaks, **kwargs_)
+            fig = sig.plot_add_on(fig, auto_open=False, auto_format=False, op_peaks=op_peaks, **kwargs_)
 
         if auto_format:
             add_plot_format(fig, self.x_label, "; ".join(self.y_labels))
@@ -71,7 +71,7 @@ def local_run():
     df.columns = ["RI", "UV", "LS"]
     df.index.names = ["time"]
 
-    chro = SECChromo(data=df, cal=cal)
+    chro = SECChrom(data=df, cal=cal)
     chro.auto_peak_baseline(deg=1)
     chro.plot()
     chro.stats()

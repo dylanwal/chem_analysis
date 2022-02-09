@@ -5,10 +5,6 @@ import pandas as pd
 
 import chem_analysis.analysis as chem
 
-# chro = chem.SECChromo(data=df, cal=cal)
-# chro.auto_peak_baseline(deg=1)
-# chro.plot()
-# chro.stats()
 chem.logger_analysis.setLevel(logging.CRITICAL)
 
 
