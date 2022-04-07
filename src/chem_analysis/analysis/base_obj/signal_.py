@@ -5,12 +5,12 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
-from src.chem_analysis.analysis.base_obj.peak import Peak
-from src.chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods
-import src.chem_analysis.analysis.algorithms as algorithms
-from src.chem_analysis.analysis.logger import logger_analysis
-from src.chem_analysis.analysis.utils import ObjList, fig_count
-from src.chem_analysis.analysis.utils.plot_format import get_plot_color, get_similar_color, add_plot_format
+from chem_analysis.analysis.base_obj.peak import Peak
+from chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods
+import chem_analysis.analysis.algorithms as algorithms
+from chem_analysis.analysis.logger import logger_analysis
+from chem_analysis.analysis.utils import ObjList, fig_count
+from chem_analysis.analysis.utils.plot_format import get_plot_color, get_similar_color, add_plot_format
 
 array_like = (np.ndarray, list, tuple)
 

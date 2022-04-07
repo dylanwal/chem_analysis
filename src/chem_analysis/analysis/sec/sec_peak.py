@@ -5,9 +5,9 @@ import pandas as pd
 import plotly.graph_objs as go
 
 from chem_analysis.analysis.utils.plot_format import add_plot_format, get_multi_y_axis, get_plot_color
-from src.chem_analysis.analysis.base_obj.calibration import Cal
-from src.chem_analysis.analysis.base_obj.peak import Peak
-from src.chem_analysis.analysis.utils import fig_count
+from chem_analysis.analysis.base_obj.calibration import Cal
+from chem_analysis.analysis.base_obj.peak import Peak
+from chem_analysis.analysis.utils import fig_count
 
 
 def cal_Mn_D_from_wi(mw_i: np.ndarray, wi: np.ndarray) -> tuple[float, float]:

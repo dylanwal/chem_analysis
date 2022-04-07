@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
-from src.chem_analysis.analysis.base_obj.signal_ import Signal
-from src.chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format, get_multi_y_axis
+from chem_analysis.analysis.base_obj.signal_ import Signal
+from chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format, get_multi_y_axis
 
 
 class Chromatogram:

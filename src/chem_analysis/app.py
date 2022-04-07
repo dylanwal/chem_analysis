@@ -1,4 +1,4 @@
-from src.chem_analysis.server import app
+from chem_analysis.server import app
 
 from dash import html, dcc
 from dash.dependencies import Input, Output
@@ -21,9 +21,9 @@ app.layout = html.Div([
     dcc.Store(id='tab_load_reload'),
 ])
 
-from src.chem_analysis.tabs.tab_load import tab_load_layout
-from src.chem_analysis.tabs.tab_process import tab_process_layout
-from src.chem_analysis.tabs.tab_analysis import tab_analysis_layout
+from chem_analysis.tabs.tab_load import tab_load_layout
+from chem_analysis.tabs.tab_process import tab_process_layout
+from chem_analysis.tabs.tab_analysis import tab_analysis_layout
 
 
 # callbacks
@@ -39,6 +39,6 @@ def render_content(tab):
 
     return tab_load_layout
 
-from src.chem_analysis.tabs.tab_load_callback import *
-from src.chem_analysis.tabs.tab_process_callback import *
-from src.chem_analysis.tabs.tab_analysis_callback import *
+from chem_analysis.tabs.tab_load_callback import *
+from chem_analysis.tabs.tab_process_callback import *
+from chem_analysis.tabs.tab_analysis_callback import *

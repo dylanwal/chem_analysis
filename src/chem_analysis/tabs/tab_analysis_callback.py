@@ -1,6 +1,6 @@
 from dash.dependencies import Input, Output
 
-from src.chem_analysis.server import app
+from chem_analysis.server import app
 
 
 # Tab 2 callback

@@ -1,4 +1,6 @@
-
+"""
+testing how I calc stats.
+"""
 import plotly.graph_objs as go
 import numpy as np
 import scipy.stats as stats

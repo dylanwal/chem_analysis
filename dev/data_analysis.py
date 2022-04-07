@@ -50,16 +50,16 @@ def run_muti():
     folder = r"C:\Users\nicep\Desktop\Reseach_Post\Data\Polyester\publish\SEC"
     os.chdir(folder)
     files = glob.glob("*.csv")
-    for file in files[90:95]:
+    for file in files[0:5]:
         print(file)
         single_analysis(file)
 
 
 def run():
-    path = r"C:\Users\nicep\Desktop\Reseach_Post\Data\Polyester\GPC\DW1-12-1-PS-green[DW1-12-2].csv"
+    path = r"C:\Users\nicep\Desktop\Reseach_Post\Data\Polyester\publish\calibration_GPC\DW1-12-1-PS-green[DW1-12-2].csv"
     single_analysis(path)
 
 
 if __name__ == '__main__':
-    run()
-    # run_muti()
+    # run()
+    run_muti()

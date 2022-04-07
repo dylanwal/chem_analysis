@@ -3,12 +3,12 @@ from typing import Union, Callable
 import pandas as pd
 import plotly.graph_objs as go
 
-from src.chem_analysis.analysis.base_obj.calibration import Cal
-from src.chem_analysis.analysis.base_obj.chromatogram import Chromatogram
-from src.chem_analysis.analysis.base_obj.signal_ import Signal
-from src.chem_analysis.analysis.sec.sec_signal import SECSignal
-from src.chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format
-from src.chem_analysis.analysis.utils import fig_count
+from chem_analysis.analysis.base_obj.calibration import Cal
+from chem_analysis.analysis.base_obj.chromatogram import Chromatogram
+from chem_analysis.analysis.base_obj.signal_ import Signal
+from chem_analysis.analysis.sec.sec_signal import SECSignal
+from chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format
+from chem_analysis.analysis.utils import fig_count
 
 
 class SECChrom(Chromatogram):

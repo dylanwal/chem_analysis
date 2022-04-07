@@ -5,11 +5,11 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
-from src.chem_analysis.analysis.base_obj.calibration import Cal
-from src.chem_analysis.analysis.base_obj.signal_ import Signal
-from src.chem_analysis.analysis.sec.sec_peak import SECPeak
-from src.chem_analysis.analysis.utils.plot_format import add_plot_format
-from src.chem_analysis.analysis.utils import fig_count
+from chem_analysis.analysis.base_obj.calibration import Cal
+from chem_analysis.analysis.base_obj.signal_ import Signal
+from chem_analysis.analysis.sec.sec_peak import SECPeak
+from chem_analysis.analysis.utils.plot_format import add_plot_format
+from chem_analysis.analysis.utils import fig_count
 
 
 class SECType(Enum):

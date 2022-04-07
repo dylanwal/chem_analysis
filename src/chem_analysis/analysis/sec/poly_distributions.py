@@ -3,7 +3,7 @@ import math
 import numpy as np
 import plotly.graph_objs as go
 
-from src.chem_analysis.analysis.utils.plot_format import add_plot_format
+from chem_analysis.analysis.utils.plot_format import add_plot_format
 
 
 class PolyLogNorm:

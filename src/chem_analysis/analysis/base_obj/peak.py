@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
-from chem_analysis.analysis.utils.plot_format import add_plot_format
-from src.chem_analysis.analysis.utils.sig_fig import sig_figs
-from src.chem_analysis.analysis.logger import logger_analysis
-from src.chem_analysis.analysis.utils import fig_count
+# from chem_analysis.analysis.utils.plot_format import add_plot_format
+from chem_analysis.analysis.utils.sig_fig import sig_figs
+from chem_analysis.analysis.logger import logger_analysis
+from chem_analysis.analysis.utils import fig_count
 
 
 class PeakSupports(Protocol):
@@ -173,6 +173,10 @@ class Peak:
         """ Determine full-width-x_max of a peaked set of points, x and y. """
         height_half_max = np.max(y) * height
         index_max = np.argmax(y)
+        if index_max == 0 or index_max == len(x):  # peak max is at end.
+            logger_analysis.info("Finding fwhm is not possible with a peak max at an bound.")
+            return 0, 0
+
         x_low = np.interp(height_half_max, y[:index_max], x[:index_max])
         x_high = np.interp(height_half_max, np.flip(y[index_max:]), np.flip(x[index_max:]))
 

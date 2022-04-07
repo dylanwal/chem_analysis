@@ -4,8 +4,8 @@ from dash.dependencies import Input, Output, State
 from dash.dash_table.Format import Format, Scheme
 from dash.exceptions import PreventUpdate
 
-from src.chem_analysis.server import app
-from src.chem_analysis.analysis.utils.load_csv import load_csv
+from chem_analysis.server import app
+from chem_analysis.analysis.utils.load_csv import load_csv
 
 
 @app.callback([Output('output-data-upload', 'children'), Output('dataframe', 'data')],
