@@ -12,7 +12,7 @@ layout_figure = {
         "height": 600,
         "font": dict(family="Arial", size=18, color="black"),
         "plot_bgcolor": "white",
-        "legend": {"x": 0.8, "y": 0.95}
+        "legend": {"x": 0.05, "y": 0.95}
     }
 
 layout_xaxis = {

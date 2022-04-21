@@ -1,1 +1,1 @@
-recursive-include src/chem_analysis/*.py
+recursive-include chem_analysis *.py *.css

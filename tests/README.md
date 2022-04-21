@@ -41,7 +41,7 @@ Run this in the terminal:
 `pip install build`
 `pip install twine`
 
-`py -m build`
+`py -m build` or `python -m build`(conda environment)
 
 `twine upload dist/*`
 

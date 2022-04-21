@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
+
 from chem_analysis.analysis.base_obj.peak import Peak
 from chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods
 import chem_analysis.analysis.algorithms as algorithms
@@ -113,6 +114,9 @@ class Signal:
                 self.x_label = self.raw.index.name
             if self.y_label is None:
                 self.y_label = self.raw.name
+        elif ser is not None and isinstance(ser, np.ndarray) and ser.shape[1] == 2:
+            self.raw = pd.Series(data=ser[:, 1], index=ser[:, 0], name=self.y_label)
+            self.raw.index.names = [self.x_label]
         elif ser is None and isinstance(x, array_like) and isinstance(y, array_like):
             self.raw = pd.Series(data=y, index=x, name=self.y_label)
             self.raw.index.names = [self.x_label]
@@ -207,6 +211,12 @@ class Signal:
         self._result_up_to_date = False
 
         logger_analysis.debug(f"Smooth ({method}) done on: '{self.name}'.")
+
+    def peak_picking(self, lb: float, ub: float):
+        """ User defines peaks with lower and upper bound. """
+        lb_index = intnp.argmin(np.abs(self.raw.index - lb))
+        ub_index = np.argmin(np.abs(self.raw.index - ub))
+        self.peaks.add(self._peak(self, lb_index, ub_index))
 
     def auto_peak_picking(self, limit_range: list[float] = None, **kwargs):
         self.peaks.clear()

@@ -56,10 +56,10 @@ def run_muti():
 
 
 def run():
-    path = r"C:\Users\nicep\Desktop\Reseach_Post\Data\Polyester\publish\calibration_GPC\DW1-12-1-PS-green[DW1-12-2].csv"
+    path = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Polyester\publish\SEC\DW1-3-1-redo[DW1-8].csv"
     single_analysis(path)
 
 
 if __name__ == '__main__':
-    # run()
-    run_muti()
+    run()
+    # run_muti()
