@@ -2,7 +2,7 @@ import numpy as np
 from numpy import ndarray
 
 
-def detect_outliers(data: np.ndarray, m: float = 2):
+def _detect_outliers(data: np.ndarray, m: float = 2):
     dist_from_median = np.abs(data - np.median(data))
     median_deviation = np.median(dist_from_median)
     if median_deviation != 0:
@@ -12,8 +12,8 @@ def detect_outliers(data: np.ndarray, m: float = 2):
     return np.zeros_like(data)  # no outliers
 
 
-def window_calc(data: np.ndarray, pos: int, m: float = 2) -> float:
-    outlier = detect_outliers(data, m)
+def _window_calc(data: np.ndarray, pos: int, m: float = 2) -> float:
+    outlier = _detect_outliers(data, m)
     if outlier[pos]:
         return np.median(data[np.invert(outlier)])
     else:
@@ -29,16 +29,13 @@ def despike(x: np.ndarray, y: np.ndarray, window: int = 20, m: float = 2) -> tup
     span = int(window/2)
     for i in range(len(y)):
         if i < span:  # left edge
-            out[i] = window_calc(y[:window], i, m)
+            out[i] = _window_calc(y[:window], i, m)
         elif i > len(y) - span:  # right edge
-            out[i] = window_calc(y[window:], i - (len(y)-window), m)
+            out[i] = _window_calc(y[window:], i - (len(y) - window), m)
         else:  # middle
-            out[i] = window_calc(y[i-span:i+span], span, m)
+            out[i] = _window_calc(y[i - span:i + span], span, m)
 
     return x, out
-
-
-despike_methods = {"default": despike}
 
 
 def test():

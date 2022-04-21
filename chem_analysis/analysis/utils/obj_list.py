@@ -98,10 +98,10 @@ class ObjList:
         Exception
             If item name not found.
         """
-        values = [i.key for i in self._objs]
-        text, score = difflib.get_close_matches(item, values, n=1, cutoff=0.8)
-        if score > 50:
-            return values.index(text)
+        values = [i for i in self._objs]
+        text = difflib.get_close_matches(word=item, possibilities=values, n=1, cutoff=0.8)
+        if text:
+            return values.index(text[0])
         else:
             mes = f"'{item}' not found."
             self._logger.error(mes)
@@ -176,3 +176,16 @@ class ObjList:
     def as_dict(self) -> list:
         """ Returns list of references for serialization."""
         return [obj.as_dict() for obj in self.objs]
+
+
+if __name__ == '__main__':
+    list_ = ObjList(str)
+    list_.add("first")
+    list_.add("second")
+    list_.add("third")
+    list_.add(["forth", "fifth", "sixth"])
+    print(list_)
+    list_.remove("third")
+    list_.remove(1)
+    print(list_)
+    print("hi")

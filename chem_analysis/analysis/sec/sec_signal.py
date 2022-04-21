@@ -9,7 +9,7 @@ from chem_analysis.analysis.base_obj.calibration import Cal
 from chem_analysis.analysis.base_obj.signal_ import Signal
 from chem_analysis.analysis.sec.sec_peak import SECPeak
 from chem_analysis.analysis.utils.plot_format import add_plot_format
-from chem_analysis.analysis.utils import fig_count
+from chem_analysis.analysis.utils import FIGURE_COUNTER
 
 
 class SECType(Enum):
@@ -48,12 +48,12 @@ class SECSignal(Signal):
 
     @property
     def result_weight(self) -> pd.Series:
-        if not self._result_up_to_date:
-            self.calc()
+        if not self._up_to_date:
+            self._update()
         return self._result_weight
 
-    def calc(self):
-        super().calc()
+    def _update(self):
+        super()._update()
 
         mol_weight = self.cal(self.result.index.to_numpy())
         self._result_weight = pd.Series(self.result.to_numpy(), mol_weight)
@@ -80,9 +80,9 @@ class SECSignal(Signal):
             add_plot_format(fig, self.result.index.name, str(self.result.name))
 
         if auto_open:
-            global fig_count
-            fig.write_html(f'temp{fig_count}.html', auto_open=True)
-            fig_count += 1
+            global FIGURE_COUNTER
+            fig.write_html(f'temp{FIGURE_COUNTER}.html', auto_open=True)
+            FIGURE_COUNTER += 1
 
         return fig
 

@@ -1,5 +1,5 @@
 """
-testing how I calc stats.
+testing how I _update stats.
 """
 import plotly.graph_objs as go
 import numpy as np

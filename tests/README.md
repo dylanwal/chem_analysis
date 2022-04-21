@@ -36,7 +36,7 @@ Run this in the terminal:
 `tox`
 
 ---
-## To build package and push update:
+## To build package and push up_to_date:
 Run this in the terminal:
 `pip install build`
 `pip install twine`
@@ -45,7 +45,7 @@ Run this in the terminal:
 
 `twine upload dist/*`
 
-## To creating/update badges:
+## To creating/up_to_date badges:
 
 `pip install genbadge[all]`
 

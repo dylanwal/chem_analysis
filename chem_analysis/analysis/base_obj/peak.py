@@ -4,10 +4,9 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
-# from chem_analysis.analysis.utils.plot_format import add_plot_format
+from chem_analysis.analysis.utils.plot_format import add_plot_format
 from chem_analysis.analysis.utils.sig_fig import sig_figs
-from chem_analysis.analysis.logger import logger_analysis
-from chem_analysis.analysis.utils import fig_count
+from chem_analysis.analysis.utils import logger_analysis, FIGURE_COUNTER
 
 
 class PeakSupports(Protocol):
@@ -249,9 +248,9 @@ class Peak:
             add_plot_format(fig, self._parent.result.index.name, str(self._parent.result.name))
 
         if auto_open:
-            global fig_count
-            fig.write_html(f'temp{fig_count}.html', auto_open=True)
-            fig_count += 1
+            global FIGURE_COUNTER
+            fig.write_html(f'temp{FIGURE_COUNTER}.html', auto_open=True)
+            FIGURE_COUNTER += 1
 
         return fig
 
@@ -365,7 +364,8 @@ class Peak:
             **kkwargs
         ))
 
-    def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150, headers: dict = None):
+    def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150, headers: dict = None,
+              num_sig_figs: int = 3):
         """ Prints stats out for peak. """
         text = ""
         if headers is None:
@@ -384,7 +384,7 @@ class Peak:
             text = text + "-" * window + "\n"
 
         # values
-        entries = [_length_limit(str(sig_figs(getattr(self, k), 3)), width) for k in headers]
+        entries = [_length_limit(str(sig_figs(getattr(self, k), num_sig_figs)), width) for k in headers]
         entries[0] = f"{self._parent.name}: {entries[0]}"  # peak name: peak id
         text = text + row_format.format(*entries) + "\n"
 

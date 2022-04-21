@@ -3,7 +3,8 @@ import logging
 import numpy as np
 import pandas as pd
 
-import chem_analysis.analysis as chem
+import chem_analysis as chem
+import chem_analysis.algorithms.baseline_correction as chem_bc
 
 chem.logger_analysis.setLevel(logging.CRITICAL)
 
@@ -13,7 +14,7 @@ def extract_from_excel2(file_name: str):
 
 
 def main():
-    file_name = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\DW-RAFT-2-SEC.xlsx"
+    file_name = r"G:\Other computers\My Laptop\post_doc_2022\Data\Instrument\polymerization\DW-RAFT-2-SEC.xlsx"
     data = extract_from_excel2(file_name)
 
     def cal_func_RI(time: np.ndarray):
@@ -23,11 +24,13 @@ def main():
 
     signals = []
     for name, df in data.items():
-        signals.append(chem.SECSignal(name=name, ser=df[["time_RI", "RI"]].to_numpy(), cal=cal_RI))
+        signals.append(chem.SECSignal(name=name, xy=df[["time_RI", "RI"]].to_numpy(), cal=cal_RI))
 
     for sig in signals:
-        sig.peak_picking(lb=10, ub=11.5)
-        sig.stats()
+        sig.pipeline.add(chem_bc.adaptive_polynomial_baseline)
+        sig.peak_picking(lb=10, ub=11.8)
+        sig.stats(num_sig_figs=4, op_headers=False)
+        sig.plot()
 
     print("hi")
 

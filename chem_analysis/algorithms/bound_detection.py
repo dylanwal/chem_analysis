@@ -89,8 +89,3 @@ def rolling_value(x: np.ndarray, peak_index: int = None, peak_value: Union[float
         ub = min_index
 
     return lb, ub
-
-
-bound_detection_methods = {
-    "rolling_value": rolling_value
-}

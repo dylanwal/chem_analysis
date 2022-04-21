@@ -7,7 +7,7 @@ import plotly.graph_objs as go
 from chem_analysis.analysis.utils.plot_format import add_plot_format, get_multi_y_axis, get_plot_color
 from chem_analysis.analysis.base_obj.calibration import Cal
 from chem_analysis.analysis.base_obj.peak import Peak
-from chem_analysis.analysis.utils import fig_count
+from chem_analysis.analysis.utils import FIGURE_COUNTER
 
 
 def cal_Mn_D_from_wi(mw_i: np.ndarray, wi: np.ndarray) -> tuple[float, float]:
@@ -118,7 +118,7 @@ class SECPeak(Peak):
         super().calc()
 
         self.mw_i = np.flip(self._parent.result_weight.index[self.slice].to_numpy())
-        # 'np.flip' so small mw is first avoids having to flip everything in calc below
+        # 'np.flip' so small mw is first avoids having to flip everything in _update below
         self.wi = np.flip(self._parent.result_weight.iloc[self.slice].to_numpy() / \
                   np.trapz(x=self.mw_i, y=self._parent.result_weight.iloc[self.slice].to_numpy()))
 
@@ -180,7 +180,8 @@ class SECPeak(Peak):
 
         return fig
 
-    def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150, headers: dict = None):
+    def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150, headers: dict = None,
+              num_sig_figs: int = 3):
         if headers is None:
             headers = {  # attribute: print
                 "id_": "id", "lb_loc": "low bound", "max_loc": "max", "hb_loc": "high bound", "area": "area",
@@ -188,4 +189,4 @@ class SECPeak(Peak):
                 "mw_skew": "mw_skew", "mw_kurtosis": "mw_kurtosis", "mw_asym": "mw_asym"
             }
 
-        return super().stats(op_print, op_headers, window, headers)
+        return super().stats(op_print, op_headers, window, headers, num_sig_figs)

@@ -93,14 +93,14 @@ class Chromatogram:
         for sig in self:
             sig.auto_peak_baseline(**kwargs)
 
-    def stats(self, op_print: bool = True) -> str:
+    def stats(self, op_print: bool = True, num_sig_figs: int = 3) -> str:
         text = ""
         for i, sig in enumerate(self):
             if i == 0:
-                text += sig.stats(op_print=False)
+                text += sig.stats(op_print=False, num_sig_figs=num_sig_figs)
                 continue
 
-            text += sig.stats(op_print=False, op_headers=False)
+            text += sig.stats(op_print=False, op_headers=False, num_sig_figs=num_sig_figs)
 
         if op_print:
             print(text)

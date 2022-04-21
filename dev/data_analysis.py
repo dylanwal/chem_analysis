@@ -23,22 +23,16 @@ def single_analysis(path: str):
     def cal_func_RI(time: np.ndarray):
         return 10 ** (0.0206 * time ** 2 - 1.0422 * time + 15.081)
 
-
     cal_UV = chem.Cal(cal_func_UV, lb=160, ub=319_000, name="UV calibration")
     cal_RI = chem.Cal(cal_func_RI, lb=160, ub=319_000, name="RI calibration")
 
     sig_RI = chem.SECSignal(ser=df["RI"], cal=cal_RI)
-    # mask = np.ones_like(sig_RI.result.index.to_numpy())
-    # mask_index = np.argmin(np.abs(sig_RI.result.index.to_numpy() - 10))
-    # mask[mask_index:] = False
-    # sig_RI.baseline(mask=mask, deg=1)
-    # sig_RI.auto_peak_picking()
-    sig_RI.auto_peak_baseline(deg=1, iterations=3)
+    sig_RI.auto_full()
     sig_RI.plot(title=path)
     sig_RI.stats()
 
     sig_UV = chem.SECSignal(ser=df["UV"], cal=cal_UV)
-    sig_UV.auto_peak_baseline(deg=1, iterations=3)
+    sig_RI.auto_full()
     sig_UV.plot(title=path)
     sig_UV.stats()
 
@@ -56,7 +50,8 @@ def run_muti():
 
 
 def run():
-    path = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Polyester\publish\SEC\DW1-3-1-redo[DW1-8].csv"
+    # path = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Polyester\publish\SEC\DW1-3-1-redo[DW1-8].csv"
+    path = r"G:\Other computers\My Laptop\post_doc_2022\Data\Polyester\publish\SEC\DW1-3-1-redo[DW1-8].csv"
     single_analysis(path)
 
 

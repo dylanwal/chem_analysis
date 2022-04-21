@@ -8,7 +8,7 @@ from chem_analysis.analysis.base_obj.chromatogram import Chromatogram
 from chem_analysis.analysis.base_obj.signal_ import Signal
 from chem_analysis.analysis.sec.sec_signal import SECSignal
 from chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_format
-from chem_analysis.analysis.utils import fig_count
+from chem_analysis.analysis.utils import FIGURE_COUNTER
 
 
 class SECChrom(Chromatogram):

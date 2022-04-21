@@ -1,5 +1,4 @@
-from typing import Union, Callable
-from enum import Enum
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -7,36 +6,8 @@ import plotly.graph_objs as go
 
 
 from chem_analysis.analysis.base_obj.peak import Peak
-from chem_analysis.analysis.algorithms import despike_methods, baseline_methods, smoothing_methods
-import chem_analysis.analysis.algorithms as algorithms
-from chem_analysis.analysis.logger import logger_analysis
-from chem_analysis.analysis.utils import ObjList, fig_count
+from chem_analysis.analysis.utils import logger_analysis, Pipeline, ObjList, FIGURE_COUNTER, up_to_date, array_like
 from chem_analysis.analysis.utils.plot_format import get_plot_color, get_similar_color, add_plot_format
-
-array_like = (np.ndarray, list, tuple)
-
-
-class ProcessType(Enum):
-    RAW = 0
-    DESPIKE = 1
-    BASELINE = 2
-    SMOOTH = 3
-
-
-class ProcessStep:
-    def __init__(self, func: Callable, type_: ProcessType, kwargs: dict = None):
-        self.func = func
-        self.current_type = type_
-        self.kwargs = kwargs
-
-    def __repr__(self):
-        return f"{self.func.__name__}; type:{self.current_type}"
-
-    def __call__(self, *args, **kwargs):
-        if kwargs is not None:
-            kwargs = {**kwargs, **self.kwargs}
-
-        return self.func(*args, **kwargs)
 
 
 class Signal:
@@ -74,6 +45,7 @@ class Signal:
                  ser: pd.Series = None,
                  x: Union[np.ndarray, pd.Series] = None,
                  y: np.ndarray = None,
+                 xy: np.ndarray = None,
                  x_label: str = None,
                  y_label: str = None,
                  _parent=None
@@ -86,10 +58,12 @@ class Signal:
             user defined name
         ser: pd.Series
             x-y data in the form of a pandas Series
-        x: np.ndarray
+        x: np.ndarray[:]
             x data
-        y: np.ndarray
+        y: np.ndarray[:]
             y data
+        xy: np.ndarray[:,2] or [2,:]
+            xy data
         x_label: str
             x-axis label
         y_label: str
@@ -97,7 +71,7 @@ class Signal:
 
         Notes
         -----
-        * Either 'ser' or 'x' and 'y' are required but not both.
+        * Either 'ser' or 'x' and 'y' or 'xy' are required but not more than one.
 
         """
         if name is None:
@@ -108,34 +82,19 @@ class Signal:
         self.x_label = x_label
         self.y_label = y_label
 
-        if ser is not None and isinstance(ser, pd.Series) and x is None and y is None:
-            self.raw = ser
-            if self.x_label is None:
-                self.x_label = self.raw.index.name
-            if self.y_label is None:
-                self.y_label = self.raw.name
-        elif ser is not None and isinstance(ser, np.ndarray) and ser.shape[1] == 2:
-            self.raw = pd.Series(data=ser[:, 1], index=ser[:, 0], name=self.y_label)
-            self.raw.index.names = [self.x_label]
-        elif ser is None and isinstance(x, array_like) and isinstance(y, array_like):
-            self.raw = pd.Series(data=y, index=x, name=self.y_label)
-            self.raw.index.names = [self.x_label]
-
-        if not hasattr(self, "raw"):
-            mes = "Provide either a pandas Series (ser=) or two numpy arrays x and y (x=,y=)."
-            raise ValueError(mes + f" (df:{type(ser)}, x:{type(x)}, y:{type(y)})")
+        self.raw = self._get_series_from_input(ser, x, y, xy)
 
         if self.x_label is None:
             self.x_label = "x_axis"
         if self.y_label is None:
             self.y_label = "y_axis"
 
-        self.pipeline = ObjList(ProcessStep)
-        self.peaks = ObjList(self._peak)
         self._result = None
         self._result_norm = None
-        self._result_up_to_date = False
+        self._up_to_date = False
         self._parent = _parent
+        self.pipeline = Pipeline(up_to_date=self)
+        self.peaks = ObjList(self._peak)
 
     def __repr__(self):
         text = f"{self.name}: "
@@ -144,81 +103,88 @@ class Signal:
         return text
 
     @property
+    @up_to_date
     def result(self) -> pd.Series:
-        if not self._result_up_to_date:
-            self.calc()
+        """ The signal post-processing. """
         return self._result
 
     @property
+    @up_to_date
     def result_norm(self) -> pd.Series:
-        if not self._result_up_to_date:
-            self.calc()
+        """ The signal post-processing normalized with max intensity = 1. """
+        self._result_norm = self._result/np.max(self._result)
         return self._result_norm
 
     @property
+    @up_to_date
     def num_peaks(self) -> int:
         return len(self.peaks)
 
-    def calc(self):
+    def _get_series_from_input(self, ser, x, y, xy) -> pd.Series:
+        """ Take the data from user and process it into a pd.Series. """
+        guard_statements = [
+            ser is not None,
+            x is not None and y is not None,
+            xy is not None]
+        if sum(guard_statements) != 1:
+            mes = "Too many values provided. Provide either a pandas Series (ser=) or two numpy arrays x and y (x=," \
+                  "y=), or a single numpy array (xy=)."
+            raise ValueError(f"{mes} (df:{type(ser)}, x:{type(x)}, y:{type(y)}, xy:{type(xy)})")
+
+        # pd.series
+        if ser is not None:
+            if isinstance(ser, pd.Series):
+                if self.x_label is None:
+                    self.x_label = ser.index.name
+                if self.y_label is None:
+                    self.y_label = ser.name
+                    return ser
+            else:
+                raise TypeError(f"'ser' needs to be a 'pd.Series'. Received '{type(ser)}'.")
+
+        # x,y option
+        if x is not None and y is not None:
+            if isinstance(x, array_like) and isinstance(y, array_like):
+                raw = pd.Series(data=y, index=x, name=self.y_label)
+                raw.index.names = [self.x_label]
+                return raw
+            else:
+                raise TypeError(f"'x' and 'y' needs to be a 'np.ndarray'. Received x: '{type(x)}'; y: '{type(y)}'.")
+
+        # xy option
+        if xy is not None:
+            if isinstance(xy, np.ndarray) and xy.shape[1] == 2:
+                raw = pd.Series(data=xy[:, 1], index=xy[:, 0], name=self.y_label)
+                raw.index.names = [self.x_label]
+                return raw
+            else:
+                raise TypeError(f"'xy' needs to be a 'np.ndarray'. Received xy: '{type(xy)}'.")
+
+    def _update(self):
+        """ performs processing pipeline"""
         x = self.raw.index.to_numpy()
         y = self.raw.to_numpy()
-        for func in self.pipeline:
-            x, y, z = func(x, y)
+        x, y = self.pipeline.run(x, y)
 
         self._result = pd.Series(y, x, name=self.y_label)
-        self._result_norm = self._result/np.max(self._result)
         self._result.index.names = [self.x_label]
-        self._result_up_to_date = True
+        self._up_to_date = True
 
-    def despike(self, method="default", **kwargs):
-        if callable(method):
-            func = method
-        else:
-            try:
-                func: callable = despike_methods[method]
-            except KeyError:
-                raise ValueError(f"Not a valid 'despiking' method. (given: {method})")
+    def auto_processing(self):
+        import chem_analysis.algorithms.baseline_correction as chem_bc
+        self.pipeline.add(chem_bc.adaptive_polynomial_baseline, deg=1)
 
-        self.pipeline.add(ProcessStep(func, ProcessType.DESPIKE, kwargs))
-        self._result_up_to_date = False
-
-        logger_analysis.debug(f"Despiking ({method}) done on: '{self.name}'.")
-
-    def baseline(self, method="polynomial", **kwargs):
-        if callable(method):
-            func = method
-        else:
-            try:
-                func: callable = baseline_methods[method]
-            except KeyError:
-                raise ValueError(f"Not a valid 'baseline' method. (given: {method})")
-
-        self.pipeline.add(ProcessStep(func, ProcessType.BASELINE, kwargs))
-        self._result_up_to_date = False
-
-        logger_analysis.debug(f"Baseline correction ({method}) done on: '{self.name}'.")
-
-    def smooth(self, method="default", **kwargs):
-        if callable(method):
-            func = method
-        else:
-            try:
-                func: callable = smoothing_methods[method]
-            except KeyError:
-                raise ValueError(f"Not a valid 'smooth' method. (given: {method})")
-
-        self.pipeline.add(ProcessStep(func, ProcessType.SMOOTH, kwargs))
-        self._result_up_to_date = False
-
-        logger_analysis.debug(f"Smooth ({method}) done on: '{self.name}'.")
-
+    @up_to_date
     def peak_picking(self, lb: float, ub: float):
         """ User defines peaks with lower and upper bound. """
-        lb_index = intnp.argmin(np.abs(self.raw.index - lb))
-        ub_index = np.argmin(np.abs(self.raw.index - ub))
+        lb_index = int(np.argmin(np.abs(self.raw.index - lb)))
+        ub_index = int(np.argmin(np.abs(self.raw.index - ub)))
         self.peaks.add(self._peak(self, lb_index, ub_index))
 
+    @up_to_date
     def auto_peak_picking(self, limit_range: list[float] = None, **kwargs):
+        import chem_analysis.algorithms.peak_picking as chem_pp
+        import chem_analysis.algorithms.bound_detection as chem_bd
         self.peaks.clear()
 
         # find peaks
@@ -230,14 +196,14 @@ class Signal:
             ub_index = np.argmin(np.abs(self.result.index.to_numpy() - limit_range[1]))
             y = self.result_norm.iloc[lb_index:ub_index].to_numpy()
             y = y/np.max(y)
-            peaks_index = algorithms.scipy_find_peaks(y, **kwargs_) + lb_index
+            peaks_index = chem_pp.scipy_find_peaks(y, **kwargs_) + lb_index
         else:
-            peaks_index = algorithms.scipy_find_peaks(self.result_norm.to_numpy(), **kwargs_)
+            peaks_index = chem_pp.scipy_find_peaks(self.result_norm.to_numpy(), **kwargs_)
 
         # get bounds from peak maximums
         if len(peaks_index) != 0:
             for peak in peaks_index:
-                lb, ub = algorithms.rolling_value(self.result_norm.to_numpy(), peak_index=peak, sensitivity=0.1,
+                lb, ub = chem_bd.rolling_value(self.result_norm.to_numpy(), peak_index=peak, sensitivity=0.1,
                                                   cut_off=0.05)
                 self.peaks.add(self._peak(self, lb, ub))
         else:
@@ -245,38 +211,31 @@ class Signal:
 
         logger_analysis.debug(f"Auto peak picking done on: '{self.name}'. Peaks found: {self.num_peaks}")
 
-    def auto_peak_baseline(self, iterations: int = 3, limit_range: list[float] = None, **kwargs):
+    def auto_full(self):
         """
         Does automatic baseline correction and peak detection.
-        It uses peak detection to create a mask for baseline correction in an iterative fashion.
-
         """
-        self.baseline(**kwargs)
-        self.auto_peak_picking(limit_range=limit_range)
-        for i in range(iterations):
-            self.pipeline.remove(-1)
-            mask = np.ones_like(self.raw.to_numpy())
-            for peak in self.peaks:
-                mask[peak.slice] = False
-            self.baseline(mask=mask, **kwargs)
-            self.auto_peak_picking()
-            logger_analysis.debug(f"'auto_peak_baseline' iteration {i} done.")
+        self.auto_processing()
+        self.auto_peak_picking()
 
-    def stats(self, op_print: bool = True, op_headers: bool = True) -> str:
+    @up_to_date
+    def stats(self, op_print: bool = True, op_headers: bool = True,  num_sig_figs: int = 3) -> str:
         """ Print out signal/peak stats. """
+
         text = ""
         for i, peak in enumerate(self.peaks):
             if i == 0:
                 if op_headers:
-                    text += peak.stats(op_print=False)
+                    text += peak.stats(op_print=False, num_sig_figs=num_sig_figs)
                     continue
 
-            text += peak.stats(op_print=False, op_headers=False)
+            text += peak.stats(op_print=False, op_headers=False, num_sig_figs=num_sig_figs)
 
         if op_print:
             print(text)
         return text
 
+    @up_to_date
     def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
              op_peaks: bool = True, y_label: str = None, title: str = None, **kwargs) -> go.Figure:
         """ Plot
@@ -346,9 +305,9 @@ class Signal:
             add_plot_format(fig, self.result.index.name, str(self.result.name))
 
         if auto_open:
-            global fig_count
-            fig.write_html(f'temp{fig_count}.html', auto_open=True)
-            fig_count += 1
+            global FIGURE_COUNTER
+            fig.write_html(f'temp{FIGURE_COUNTER}.html', auto_open=True)
+            FIGURE_COUNTER += 1
 
         return fig
 
@@ -359,9 +318,9 @@ def local_run():
     rv = norm(loc=n/2, scale=10)
     x = np.linspace(0, n, n)
     y = np.linspace(0, n, n) + 20 * np.random.random(n) + 5000 * rv.pdf(x)
+
     signal = Signal(name="test", x=x, y=y, x_label="x_test", y_label="y_test")
-    signal.baseline(deg=1)
-    signal.auto_peak_picking()
+    signal.auto_full()
     signal.stats()
     signal.plot()
     print("done")

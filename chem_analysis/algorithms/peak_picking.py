@@ -9,4 +9,3 @@ def scipy_find_peaks(y, *args, **kwargs):
     return peaks
 
 
-peak_picking_methods = {"scipy", scipy_find_peaks}
