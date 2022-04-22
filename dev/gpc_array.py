@@ -14,7 +14,7 @@ def extract_from_excel2(file_name: str):
 
 
 def main():
-    file_name = r"G:\Other computers\My Laptop\post_doc_2022\Data\Instrument\polymerization\DW-RAFT-2-SEC.xlsx"
+    file_name = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\DW-RAFT-2-SEC.xlsx"
     data = extract_from_excel2(file_name)
 
     def cal_func_RI(time: np.ndarray):
@@ -24,7 +24,8 @@ def main():
 
     signals = []
     for name, df in data.items():
-        signals.append(chem.SECSignal(name=name, xy=df[["time_RI", "RI"]].to_numpy(), cal=cal_RI))
+        signals.append(chem.SECSignal(name=name, xy=df[["time_RI", "RI"]].to_numpy(), cal=cal_RI,
+                                      x_label="retention time (min)", y_label="signal"))
 
     for sig in signals:
         sig.pipeline.add(chem_bc.adaptive_polynomial_baseline)

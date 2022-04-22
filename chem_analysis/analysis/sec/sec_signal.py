@@ -78,6 +78,8 @@ class SECSignal(Signal):
             if title is not None:
                 fig.update_layout(title=title)
             add_plot_format(fig, self.result.index.name, str(self.result.name))
+            if op_cal:
+                self._add_cal_format(fig)
 
         if auto_open:
             global FIGURE_COUNTER
@@ -102,7 +104,7 @@ class SECSignal(Signal):
         fig.add_trace(go.Scatter(
             x=time,
             y=mw,
-            name=self.cal.name if self.cal.name is not None else "calibration",
+            name=f"<b>{self.cal.name if self.cal.name is not None else 'calibration'}</b>",
             mode="lines",
             line=kwargs_,
             yaxis="y2",
@@ -118,7 +120,6 @@ class SECSignal(Signal):
             fig.add_trace(go.Scatter(
                 x=[self.cal.lb_loc, self.cal.lb_loc],
                 y=[0, np.max(mw)],
-                name="calibration",
                 mode="lines",
                 line=kwargs_,
                 yaxis="y2",
@@ -132,7 +133,6 @@ class SECSignal(Signal):
             fig.add_trace(go.Scatter(
                 x=[self.cal.ub_loc, self.cal.ub_loc],
                 y=[0, np.max(mw)],
-                name="calibration",
                 mode="lines",
                 line=kwargs_,
                 yaxis="y2",
@@ -143,13 +143,6 @@ class SECSignal(Signal):
 
         fig.update_layout(
             yaxis2=dict(
-                title="molecular weight",
-                titlefont=dict(
-                    color=color
-                ),
-                tickfont=dict(
-                    color=color
-                ),
                 anchor="x",
                 overlaying="y",
                 side="right",
@@ -158,6 +151,18 @@ class SECSignal(Signal):
             ),
         )
 
+    def _add_cal_format(self, fig, color: str = 'black'):
+        fig.update_layout(
+            yaxis2=dict(
+                title="<b>molecular weight (g/mol) </b>",
+                titlefont=dict(
+                    color=color
+                ),
+                tickfont=dict(
+                    color=color
+                )
+            ),
+        )
 
 def local_run():
     from scipy.stats import norm

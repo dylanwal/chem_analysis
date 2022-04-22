@@ -107,7 +107,7 @@ def add_plot_format(fig: go.Figure, x_axis: str, y_axis: str, layout_kwargs: dic
     fig.update_layout(layout_format)
 
     # x-axis
-    x_axis_format = {"title": x_axis}
+    x_axis_format = {"title": f"<b>{x_axis}</b>"}
     if x_kwargs:
         x_axis_format = {**x_axis_format, **layout_xaxis, **x_kwargs}
     else:
@@ -115,7 +115,7 @@ def add_plot_format(fig: go.Figure, x_axis: str, y_axis: str, layout_kwargs: dic
     fig.update_xaxes(x_axis_format)
 
     # y-axis
-    y_axis_format = {"title": y_axis}
+    y_axis_format = {"title": f"<b>{y_axis}</b>"}
     if y_kwargs:
         y_axis_format = {**y_axis_format, **layout_yaxis, **y_kwargs}
     else:

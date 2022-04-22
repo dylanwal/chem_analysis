@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
-
 from chem_analysis.analysis.base_obj.peak import Peak
 from chem_analysis.analysis.utils import logger_analysis, Pipeline, ObjList, FIGURE_COUNTER, up_to_date, array_like
 from chem_analysis.analysis.utils.plot_format import get_plot_color, get_similar_color, add_plot_format
@@ -112,7 +111,7 @@ class Signal:
     @up_to_date
     def result_norm(self) -> pd.Series:
         """ The signal post-processing normalized with max intensity = 1. """
-        self._result_norm = self._result/np.max(self._result)
+        self._result_norm = self._result / np.max(self._result)
         return self._result_norm
 
     @property
@@ -195,7 +194,7 @@ class Signal:
             lb_index = np.argmin(np.abs(self.result.index.to_numpy() - limit_range[0]))
             ub_index = np.argmin(np.abs(self.result.index.to_numpy() - limit_range[1]))
             y = self.result_norm.iloc[lb_index:ub_index].to_numpy()
-            y = y/np.max(y)
+            y = y / np.max(y)
             peaks_index = chem_pp.scipy_find_peaks(y, **kwargs_) + lb_index
         else:
             peaks_index = chem_pp.scipy_find_peaks(self.result_norm.to_numpy(), **kwargs_)
@@ -204,7 +203,7 @@ class Signal:
         if len(peaks_index) != 0:
             for peak in peaks_index:
                 lb, ub = chem_bd.rolling_value(self.result_norm.to_numpy(), peak_index=peak, sensitivity=0.1,
-                                                  cut_off=0.05)
+                                               cut_off=0.05)
                 self.peaks.add(self._peak(self, lb, ub))
         else:
             logger_analysis.warning(f"No peaks found in signal '{self.name}'.")
@@ -219,7 +218,7 @@ class Signal:
         self.auto_peak_picking()
 
     @up_to_date
-    def stats(self, op_print: bool = True, op_headers: bool = True,  num_sig_figs: int = 3) -> str:
+    def stats(self, op_print: bool = True, op_headers: bool = True, num_sig_figs: int = 3) -> str:
         """ Print out signal/peak stats. """
 
         text = ""
@@ -290,7 +289,7 @@ class Signal:
             "y": self.result,
             "mode": 'lines',
             "connectgaps": True,
-            "name": self.result.name,
+            "name": f"<b>{self.result.name}</b>",
             "legendgroup": group,
             "line": dict(color=color)
         }
@@ -301,7 +300,7 @@ class Signal:
 
         if auto_format:
             if title is not None:
-                fig.update_layout(title=title)
+                fig.update_layout(title=f"<b>{title}</b>")
             add_plot_format(fig, self.result.index.name, str(self.result.name))
 
         if auto_open:
@@ -315,7 +314,7 @@ class Signal:
 def local_run():
     from scipy.stats import norm
     n = 1000
-    rv = norm(loc=n/2, scale=10)
+    rv = norm(loc=n / 2, scale=10)
     x = np.linspace(0, n, n)
     y = np.linspace(0, n, n) + 20 * np.random.random(n) + 5000 * rv.pdf(x)
 
