@@ -1,8 +1,9 @@
-import glob
 import logging
 
 import numpy as np
 import pandas as pd
+import plotly.graph_objs as go
+import plotly.express as px
 
 import chem_analysis as chem
 import chem_analysis.algorithms.baseline_correction as chem_bc
@@ -65,46 +66,29 @@ wells = [
 
 ]
 
-
-def extract_from_excel2(file_name: str):
-    return pd.read_excel(file_name, sheet_name=None, names=["time_RI", "RI", "timeUV", "UV"], skiprows=[1])
-
-
-def data_to_csv(data: dict[str, pd.DataFrame]):
-    for key, dat in data.items():
-        folder = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\RAFT2-6min"
-        dat.to_csv(folder + f"\\{key}.csv")
-
-
 def main():
-    # file_name = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\RAFT2-6min.xlsx"
-    # data = extract_from_excel2(file_name)
-    # data_to_csv(data)
-    # exit()
-
-    folder = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\RAFT2_6min"
-    files = glob.glob(folder + "\\*.csv")
-    data = dict()
-    for file in files:
-        key = file.split("\\")[-1].replace(".csv", "")
-        with open(file, 'r') as f:
-            data[key] = pd.read_csv(f)
+    # load data
+    file_name = r"C:\Users\nicep\Downloads\RAFT4-10min.csv"
+    df = pd.read_csv(file_name, header=0, index_col=0)
+    for col in list(df.columns):
+        if str(col).startswith("Unnamed:"):
+            del df[col]
 
     def cal_func_RI(time: np.ndarray):
-        return 10 ** (-0.6 * time + 10.644)
+            return 10 ** (-0.6 * time + 10.644)
 
     cal_RI = chem.Cal(cal_func_RI, lb=160, ub=1_090_000, name="RI calibration")
 
     signals = []
-    for name, df in data.items():
-        signals.append(chem.SECSignal(name=name, xy=df[["time_RI", "RI"]].to_numpy(), cal=cal_RI,
+    for col in df.columns:
+        signals.append(chem.SECSignal(name=col, ser=df[col], cal=cal_RI,
                                       x_label="retention time (min)", y_label="signal"))
 
     count = 0
     df = None
-    for sig in signals:
+    for sig in signals[4:]:
         sig.pipeline.add(chem_bc.adaptive_polynomial_baseline)
-        sig.peak_picking(lb=10.85, ub=12.8)   # lb=10.85, ub=12.2
+        sig.peak_picking(lb=10.5, ub=11.3)   # lb=10.85, ub=12.2
 
         if count == 0:
             count += 1
@@ -114,18 +98,33 @@ def main():
             df = pd.concat([df, sig.stats_df()], axis=1)
 
     df = df.T
-    df = df[:52]
-    df.index = wells
+    # df_ = df[:52]
+    df_ = remove_outliears(df, "mw_n", 52)
+    df_.index = wells
 
     import well_plate
     wp = well_plate.WellPlate(384, "rect")
-    wp.add_data(df["mw_n"])
+    wp.add_data(df_["mw_n"])
     wp.plot(key="mw_n")
-    print("mean :", np.mean(df["mw_n"]))
-    print("std: ", np.std(df["mw_n"]))
+    print("mean :", np.mean(df_["mw_n"]))
+    print("std: ", np.std(df_["mw_n"]))
+
+    fig = px.histogram(df, x="mw_n", nbins=12)
+    fig.show()
 
     print("hi")
 
 
+def remove_outliears(df, column, length):
+    for i in range(len(df.index)-length):
+        mean = np.mean(df[column])
+        errors = np.abs(df[column].to_numpy() - mean)
+        max_index = np.argmax(errors)
+        df = df.drop(df.index[max_index])
+
+    return df
+
+
 if __name__ == '__main__':
     main()
+

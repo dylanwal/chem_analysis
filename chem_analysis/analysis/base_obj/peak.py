@@ -76,6 +76,10 @@ class Peak:
         >1 tailing to larger values; <1 tailing to smaller numbers
 
     """
+    headers = {
+            "id_": "id", "lb_loc": "low bound", "max_loc": "max", "hb_loc": "high bound", "area": "area"
+        }
+
     def __init__(self, parent: PeakSupports, lb_index: int, hb_index: int, id_: int = None):
         self.id_ = id_
         self._parent = parent
@@ -369,9 +373,7 @@ class Peak:
         """ Prints stats out for peak. """
         text = ""
         if headers is None:
-            headers = {  # attribute: print
-                "id_": "id", "lb_loc": "low bound", "max_loc": "max", "hb_loc": "high bound", "area": "area"
-            }
+            headers = self.headers
 
         # format
         width = int(window / len(headers))
@@ -392,3 +394,13 @@ class Peak:
             print(text)
 
         return text
+
+    def stats_series(self, headers: dict = None) -> pd.Series:
+        if headers is None:
+            headers = self.headers
+
+        data = dict()
+        for key, header in headers.items():
+            data[header] = getattr(self, key)
+
+        return pd.Series(data, name=f"{self._parent.name}: {data['id']}")

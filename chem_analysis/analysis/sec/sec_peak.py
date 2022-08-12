@@ -79,6 +79,11 @@ class SECPeak(Peak):
         >1 tailing to larger values; <1 tailing to smaller numbers
 
     """
+    headers = {
+            "id_": "id", "lb_loc": "low bound", "max_loc": "max", "hb_loc": "high bound", "area": "area",
+            "mw_n": "mw_n", "mw_w": "mw_w", "mw_d": "mw_d", "mw_max": "mw_max", "mw_std": "mw_std",
+            "mw_skew": "mw_skew", "mw_kurtosis": "mw_kurtosis", "mw_asym": "mw_asym"
+        }
 
     def __init__(self, parent: SECPeakSupports, lb_index: int, hb_index: int):
         """
@@ -181,7 +186,7 @@ class SECPeak(Peak):
         return fig
 
     def stats(self, op_print: bool = True, op_headers: bool = True, window: int = 150, headers: dict = None,
-              num_sig_figs: int = 3):
+              num_sig_figs: int = 3) -> str:
         if headers is None:
             headers = {  # attribute: print
                 "id_": "id", "lb_loc": "low bound", "max_loc": "max", "hb_loc": "high bound", "area": "area",
@@ -190,3 +195,9 @@ class SECPeak(Peak):
             }
 
         return super().stats(op_print, op_headers, window, headers, num_sig_figs)
+
+    def stats_series(self, headers: dict = None) -> pd.Series:
+        if headers is None:
+            headers = self.headers
+
+        return super().stats_series(headers)

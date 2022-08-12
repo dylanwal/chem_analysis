@@ -137,7 +137,7 @@ class Signal:
                     self.x_label = ser.index.name
                 if self.y_label is None:
                     self.y_label = ser.name
-                    return ser
+                return ser
             else:
                 raise TypeError(f"'ser' needs to be a 'pd.Series'. Received '{type(ser)}'.")
 
@@ -233,6 +233,16 @@ class Signal:
         if op_print:
             print(text)
         return text
+
+    @up_to_date
+    def stats_df(self) -> pd.DataFrame:
+        """ Print out signal/peak stats. """
+
+        series = []
+        for peak in self.peaks:
+            series.append(peak.stats_series())
+
+        return pd.concat(series, axis=1)
 
     @up_to_date
     def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
