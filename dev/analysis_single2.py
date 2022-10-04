@@ -1,4 +1,5 @@
 import logging
+import functools
 
 import numpy as np
 import pandas as pd
@@ -66,6 +67,7 @@ wells = [
 
 ]
 
+
 def main():
     # load data
     file_name = r"C:\Users\nicep\Downloads\RAFT4-10min.csv"
@@ -86,9 +88,9 @@ def main():
 
     count = 0
     df = None
-    for sig in signals[4:]:
-        sig.pipeline.add(chem_bc.adaptive_polynomial_baseline)
-        sig.peak_picking(lb=10.5, ub=11.3)   # lb=10.85, ub=12.2
+    for sig in signals:
+        sig.pipeline.add(chem_bc.adaptive_polynomial_baseline, remove_amount=0.7)
+        sig.peak_picking(lb=10.1, ub=12)   # lb=10.85, ub=12.2
 
         if count == 0:
             count += 1
@@ -99,8 +101,16 @@ def main():
 
     df = df.T
     # df_ = df[:52]
-    df_ = remove_outliears(df, "mw_n", 52)
+    df_, remove_index = remove_outliears(df, "mw_n", 52)
+    for index in remove_index:
+        del signals[index]
     df_.index = wells
+    # for sig, well in zip(signals, wells):
+    #     sig.name = well
+    #
+    # df_.to_csv("computed_data.csv")
+    # for sig in signals:
+    #     sig.result.to_csv(f"{sig.name}.csv")
 
     import well_plate
     wp = well_plate.WellPlate(384, "rect")
@@ -110,19 +120,22 @@ def main():
     print("std: ", np.std(df_["mw_n"]))
 
     fig = px.histogram(df, x="mw_n", nbins=12)
-    fig.show()
+    # fig.show()
+    fig.write_html("temp.html", auto_open=True)
 
     print("hi")
 
 
 def remove_outliears(df, column, length):
+    remove_index = []
     for i in range(len(df.index)-length):
         mean = np.mean(df[column])
         errors = np.abs(df[column].to_numpy() - mean)
         max_index = np.argmax(errors)
         df = df.drop(df.index[max_index])
+        remove_index.append(max_index)
 
-    return df
+    return df, remove_index
 
 
 if __name__ == '__main__':
