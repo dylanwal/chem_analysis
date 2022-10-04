@@ -132,6 +132,10 @@ class Signal:
 
         # pd.series
         if ser is not None:
+            # convert data frame of size 1 to series
+            if isinstance(ser, pd.DataFrame) and ser.shape[1] == 1:
+                ser = ser[ser.columns[0]]
+
             if isinstance(ser, pd.Series):
                 if self.x_label is None:
                     self.x_label = ser.index.name
