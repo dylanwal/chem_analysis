@@ -76,7 +76,7 @@ def main2():
     import well_plate
 
     df = pd.read_csv(
-        r"C:\Users\nicep\Desktop\Reseach_Post\python\chem_analysis\dev\RAFT8_data.csv", index_col=0)
+        r"/dev/data_workups/RAFT8_data.csv", index_col=0)
 
     wp = well_plate.WellPlate(384, "rect")
     wp.add_data(df["mw_n"])
