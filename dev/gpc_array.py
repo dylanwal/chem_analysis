@@ -66,23 +66,8 @@ wells = [
 ]
 
 
-def extract_from_excel2(file_name: str):
-    return pd.read_excel(file_name, sheet_name=None, names=["time_RI", "RI", "timeUV", "UV"], skiprows=[1])
-
-
-def data_to_csv(data: dict[str, pd.DataFrame]):
-    for key, dat in data.items():
-        folder = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\RAFT2-6min"
-        dat.to_csv(folder + f"\\{key}.csv")
-
-
 def main():
-    # file_name = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\RAFT2-6min.xlsx"
-    # data = extract_from_excel2(file_name)
-    # data_to_csv(data)
-    # exit()
-
-    folder = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\RAFT2_6min"
+    folder = r"C:\Users\nicep\Desktop\post_doc_2022\Data\Instrument\polymerization\RAFT4-10min"
     files = glob.glob(folder + "\\*.csv")
     data = dict()
     for file in files:

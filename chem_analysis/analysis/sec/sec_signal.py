@@ -64,12 +64,12 @@ class SECSignal(Signal):
 
         super().auto_peak_baseline(iterations=iterations, limit_range=limit_range, **kwargs)
 
-    def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
+    def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True, normalize: bool = False,
              op_peaks: bool = True, op_cal: bool = True, y_label: str = None, title: str = None, **kwargs) -> go.Figure:
         if fig is None:
             fig = go.Figure()
 
-        fig = super().plot(fig, auto_open=False, op_peaks=op_peaks, y_label=y_label)
+        fig = super().plot(fig, auto_open=False, op_peaks=op_peaks, y_label=y_label, normalize=normalize)
 
         if op_cal and self.cal is not None:
             self._plot_cal(fig)
@@ -163,6 +163,7 @@ class SECSignal(Signal):
                 )
             ),
         )
+
 
 def local_run():
     from scipy.stats import norm

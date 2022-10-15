@@ -249,7 +249,7 @@ class Signal:
         return pd.concat(series, axis=1)
 
     @up_to_date
-    def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True,
+    def plot(self, fig: go.Figure = None, auto_open: bool = True, auto_format: bool = True, normalize: bool = False,
              op_peaks: bool = True, y_label: str = None, title: str = None, **kwargs) -> go.Figure:
         """ Plot
 
@@ -269,6 +269,8 @@ class Signal:
             y_axis label (used for multiple y-axis)
         title: str
             title
+        normalize: bool
+            signals normalized max to 1.
 
         Returns
         -------
@@ -295,15 +297,20 @@ class Signal:
                     peak_color = get_similar_color(color, self.num_peaks)
 
                 for peak, color_ in zip(self.peaks, peak_color):
-                    peak.plot_add_on(fig, color=color_, group=group, y_label=y_label)
+                    peak.plot_add_on(fig, color=color_, group=group, y_label=y_label, normalize=normalize)
 
         # add main trace
+        if normalize:
+            y_data = self.result_norm
+        else:
+            y_data = self.result
+
         plot_kwargs = {
             "x": self.result.index,
-            "y": self.result,
+            "y": y_data,
             "mode": 'lines',
             "connectgaps": True,
-            "name": f"<b>{self.result.name}</b>",
+            "name": f"<b>{self.name}</b>",
             "legendgroup": group,
             "line": dict(color=color)
         }

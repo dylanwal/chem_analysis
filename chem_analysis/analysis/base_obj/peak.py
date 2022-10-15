@@ -86,7 +86,7 @@ class Peak:
 
         self.x = None
         self.y = None
-        self.y_norm = None
+        self.y_norm_area = None
 
         self._lb_index = None
         self._hb_index = None
@@ -136,11 +136,15 @@ class Peak:
     def slice(self):
         return slice(self.lb_index, self.hb_index)
 
+    @property
+    def y_norm(self):
+        return self.y/np.max(self.y)
+
     def calc(self):
         """ Calculates the stats for the peak. """
         self.x = self._parent.result.index[self.slice].to_numpy()
         self.y = self._parent.result.iloc[self.slice].to_numpy()
-        self.y_norm = self.y/np.trapz(x=self.x, y=self.y)
+        self.y_norm_area = self.y / np.trapz(x=self.x, y=self.y)
         self.lb_value = self.y[0]
         self.hb_value = self.y[-1]
         self.lb_loc = self.x[0]
@@ -150,10 +154,15 @@ class Peak:
         self.max = self.y[self.max_index-self.lb_index]
         self.max_loc = self.x[self.max_index-self.lb_index]
 
-        self.mean = np.trapz(x=self.x, y=self.x*self.y_norm)
-        self.std = np.sqrt(np.trapz(x=self.x, y=self.y_norm*(self.x-self.mean)**2))
-        self.skew = np.trapz(x=self.x, y=self.y_norm * (self.x - self.mean) ** 3) / self.std ** 3
-        self.kurtosis = (np.trapz(x=self.x, y=self.y_norm * (self.x - self.mean) ** 4) / self.std ** 4) - 3
+        self.mean = np.trapz(x=self.x, y=self.x*self.y_norm_area)
+        variance = np.trapz(x=self.x, y=self.y_norm_area * (self.x - self.mean) ** 2)
+        if variance > 0:
+            self.std = np.sqrt(variance)
+        else:
+            self.std = 0
+            logger_analysis.warn(f"Peak {self._parent.name}.{self.id_} has invalid area.")
+        self.skew = np.trapz(x=self.x, y=self.y_norm_area * (self.x - self.mean) ** 3) / self.std ** 3
+        self.kurtosis = (np.trapz(x=self.x, y=self.y_norm_area * (self.x - self.mean) ** 4) / self.std ** 4) - 3
         self.fwhm = self.get_fw(x=self.x, y=self.y, height=0.5)
         self.asym = self.get_asym(x=self.x, y=self.y, height=0.1)
 
@@ -258,7 +267,7 @@ class Peak:
 
         return fig
 
-    def plot_add_on(self, fig: go.Figure, group: str = None, y_label: str = None, **kwargs):
+    def plot_add_on(self, fig: go.Figure, group: str = None, y_label: str = None, normalize: bool = False, **kwargs):
         """ Plot
 
         Plots several things related to a peak.
@@ -273,11 +282,11 @@ class Peak:
             Label for the y-axis the data is associated with
 
         """
-        self._plot_max(fig, group, y_label, **kwargs)
+        self._plot_max(fig, group, y_label, normalize, **kwargs)
         # self._plot_bounds(fig, group, **kwargs)
-        self._plot_shade(fig, group, y_label, **kwargs)
+        self._plot_shade(fig, group, y_label, normalize, **kwargs)
 
-    def _plot_shade(self, fig: go.Figure, group: str = None, y_label: str = None, **kwargs):
+    def _plot_shade(self, fig: go.Figure, group: str = None, y_label: str = None, normalize: bool = False, **kwargs):
         """ Plots the shaded area for the peak. """
         kwargs_ = {
             "width": 0
@@ -291,9 +300,14 @@ class Peak:
         if y_label:
             kkwargs["yaxis"] = y_label
 
+        if normalize:
+            y_data = self.y_norm
+        else:
+            y_data = self.y
+
         fig.add_trace(go.Scatter(
             x=self.x,
-            y=self.y,
+            y=y_data,
             mode="lines",
             fill='tozeroy',
             line=kwargs_,
@@ -301,7 +315,7 @@ class Peak:
             **kkwargs
         ))
 
-    def _plot_max(self, fig: go.Figure, group: str = None, y_label: str = None, **kwargs):
+    def _plot_max(self, fig: go.Figure, group: str = None, y_label: str = None, normalize: bool = False, **kwargs):
         """ Plots peak name at max. """
         kwargs_ = {
             "size": 1
@@ -315,9 +329,14 @@ class Peak:
         if y_label:
             kkwargs["yaxis"] = y_label
 
+        if normalize:
+            y_data = [1]
+        else:
+            y_data = [self.max]
+
         fig.add_trace(go.Scatter(
             x=[self.max_loc],
-            y=[self.max],
+            y=y_data,
             mode="text",
             marker=kwargs_,
             text=[f"{self._parent.name}: {self.id_}"],
