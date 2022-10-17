@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 
-from chem_analysis.analysis.base_obj.calibration import Cal
+from chem_analysis.analysis.base_obj.calibration import Calibration
 from chem_analysis.analysis.base_obj.signal_ import Signal
 from chem_analysis.analysis.sec.sec_peak import SECPeak
 from chem_analysis.analysis.utils.plot_format import add_plot_format
@@ -26,7 +26,7 @@ class SECSignal(Signal):
 
     Attributes
     ----------
-    cal: Cal
+    cal: Calibration
         calibration
     peaks: List[SECPeak]
 
@@ -35,13 +35,13 @@ class SECSignal(Signal):
 
     _peak = SECPeak
 
-    def __init__(self, cal: Union[Cal, Callable] = None, **kwrags):
+    def __init__(self, cal: Union[Calibration, Callable] = None, **kwrags):
         super().__init__(**kwrags)
 
         if cal is None and self._parent.cal is not None:
             cal = self._parent.cal
-        if not isinstance(cal, Cal):
-            cal = Cal(cal)
+        if not isinstance(cal, Calibration):
+            cal = Calibration(cal)
         self.cal = cal
 
         self._result_weight = None
@@ -69,7 +69,7 @@ class SECSignal(Signal):
         if fig is None:
             fig = go.Figure()
 
-        fig = super().plot(fig, auto_open=False, op_peaks=op_peaks, y_label=y_label, normalize=normalize)
+        fig = super().plot(fig, auto_open=False, op_peaks=op_peaks, y_label=y_label, normalize=normalize, **kwargs)
 
         if op_cal and self.cal is not None:
             self._plot_cal(fig)
@@ -171,7 +171,7 @@ def local_run():
     def cal_func(time: np.ndarray):
         return 10**(0.0167 * time ** 2 - 0.9225 * time + 14.087)
 
-    cal = Cal(cal_func, lb=900, ub=319_000)
+    cal = Calibration(cal_func, lb=900, ub=319_000)
 
     nx = 1000
     x = np.linspace(0, 25, nx)

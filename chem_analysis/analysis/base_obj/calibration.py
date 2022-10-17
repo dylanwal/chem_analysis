@@ -5,7 +5,7 @@ import scipy.optimize
 import plotly.graph_objs as go
 
 
-class Cal:
+class Calibration:
     def __init__(self, cal: Callable, lb: float = None, ub: float = None, name: str = None):
         self.name = name
         self.cal = cal

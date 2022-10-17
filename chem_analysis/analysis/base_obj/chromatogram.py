@@ -17,7 +17,6 @@ class Chromatogram:
     _signal = Signal
 
     def __init__(self, data: Union[pd.DataFrame, Signal, list[Signal]], name: str = None):
-        super().__init__()
         if isinstance(data, pd.DataFrame):
             data = self._load_from_df(data)
         elif isinstance(data, Signal):

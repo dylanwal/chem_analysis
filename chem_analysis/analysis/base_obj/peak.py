@@ -282,7 +282,7 @@ class Peak:
             Label for the y-axis the data is associated with
 
         """
-        self._plot_max(fig, group, y_label, normalize, **kwargs)
+        # self._plot_max(fig, group, y_label, normalize, **kwargs)
         # self._plot_bounds(fig, group, **kwargs)
         self._plot_shade(fig, group, y_label, normalize, **kwargs)
 

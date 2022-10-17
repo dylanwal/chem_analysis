@@ -57,7 +57,7 @@ stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(LogFormatter())
 logger_analysis.addHandler(stream_handler)
 
-logger_analysis.setLevel(logging.DEBUG)
+logger_analysis.setLevel(logging.WARNING)
 
 
 # Logger decorators

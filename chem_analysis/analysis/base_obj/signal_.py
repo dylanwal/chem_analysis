@@ -301,7 +301,10 @@ class Signal:
 
         # add main trace
         if normalize:
-            y_data = self.result_norm
+            if len(self.peaks) > 0:
+                y_data = self._result / self.peaks[0].max
+            else:
+                y_data = self.result_norm
         else:
             y_data = self.result
 
@@ -323,6 +326,9 @@ class Signal:
             if title is not None:
                 fig.update_layout(title=f"<b>{title}</b>")
             add_plot_format(fig, self.result.index.name, str(self.result.name))
+
+        if normalize:
+            fig.update_yaxes(range=[-0.1, 1.1])
 
         if auto_open:
             global FIGURE_COUNTER

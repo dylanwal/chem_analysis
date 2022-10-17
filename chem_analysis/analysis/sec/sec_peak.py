@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objs as go
 
 from chem_analysis.analysis.utils.plot_format import add_plot_format, get_multi_y_axis, get_plot_color
-from chem_analysis.analysis.base_obj.calibration import Cal
+from chem_analysis.analysis.base_obj.calibration import Calibration
 from chem_analysis.analysis.base_obj.peak import Peak
 from chem_analysis.analysis.utils import FIGURE_COUNTER
 
@@ -36,7 +36,7 @@ class SECPeakSupports(Protocol):
     name: str
     result: pd.Series
     result_weight: pd.Series
-    cal: Cal
+    cal: Calibration
 
 
 class SECPeak(Peak):

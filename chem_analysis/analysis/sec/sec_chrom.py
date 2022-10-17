@@ -3,7 +3,7 @@ from typing import Union, Callable
 import pandas as pd
 import plotly.graph_objs as go
 
-from chem_analysis.analysis.base_obj.calibration import Cal
+from chem_analysis.analysis.base_obj.calibration import Calibration
 from chem_analysis.analysis.base_obj.chromatogram import Chromatogram
 from chem_analysis.analysis.base_obj.signal_ import Signal
 from chem_analysis.analysis.sec.sec_signal import SECSignal
@@ -11,13 +11,13 @@ from chem_analysis.analysis.utils.plot_format import get_plot_color, add_plot_fo
 from chem_analysis.analysis.utils import FIGURE_COUNTER
 
 
-class SECChrom(Chromatogram):
+class SECChromatogram(Chromatogram):
 
     _signal = SECSignal
 
-    def __init__(self, data: Union[pd.DataFrame, Signal, list[Signal]], cal: Union[Cal, Callable] = None):
-        if not isinstance(cal, Cal):
-            cal = Cal(cal)
+    def __init__(self, data: Union[pd.DataFrame, Signal, list[Signal]], cal: Union[Calibration, Callable] = None):
+        if not isinstance(cal, Calibration):
+            cal = Calibration(cal)
         self.cal = cal
 
         super().__init__(data)
@@ -57,7 +57,7 @@ def local_run():
     def cal_func(time: np.ndarray):
         return 10**(0.0167 * time ** 2 - 0.9225 * time + 14.087)
 
-    cal = Cal(cal_func, lb=900, ub=319_000)
+    cal = Calibration(cal_func, lb=900, ub=319_000)
 
     nx = 1000
     ny = 3
@@ -71,7 +71,7 @@ def local_run():
     df.columns = ["RI", "UV", "LS"]
     df.index.names = ["time"]
 
-    chro = SECChrom(data=df, cal=cal)
+    chro = SECChromatogram(data=df, cal=cal)
     chro.auto_peak_baseline(deg=1)
     chro.plot()
     chro.stats()
