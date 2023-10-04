@@ -1,7 +1,7 @@
 from typing import Union
 
 
-def sig_figs(number: Union[float, int, None], sig_digit: int = 3) -> Union[int, float, None]:
+def apply_sig_figs(number: Union[float, int, None], sig_digit: int = 3) -> Union[int, float, None]:
     """ significant figures
     Given a number return a string rounded to the desired significant digits.
     Parameters
