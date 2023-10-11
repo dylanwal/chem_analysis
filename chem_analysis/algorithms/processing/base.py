@@ -27,14 +27,42 @@ class ProcessingMethod(abc.ABC):
         ...
 
 
-class Processor(list):
+class Processor:
     """
     Processor
     """
+    def __init__(self, methods: list[ProcessingMethod] = None):
+        self._methods: list[ProcessingMethod] = [] if methods is None else methods
+        self.processed = False
+
     def __repr__(self):
         return f"Processor: {len(self)} methods"
 
+    def __len__(self):
+        return len(self._methods)
+
+    @property
+    def methods(self) -> list[ProcessingMethod]:
+        return self._methods
+
+    def add(self, *args: ProcessingMethod):
+        self._methods += args
+        self.processed = False
+
+    def insert(self, index: int, method: ProcessingMethod):
+        self._methods.insert(index, method)
+        self.processed = False
+
+    def delete(self, method: int | ProcessingMethod):
+        if isinstance(method, ProcessingMethod):
+            self._methods.remove(method)
+        else:
+            self._methods.pop(method)
+        self.processed = False
+
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        for method in self:
+        for method in self._methods:
             x, y = method.run(x, y)
+
+        self.processed = True
         return x, y

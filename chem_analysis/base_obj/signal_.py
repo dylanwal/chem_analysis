@@ -3,8 +3,9 @@ from collections import OrderedDict
 import numpy as np
 
 import chem_analysis.algorithms.general_math as general_math
+from chem_analysis.algorithms.processing.base import Processor
 from chem_analysis.utils.sig_fig import apply_sig_figs
-from chem_analysis.base_obj.peak import Peak
+from chem_analysis.base_obj.peak import Peak, PeakID
 
 
 class Signal:
@@ -32,6 +33,7 @@ class Signal:
                  y_label: str = None,
                  name: str = None,
                  raw_data: bool = True,
+                 var=None,
                  _parent=None
                  ):
         """
@@ -54,8 +56,8 @@ class Signal:
         * Either 'ser' or 'x' and 'y' are required but not both.
 
         """
-        self.x = x
-        self.y = y
+        self.x_raw = x
+        self.y_raw = y
         self.id_ = Signal.__count
         Signal.__count += 1
         self.name = name if name is not None else f"signal_{self.id_}"
@@ -65,7 +67,11 @@ class Signal:
         self._peaks = []
         self._peak_counter = 0
         self._parent = _parent
-        self.raw_data = raw_data
+        self.var = var
+
+        self.processor = Processor()
+        self._x = None
+        self._y = None
 
     def __repr__(self):
         text = f"{self.name}: "
@@ -75,6 +81,20 @@ class Signal:
 
     def __len__(self) -> int:
         return len(self.x)
+
+    @property
+    def x(self) -> np.ndarray:
+        if not self.processor.processed:
+            self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
+
+        return self._x
+
+    @property
+    def y(self) -> np.ndarray:
+        if not self.processor.processed:
+            self._y, self._y = self.processor.run(self.x_raw, self.y_raw)
+
+        return self._y
 
     @property
     def y_normalized_by_peak_max(self) -> np.ndarray:
@@ -88,9 +108,16 @@ class Signal:
     def peaks(self) -> list[Peak]:
         return self._peaks
 
+    @property
+    def tallest_peak(self) -> None | Peak:
+        if len(self.peaks) == 0:
+            return None
+
+        return max(self.peaks, key=lambda x: x.max_value)
+
     def add_peak(self, peak: Peak):
         self.peaks.append(peak)
-        peak.id_ = self._peak_counter
+        peak.id_ = PeakID(self.id_, self._peak_counter)
         self._peak_counter += 1
 
     def delete_peak(self, peak: Peak | int):
@@ -102,7 +129,7 @@ class Signal:
         counter = -1
         for peak in self.peaks:
             counter += 1
-            peak.id_ = counter
+            peak.id_.signal_id = counter
         self._peak_counter = counter
 
     def stats(self) -> list[OrderedDict]:

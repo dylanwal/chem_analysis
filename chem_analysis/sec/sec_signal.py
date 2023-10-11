@@ -44,6 +44,12 @@ class SECSignal(Signal):
     def peaks(self) -> list[SECPeak]:
         return self._peaks
 
+    def add_peak(self, peak: SECPeak):
+        super().add_peak(peak)
+
+    def delete_peak(self, peak: SECPeak | int):
+        super().delete_peak(peak)
+
     @property
     def mw_i(self) -> np.ndarray | None:
         if self.calibration is None:

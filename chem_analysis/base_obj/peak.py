@@ -12,6 +12,7 @@ class PeakSupports(Protocol):
     x: np.ndarray
     y: np.ndarray
     y_normalized_by_area: np.ndarray
+    y_normalized_by_peak_max: np.ndarray
 
 
 class PeakID:
@@ -65,7 +66,7 @@ class Peak:
     _stats = ["id_", "low_bound_location", "max_location", "high_bound_location", "mean", "std", "skew",
               "kurtosis", "full_width_half_max", "asymmetry_factor", "area"]
 
-    def __init__(self, parent: PeakSupports, low_bound_index: int, high_bound_index: int, id_: int = None):
+    def __init__(self, parent: PeakSupports, low_bound_index: int, high_bound_index: int, id_: PeakID = None):
         self.id_ = id_
         self.parent = parent
 

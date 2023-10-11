@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 import numpy as np
 import plotly.graph_objs as go
@@ -29,12 +30,13 @@ def get_similar_color(color_in: str, num_colors: int, mode: str = "dark") -> lis
 
 
 def get_data():
-    file_path = r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-3\DW2-3-ATIR.csv"  # DW2_3_ATIR_data.csv  DW2-3-ATIR.csv
+    file_path = r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-4\DW2-4-ATIR.csv"
+    # DW2_3_ATIR_data.csv  DW2-3-ATIR.csv
     data = np.loadtxt(file_path, delimiter=",")
 
     wavenumber = np.flip(data[0, 1:])
     times = data[1:, 0]
-    times = times - times[0]
+    # times = times - times[0]
     data = data[1:, 1:]
 
     # data = np.concatenate((data[:171], data[206:]))
@@ -52,23 +54,23 @@ def get_data():
 
 def main():
     times, wavenumber, data = get_data()
+    data = data[805::20]
+    times = times[805::20]
+    times = times -times[0]
+    n = len(times)
 
     fig = go.Figure()
-    fig.add_trace(
-        go.Surface(
-            x=wavenumber,
-            y=times,
-            z=data,
-            legendgroup="surface",
-            showlegend=True,
-            showscale=False
-        )
-    )
+    # fig.add_trace(
+    #     go.Surface(
+    #         x=wavenumber,
+    #         y=times,
+    #         z=data,
+    #         legendgroup="surface",
+    #         showlegend=True,
+    #         showscale=False
+    #     )
+    # )
 
-    n = 10
-    data = data[::n]
-    times = times[::n]
-    n = len(times)
     colors = get_similar_color("(0,0,255)", n + 1)
     for i, t in enumerate(times):
         fig.add_trace(
@@ -103,7 +105,7 @@ def main():
     # gif = GIF(mode="png")
     # three_d_scatter_rotate(gif, fig)
 
-    fig.write_html("temp.html", auto_open=True)
+    fig.write_html("temp_main.html", auto_open=True)
 
 
 from pymcr.constraints import ConstraintNonneg, Constraint
@@ -161,25 +163,29 @@ def analysis():
 
     """
     times, wavenumber, data = get_data()
+    times_ = np.copy(times)
 
-    times = times - times[3]
-    t_start = 10
-    times = times[t_start:]
-    data = data[t_start:]
+    times = times - times[0]
+    t_start = 800 #25
+    t_end = -1 #800
+    times = times[t_start:t_end]
+    times_ = times_[t_start:t_end]
+    data = data[t_start:t_end]
 
     wave_number_mask = np.where(np.logical_and(wavenumber > 933, 1800 > wavenumber))[0]
     data = data[:, wave_number_mask]
     wavenumber = wavenumber[wave_number_mask]
 
-    num_compounds = 2
+    num_compounds = 3
 
     D = data
     C = np.ones((D.shape[0], num_compounds)) * .5
-    C[-1, :] = np.array([1, 0])
+    C[0, :] = np.array([1, 0, 0])
+    C[20, :] = np.array([0, .5, .8])
     # S = np.ones((2, D.shape[1])) * -.1
     # S[0, :] = data[-1, :]
 
-    mcrar = McrAR(max_iter=300, c_constraints=[ConstraintNonneg(), ConstraintConv()],
+    mcrar = McrAR(max_iter=500, c_constraints=[ConstraintNonneg(), ConstraintConv()],
                   # c_regr='NNLS', # st_regr='NNLS', #  ConstraintNonneg(),
                   st_constraints=[], tol_increase=3)
 
@@ -188,9 +194,9 @@ def analysis():
     fig = go.Figure()
     fig.add_trace(go.Scatter(y=normalize(mcrar.ST_[0, :]), x=wavenumber, name="MA"))
     fig.add_trace(go.Scatter(y=normalize(mcrar.ST_[1, :]), x=wavenumber, name="PMA"))
-    fig.add_trace(go.Scatter(y=normalize(data[3, :]), x=wavenumber, name="sample early"))
-    fig.add_trace(go.Scatter(y=normalize(data[250, :]), x=wavenumber, name="sample middle"))
-    fig.add_trace(go.Scatter(y=normalize(data[-3, :]), x=wavenumber, name="sample late"))
+    fig.add_trace(go.Scatter(y=normalize(data[0, :]), x=wavenumber, name="sample early"))
+    fig.add_trace(go.Scatter(y=normalize(data[20, :]), x=wavenumber, name="sample middle"))
+    fig.add_trace(go.Scatter(y=normalize(data[-1, :]), x=wavenumber, name="sample late"))
 
     fig.update_layout(autosize=False, width=1200, height=600, font=dict(family="Arial", size=18, color="black"),
                       plot_bgcolor="white", showlegend=True)
@@ -218,7 +224,7 @@ def analysis():
     fig.write_html("temp2.html", auto_open=True)
 
     for i in range(mcrar.C_.shape[0]):
-        print(times[i], conv[i])
+        print(datetime.fromtimestamp(times_[i]), conv[i])
 
 
 def normalize(data):
@@ -228,11 +234,14 @@ def normalize(data):
 def analysis2():
     from pymcr.mcr import McrAR
     times, wavenumber, data = get_data()
+    times_ = np.copy(times)
 
-    times = times - times[3]
-    t_start = 10
-    times = times[t_start:]
-    data = data[t_start:]
+    times = times - times[0]
+    t_start = 25
+    t_end = 800
+    times = times[t_start:t_end]
+    times_ = times_[t_start:t_end]
+    data = data[t_start:t_end]
 
     wave_number_mask = np.where(np.logical_and(wavenumber > 933, 1800 > wavenumber))[0]
     data = data[:, wave_number_mask]
@@ -243,7 +252,7 @@ def analysis2():
     S[0, :] = data[-1, :]
     S[1, :] = data[150, :]
 
-    mcrar = McrAR(max_iter=100, c_constraints=[ConstraintNonneg(), ConstraintConv()], st_regr='NNLS', # c_regr='NNLS'
+    mcrar = McrAR(max_iter=100, c_constraints=[ConstraintNonneg(), ConstraintConv()], st_regr='NNLS', #c_regr='NNLS',
                   st_constraints=[], tol_increase=3)
 
     mcrar.fit(D, ST=S, verbose=True)
@@ -252,7 +261,7 @@ def analysis2():
     fig.add_trace(go.Scatter(y=normalize(mcrar.ST_[0, :]), x=wavenumber, name="MA"))
     fig.add_trace(go.Scatter(y=normalize(mcrar.ST_[1, :]), x=wavenumber, name="PMA"))
     fig.add_trace(go.Scatter(y=normalize(data[3, :]), x=wavenumber, name="sample early"))
-    fig.add_trace(go.Scatter(y=normalize(data[250, :]), x=wavenumber, name="sample middle"))
+    fig.add_trace(go.Scatter(y=normalize(data[405, :]), x=wavenumber, name="sample middle"))
     fig.add_trace(go.Scatter(y=normalize(data[-3, :]), x=wavenumber, name="sample late"))
 
     fig.update_layout(autosize=False, width=1200, height=600, font=dict(family="Arial", size=18, color="black"),
@@ -285,6 +294,6 @@ def analysis2():
 
 
 if __name__ == "__main__":
-    # main()
-    analysis()
+    main()
+    # analysis()
     # analysis2()
