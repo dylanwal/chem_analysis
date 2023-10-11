@@ -7,7 +7,7 @@ from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.sec.sec_peak import SECPeak
 
 
-class SECType(Enum):
+class SECTypes(Enum):
     UNKNOWN = -1
     RI = 0
     UV = 1
@@ -22,7 +22,7 @@ class SECSignal(Signal):
                  x: np.ndarray,
                  y: np.ndarray,
                  calibration: SECCalibration = None,
-                 type_: SECType = SECType.UNKNOWN,
+                 type_: SECTypes = SECTypes.UNKNOWN,
                  x_label: str = None,
                  y_label: str = None,
                  name: str = None,
@@ -35,7 +35,7 @@ class SECSignal(Signal):
 
     def __repr__(self):
         text = super().__repr__()
-        if self.type_ is not SECType.UNKNOWN:
+        if self.type_ is not SECTypes.UNKNOWN:
             text += f" ({self.type_.name})"
 
         return text

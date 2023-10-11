@@ -1,22 +1,36 @@
-
 import numpy as np
 
-import chem_analysis as ca
+import chem_analysis.algorithms.processing as ca_processing
+import chem_analysis.algorithms.analysis as ca_analysis
+import chem_analysis.sec as ca_sec
 
 
-def cal_func(time: np.ndarray):
-    return 10 ** (0.0167 * time ** 2 - 0.9225 * time + 14.087)
+def quadratic(a, b, c):
+    return -b + np.sqrt(b ** 2 - 4 * a * c) / (2 * a)
 
 
-calibration = ca.sec.ConventionalCalibration(cal_func, lower_bound_mw=900, upper_bound_mw=319_000)
+def create_data(Mn: float = 15_000, D: float = 1.05, n: int = 1000):
+    mw_i = np.linespace(0, 30, n)
+    weight_fraction = 1 / (Mn * np.sqrt(2 * np.pi * np.log(D))) * \
+                      np.exp(-1 * (np.log(mw_i / Mn) + np.log(D) / 2) ** 2 / (2 * np.log(D)))
+    retention_time = quadratic(0.0167, - 0.9225, 14.087 - np.log10(mw_i))
+    return retention_time, weight_fraction
 
 
-# load test data (log-normal distribution)
-D = 1.05
-Mn = 15_000  # g/mol
-x = np.linespace(0, 30, 1_000)
-y = 1 / (x * np.sqrt(2 * np.pi * np.log(D))) * np.exp(-1 * (np.log(x / Mn) + np.log(D) / 2) ** 2 / (2 * np.log(D)))
+def main():
+    retention_time, weight_fraction = create_data()
 
-signal = ca.sec.SECSignal(x, y, calibration)
+    def cal_func(time: np.ndarray) -> np.ndarray:
+        return 10 ** (0.0167 * time ** 2 - 0.9225 * time + 14.087)
 
-signal.print_stats()
+    calibration = ca_sec.ConventionalCalibration(cal_func, lower_bound_mw=900, upper_bound_mw=319_000)
+
+    signal = ca_sec.SECSignal(x=retention_time, y=weight_fraction, calibration=calibration)
+    signal.processor.add(ca_processing.baseline_correction.Polynomial(degree=3))
+    peaks = ca_analysis.peak_picking.find_peaks(signal, lower_bound, upper_bound, )
+    signal.print_stats()
+    ca_sec.plot(signal)
+
+
+if __name__ == "__main__":
+    main()

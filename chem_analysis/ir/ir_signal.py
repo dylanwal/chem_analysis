@@ -9,10 +9,10 @@ class IRSignal(Signal):
     """ SECSignal
     """
     def __init__(self,
-                 cm_1: np.ndarray,
-                 absorbance: np.ndarray,
-                 x_label: str = None,
-                 y_label: str = None,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 x_label: str = "wave_number",
+                 y_label: str = "absorbance",
                  name: str = None,
                  raw_data: bool = True,
                  _parent=None
