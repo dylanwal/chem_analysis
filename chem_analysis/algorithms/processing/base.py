@@ -60,9 +60,15 @@ class Processor:
             self._methods.pop(method)
         self.processed = False
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run(self, x: np.ndarray, y: np.ndarray, z: np.ndarray | None = None) \
+            -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
         for method in self._methods:
-            x, y = method.run(x, y)
+            if z is None:
+                x, y = method.run(x, y)
+            else:
+                x, y, z = method.run(x, y, z)
 
         self.processed = True
-        return x, y
+        if z is None:
+            return x, y
+        return x, y, z

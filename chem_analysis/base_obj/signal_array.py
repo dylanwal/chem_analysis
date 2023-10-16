@@ -31,10 +31,11 @@ class SignalArray:
         self.processor = Processor()
         self._x = None
         self._y = None
+        self._z = None
 
         self.signals = []
         # create signals
-        for i in self.z.shape[0]:
+        for i in range(self.z.shape[0]):
             sig = Signal(x=self.x, y=z[i, :], var=y[i], x_label=x_label, y_label=z_label)
             sig.id_ = i
             self.signals.append(sig)
@@ -42,21 +43,21 @@ class SignalArray:
     @property
     def x(self) -> np.ndarray:
         if not self.processor.processed:
-            self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
+            self._x, self._y, self._z = self.processor.run(self.x_raw, self.y_raw, self.z_raw)
 
         return self._x
 
     @property
     def y(self) -> np.ndarray:
         if not self.processor.processed:
-            self._y, self._y = self.processor.run(self.x_raw, self.y_raw)
+            self._x, self._y, self._z = self.processor.run(self.x_raw, self.y_raw, self.z_raw)
 
         return self._y
 
     @property
     def z(self) -> np.ndarray:
         if not self.processor.processed:
-            self._z, self._z = self.processor.run(self.x_raw, self.y_raw)
+            self._x, self._y, self._z = self.processor.run(self.x_raw, self.y_raw, self.z_raw)
 
         return self._z
 

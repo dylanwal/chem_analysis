@@ -15,18 +15,14 @@ class IRArray(SignalArray):
                  ):
         super().__init__(x, y, z, x_label, y_label, z_label, name)
 
-    @property
-    def names(self):
-        return [i.name for i in self.signals]
-
-    @property
-    def y_labels(self):
-        return [i.y_label for i in self.signals]
-
-    @property
-    def x_label(self):
-        return self.signals[0].x_label
+    # @property
+    # def names(self):
+    #     return [i.name for i in self.signals]
+    #
+    # @property
+    # def y_labels(self):
+    #     return [i.y_label for i in self.signals]
 
     @property
     def number_of_signals(self):
-        return len(self.signals)
+        return len(self.y)

@@ -82,17 +82,17 @@ class Phase1D(PhaseCorrection):
         nmrData.allSpectra.append(spectra)
         return x, y
 
-    class GetIndex(Operation):
-        def __init__(self, value, scale="Hz"):
-            """Get Indices corresponding to the frequency or ppm Value."""
-            self.value = value
-            self.scale = scale
-            self.name = "Get Index"
-
-        def run(self, nmrData):
-            if self.scale == "Hz":
-                index = np.argmin(abs(nmrData.frequency - self.value))
-            elif self.scale == "ppm":
-                index = np.argmin(abs(nmrData.ppmScale - self.value))
-
-            return index
+# class GetIndex(Operation):
+#     def __init__(self, value, scale="Hz"):
+#         """Get Indices corresponding to the frequency or ppm Value."""
+#         self.value = value
+#         self.scale = scale
+#         self.name = "Get Index"
+#
+#     def run(self, nmrData):
+#         if self.scale == "Hz":
+#             index = np.argmin(abs(nmrData.frequency - self.value))
+#         elif self.scale == "ppm":
+#             index = np.argmin(abs(nmrData.ppmScale - self.value))
+#
+#         return index

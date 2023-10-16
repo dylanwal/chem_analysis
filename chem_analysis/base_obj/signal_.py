@@ -92,7 +92,7 @@ class Signal:
     @property
     def y(self) -> np.ndarray:
         if not self.processor.processed:
-            self._y, self._y = self.processor.run(self.x_raw, self.y_raw)
+            self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
 
         return self._y
 
