@@ -6,7 +6,11 @@ import chem_analysis.base_obj.plotting as base_plotting
 
 
 class PlotConfigIR(base_plotting.PlotConfig):
-    ...
+
+    def apply_default_formatting(self) -> tuple[dict, dict, dict]:
+        layout, layout_xaxis, layout_yaxis = super().apply_default_formatting()
+        layout_xaxis["autorange"] = "reversed"
+        return layout, layout_xaxis, layout_yaxis
 
 
 def plot_signal_array_overlap(

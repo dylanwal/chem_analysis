@@ -32,7 +32,6 @@ class Signal:
                  x_label: str = None,
                  y_label: str = None,
                  name: str = None,
-                 raw_data: bool = True,
                  var=None,
                  _parent=None
                  ):

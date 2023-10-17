@@ -69,7 +69,7 @@ class MCAResult:
 CallbackType = Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], None]
 
 
-class MCA:
+class MultiComponentAnalysis:
     """
     Multivariate Curve Resolution - Alternating Regression
 
@@ -126,7 +126,7 @@ class MCA:
         self.error_function = error_function
 
         self.c_constraints = c_constraints if c_constraints is not None else []
-        self.st_constraints = st_constraints if c_constraints is not None else []
+        self.st_constraints = st_constraints if st_constraints is not None else []
         self.c_regressor = c_regressor
         self.st_regressor = st_regressor
 

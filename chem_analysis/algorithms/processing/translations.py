@@ -21,3 +21,10 @@ class Horizontal(Translations):
         nmrData.fidTimeForLB = nmrData.fidTime[self.shiftPoints:]
         return x, y
 
+
+class Subtract(Translations):
+    def __init__(self, y_subtract: np.ndarray):
+        self.y_subtract = y_subtract
+
+    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        return x, y - self.y_subtract

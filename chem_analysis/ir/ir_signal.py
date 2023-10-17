@@ -6,7 +6,7 @@ from chem_analysis.ir.ir_peak import IRPeak
 
 
 class IRSignal(Signal):
-    """ SECSignal
+    """ IR Signal
     """
     def __init__(self,
                  x: np.ndarray,
@@ -14,10 +14,10 @@ class IRSignal(Signal):
                  x_label: str = "wave_number",
                  y_label: str = "absorbance",
                  name: str = None,
-                 raw_data: bool = True,
+                 var=None,
                  _parent=None
                  ):
-        super().__init__(x, y, x_label, y_label, name, raw_data, _parent)
+        super().__init__(x, y, x_label, y_label, name, var, _parent)
 
     def __repr__(self):
         text = super().__repr__()

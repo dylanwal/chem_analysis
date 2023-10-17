@@ -33,12 +33,13 @@ class SignalArray:
         self._y = None
         self._z = None
 
-        self.signals = []
-        # create signals
-        for i in range(self.z.shape[0]):
-            sig = Signal(x=self.x, y=z[i, :], var=y[i], x_label=x_label, y_label=z_label)
-            sig.id_ = i
-            self.signals.append(sig)
+        # self.signals = []
+        # # create signals
+        # for i in range(self.z.shape[0]):
+        #     sig = Signal(x=self.x, y=z[i, :], var=y[i], x_label=x_label, y_label=z_label)
+        #     sig.id_ = i
+        #     sig.processor = self.processor
+        #     self.signals.append(sig)
 
     @property
     def x(self) -> np.ndarray:
@@ -62,39 +63,42 @@ class SignalArray:
         return self._z
 
     @property
-    def names(self):
-        return [i.name for i in self.signals]
-
-    @property
     def number_of_signals(self):
-        return len(self.signals)
+        return len(self.y_raw)
 
-    def stats(self) -> list[OrderedDict]:
-        dicts_ = []
-        for sig in self.signals:
-            dicts_.append(sig.stats())
+    # def stats(self) -> list[OrderedDict]:
+    #     dicts_ = []
+    #     for sig in self.signals:
+    #         dicts_.append(sig.stats())
+    #
+    #     return dicts_
+    #
+    # def print_stats(self, sig_figs: int = 3, output_str: bool = False, **kwargs):
+    #     """ Prints stats out for peak. """
+    #     from tabulate import tabulate
+    #
+    #     if "tablefmt" not in kwargs:
+    #         kwargs["tablefmt"] = "simple_grid"
+    #
+    #     stats_list = self.stats()
+    #     rows = []
+    #     for stats in stats_list:
+    #         values = []
+    #         for value in stats.values():
+    #             if isinstance(value, float) or isinstance(value, int):
+    #                 value = apply_sig_figs(value, sig_figs)
+    #             values.append(value)
+    #         rows.append(values)
+    #
+    #     text = tabulate(rows, stats_list[0].keys(), **kwargs)
+    #     if output_str:
+    #         return text
+    #
+    #     print(text)
 
-        return dicts_
-
-    def print_stats(self, sig_figs: int = 3, output_str: bool = False, **kwargs):
-        """ Prints stats out for peak. """
-        from tabulate import tabulate
-
-        if "tablefmt" not in kwargs:
-            kwargs["tablefmt"] = "simple_grid"
-
-        stats_list = self.stats()
-        rows = []
-        for stats in stats_list:
-            values = []
-            for value in stats.values():
-                if isinstance(value, float) or isinstance(value, int):
-                    value = apply_sig_figs(value, sig_figs)
-                values.append(value)
-            rows.append(values)
-
-        text = tabulate(rows, stats_list[0].keys(), **kwargs)
-        if output_str:
-            return text
-
-        print(text)
+    def get_signal(self, index: int) -> Signal:
+        sig = Signal(x=self.x_raw, y=self.z_raw[index, :], var=self.y_raw[index], x_label=self.x_label,
+                     y_label=self.z_label)
+        sig.id_ = index
+        sig.processor = self.processor
+        return sig

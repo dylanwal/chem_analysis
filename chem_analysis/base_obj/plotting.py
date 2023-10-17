@@ -251,7 +251,7 @@ def plot_signal_array_3D(
 
     _default_config = kwargs.pop("_default_config")
     if config is None:
-        config = PlotConfig()
+        config = _default_config()
         config.signal_color = SignalColorOptions.SINGLE
     config.set_color_count(array.number_of_signals)
     config.set_attrs_from_kwargs(**kwargs)
@@ -273,7 +273,7 @@ def plot_signal_array_surface(
 
     _default_config = kwargs.pop("_default_config")
     if config is None:
-        config = PlotConfig()
+        config = _default_config()
         config.signal_color = SignalColorOptions.SINGLE
     config.set_color_count(array.number_of_signals)
     config.set_attrs_from_kwargs(**kwargs)
@@ -295,7 +295,7 @@ def plot_chromatogram(
 
     _default_config = kwargs.pop("_default_config")
     if config is None:
-        config = PlotConfig()
+        config = _default_config()
         config.signal_color = SignalColorOptions.DIVERSE
     config.set_color_count(chromatogram.number_of_signals)
     config.set_attrs_from_kwargs(**kwargs)
@@ -314,7 +314,7 @@ def plot_signal(
 ):
     _default_config = kwargs.pop("_default_config")
     if config is None:
-        config = PlotConfig()
+        config = _default_config()
     config.set_attrs_from_kwargs(**kwargs)
     
     if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
@@ -505,3 +505,15 @@ def plotly_signal_array_surface(array: SignalArray, config: PlotConfig) -> go.Fi
 ## matplotlib ##
 #######################################################################################################################
 #######################################################################################################################
+import matplotlib.pyplot as plt
+
+
+def matplotlib_signal(fig, signal, config):
+    x, y = config.get_signal_xy(signal)
+    plt.plot(x, y, label=signal.name, linestyle='-', color=config.get_signal_color(signal),
+             linewidth=config.signal_line_width)
+
+    if config.signal_connect_gaps:
+        plt.plot(x, y, linestyle='-', color=config.get_signal_color(signal), linewidth=config.signal_line_width)
+
+    return fig
