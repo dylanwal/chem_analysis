@@ -96,3 +96,4 @@ class Phase1D(PhaseCorrection):
 #             index = np.argmin(abs(nmrData.ppmScale - self.value))
 #
 #         return index
+

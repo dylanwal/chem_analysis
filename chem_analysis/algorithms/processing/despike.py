@@ -79,3 +79,9 @@ class RollingWindow(Despike):
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines"))
         fig.add_trace(go.Scatter(x=x, y=y_new, mode="lines"))
         fig.write_html("temp.html", auto_open=True)
+
+
+# Denoise
+# non-local means: noise factor 0.75 blockwise
+# median-modified wiener
+# gaussian
