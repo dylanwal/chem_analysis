@@ -1,23 +1,45 @@
+import logging
+from collections.abc import Sequence
 from typing import Callable
 
 import numpy as np
 import scipy.optimize
 
 
+def check_bounds(bound: Sequence[int | float]) -> tuple[int | float, int | float]:
+    if len(bound) != 2:
+        raise ValueError("Bound must have len() == 2.")
+    if not (isinstance(bound[0], int) or isinstance(bound[1], float)):
+        raise TypeError("Bounds must have values that are int or float.")
+    if bound[0] == bound[1]:
+        raise ValueError("The lower and upper bounds can not be equal.")
+    if bound[0] > bound[1]:
+        bound = (bound[1], bound[0])
+    return tuple(bound)
+
+
+def compute_x_bound_from_y_bound(func: Callable, y_bound: tuple[int | float, int | float]) \
+        -> tuple[int | float, int | float]:
+    # TODO: make better
+    result_lb = scipy.optimize.minimize(lambda x: np.abs(func(x) - y_bound[0]), x0=1.1)
+    result_ub = scipy.optimize.minimize(lambda x: np.abs(func(x) - y_bound[1]), x0=result_lb.x + 1)
+    return result_lb.x, result_ub.x
+
+
 class Calibration:
     def __init__(self,
                  calibration_function: Callable,
-                 lower_bound_y: int | float = None,
-                 upper_bound_y: int | float = None,
+                 *,
+                 x_bounds: Sequence[int | float] = None,
+                 y_bounds: Sequence[int | float] = None,
                  name: str = None
                  ):
         self.name = name
         self.calibration_function = calibration_function
-        self.lower_bound_y = lower_bound_y
-        self.upper_bound_y = upper_bound_y
-
-        self._upper_bound_x = None
-        self._lower_bound_x = None
+        self._x_bounds = None
+        self.x_bounds = x_bounds
+        self._y_bounds = None
+        self.y_bounds = y_bounds
 
     def __repr__(self):
         text = ""
@@ -25,41 +47,31 @@ class Calibration:
             text += self.name
         else:
             text += self.calibration_function.__name__
-        if self.lower_bound_y is not None and self.upper_bound_y:
-            text += f" ({self.lower_bound_y}:{self.upper_bound_y})"
+        if self.y_bounds is not None:
+            text += f"{self.y_bounds}"
         return text
 
     @property
-    def upper_bound_location(self) -> None | float:
-        if self.upper_bound_y is None:
-            return None
-        if self._upper_bound_x is None:
-            def _ub(x: np.ndarray) -> np.ndarray:
-                return self.get_y(x) - self.upper_bound_y
+    def x_bounds(self) -> tuple[int | float, int | float] | None:
+        return self._x_bounds
 
-            result_ub = scipy.optimize.root_scalar(_ub, x0=0.1, x1=0.2)
-            self._upper_bound_location = result_ub.root
-
-        return self._upper_bound_location
+    @x_bounds.setter
+    def x_bounds(self, x_bounds: Sequence[int | float]):
+        if x_bounds is None:
+            return
+        self._x_bounds = check_bounds(x_bounds)
+        self._y_bounds = (self.calibration_function(x_bounds[0]), self.calibration_function(x_bounds[1]))
 
     @property
-    def lower_bound_location(self) -> None | float:
-        if self.lower_bound_y is None:
-            return None
+    def y_bounds(self) -> tuple[int | float, int | float] | None:
+        return self._y_bounds
 
-        if self._lower_bound_x is None:
-            def _lb(x: np.ndarray) -> np.ndarray:
-                return self.get_y(x) - self.lower_bound_y
-
-            if self.upper_bound_location:
-                x0 = self.upper_bound_location
-            else:
-                x0 = 0.1
-
-            result_lb = scipy.optimize.root_scalar(_lb, x0=x0, x1=x0 + 0.1)
-            self._lower_bound_location = result_lb.root
-
-        return self._lower_bound_location
+    @y_bounds.setter
+    def y_bounds(self, y_bounds: Sequence[int | float]):
+        if y_bounds is None:
+            return
+        self._y_bounds = check_bounds(y_bounds)
+        self._x_bounds = compute_x_bound_from_y_bound(self.calibration_function, self.y_bounds)
 
     def get_y(self, x: int | float | np.ndarray, with_bounds: bool = True) -> int | float | np.ndarray:
         """
@@ -67,7 +79,7 @@ class Calibration:
         Parameters
         ----------
         x:
-
+            values to evaluate at
         with_bounds:
             will set values outside bounds to zero
 
@@ -79,14 +91,14 @@ class Calibration:
 
         if with_bounds:
             if isinstance(y, int) or isinstance(y, float):
-                if self.lower_bound_y < y < self.upper_bound_y:
+                if self.y_bounds[0] < y < self.y_bounds[1]:
                     return y
                 else:
                     return 0
             else:
-                if np.min(y) < self.lower_bound_y:
-                    y = np.where(y < self.lower_bound_y, 0, y)
-                if np.max(y) > self.upper_bound_y:
-                    y = np.where(y < self.lower_bound_y, 0, y)
+                if np.min(y) < self.y_bounds[0]:
+                    y = np.where(y < self.y_bounds[0], 0, y)
+                if np.max(y) > self.y_bounds[1]:
+                    y = np.where(y < self.y_bounds[1], 0, y)
 
         return y

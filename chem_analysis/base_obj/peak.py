@@ -25,6 +25,9 @@ class PeakID:
 
 
 class Peak:
+
+
+class PeakBounds(Peak):
     """ Peak
 
     a peak of a signal
@@ -155,6 +158,69 @@ class Peak:
             values.append(value)
 
         text = tabulate(values, stats.keys(), **kwargs)
+        if output_str:
+            return text
+
+        print(text)
+
+
+class PeakResult:
+    def __init__(self):
+        pass
+
+    @property
+    def peaks(self) -> list[Peak]:
+        return self._peaks
+
+    @property
+    def tallest_peak(self) -> None | Peak:
+        if len(self.peaks) == 0:
+            return None
+
+        return max(self.peaks, key=lambda x: x.max_value)
+
+    def add_peak(self, peak: Peak):
+        self.peaks.append(peak)
+        peak.id_ = PeakID(self.id_, self._peak_counter)
+        self._peak_counter += 1
+
+    def delete_peak(self, peak: Peak | int):
+        if isinstance(peak, Peak):
+            peak = peak.id_
+        self.peaks.pop(peak)
+
+        # re-number peaks
+        counter = -1
+        for peak in self.peaks:
+            counter += 1
+            peak.id_.signal_id = counter
+        self._peak_counter = counter
+
+    def stats(self) -> list[OrderedDict]:
+        out = []
+        for peak in self.peaks:
+            out.append(peak.stats())
+
+        return out
+
+    def print_stats(self, sig_figs: int = 3, output_str: bool = False, **kwargs):
+        """ Prints stats out for peak. """
+        from tabulate import tabulate
+
+        if "tablefmt" not in kwargs:
+            kwargs["tablefmt"] = "simple_grid"
+
+        stats_list = self.stats()
+        rows = []
+        for stats in stats_list:
+            cols = []
+            for value in stats.values():
+                if isinstance(value, float) or isinstance(value, int):
+                    value = apply_sig_figs(value, sig_figs)
+                cols.append(value)
+            rows.append(cols)
+
+        text = tabulate(rows, stats_list[0].keys(), **kwargs)
         if output_str:
             return text
 
