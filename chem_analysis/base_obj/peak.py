@@ -25,6 +25,7 @@ class PeakID:
 
 
 class Peak:
+    pass
 
 
 class PeakBounds(Peak):
