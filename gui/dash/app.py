@@ -1,4 +1,4 @@
-from gui.server import app
+from gui.dash.server import app
 
 from dash import html, dcc
 from dash.dependencies import Input, Output
@@ -21,9 +21,9 @@ app.layout = html.Div([
     dcc.Store(id='tab_load_reload'),
 ])
 
-from gui.tabs.tab_load import tab_load_layout
-from gui.tabs.tab_process import tab_process_layout
-from gui.tabs.tab_analysis import tab_analysis_layout
+from gui.dash.tabs.tab_load import tab_load_layout
+from gui.dash.tabs.tab_process import tab_process_layout
+from gui.dash.tabs.tab_analysis import tab_analysis_layout
 
 
 # callbacks

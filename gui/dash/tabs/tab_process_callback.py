@@ -1,6 +1,6 @@
 from dash.dependencies import Input, Output
 
-from gui.server import app
+from gui.dash.server import app
 
 
 # Tab 2 callback

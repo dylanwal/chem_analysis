@@ -28,3 +28,17 @@ class Subtract(Translations):
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x, y - self.y_subtract
+
+
+class AlignMax(Translations):
+    def __init__(self, range_: tuple[int, int] = None, range_index: tuple[int, int] = None):
+        self.range_ = range_
+        self.range_index = range_index
+        self.max_ = None
+
+    def align_max(self, x: np.ndarray, y: np.ndarray):
+        max_indices = np.argmax(data, axis=1)
+        roll_amount = -max_indices + max_indices[0]
+        for i in range(1, data.shape[0]):
+            data[i] = np.roll(data[i], roll_amount[i])
+        return data

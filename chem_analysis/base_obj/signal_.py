@@ -2,7 +2,6 @@ from typing import Sequence
 
 import numpy as np
 
-from chem_analysis.utils.numpy_helper_functions import get_slice
 import chem_analysis.algorithms.general_math as general_math
 from chem_analysis.algorithms.processing.base import Processor
 
@@ -91,13 +90,13 @@ class Signal:
         if x_range is None:
             return self.y/np.max(self.y)
 
-        slice_ = get_slice(self.x, *x_range)
-        return self.y / np.max(self.y[slice_])
+        slice_ = general_math.get_slice(self.x, *x_range)
+        return general_math.normalize_by_max(self.y[slice_])
 
     @property
     def y_normalized_by_area(self, x_range: Sequence[int | float] = None) -> np.ndarray:
         if x_range is None:
             return general_math.normalize_by_area(self.x, self.y)
 
-        slice_ = get_slice(self.x, *x_range)
-        return self.y / np.max(self.y[slice_])
+        slice_ = general_math.get_slice(self.x, *x_range)
+        return general_math.normalize_by_area(self.x[slice_], self.y[slice_])

@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output, State
 from dash.dash_table.Format import Format, Scheme
 from dash.exceptions import PreventUpdate
 
-from gui.server import app
+from gui.dash.server import app
 from chem_analysis.utils.load_csv import load_csv
 
 

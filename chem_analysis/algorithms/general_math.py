@@ -3,6 +3,24 @@ import logging
 import numpy as np
 
 
+def get_slice(x: np.ndarray, start=None, end=None) \
+        -> slice:
+    if start is None:
+        start_ = 0
+    else:
+        start_ = np.argmin(np.abs(x - start))
+    if end is None:
+        end_ = -1
+    else:
+        end_ = np.argmin(np.abs(x - end))
+
+    return slice(start_, end_)
+
+
+def normalize_by_max(y: np.ndarray) -> np.ndarray:
+    return y / np.max(y)
+
+
 def normalize_by_area(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     return y / np.trapz(x=x, y=y)
 
