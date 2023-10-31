@@ -1,135 +1,129 @@
+
+from PyQt6 import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+
 import pyqtgraph as pg
+from pyqtgraph.Qt import QtWidgets
+from pyqtgraph.parametertree import interact, ParameterTree, Parameter
+from pyqtgraph.dockarea.Dock import Dock
+from pyqtgraph.dockarea.DockArea import DockArea
+from pyqtgraph.Qt import QtCore
+
+from gui.qt.widgts.menu_bar import MenuBarBase
+
 
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
 
 
-import sys
-import numpy as np
-import pyqtgraph as pg
-from PyQt6.QtWidgets import QApplication, QMainWindow, QMenu, QVBoxLayout, QWidget, QStackedWidget
-from PyQt6.QtCore import Qt
-import PyQt6.QtGui as QtGui
-
-import sys
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
-
-class MainMenu(QMainWindow):
-    def __init__(self):
+class IRArrayView(QtWidgets.QWidget):
+    def __init__(self, window: QtWidgets.QMainWindow):
         super().__init__()
 
-        self.setWindowTitle("Chemistry Analysis Program")
-        self.setGeometry(100, 100, 400, 300)
+        menubar = window.menuBar()
+        MenuBarBase(menubar)
+        mainLayout = QtWidgets.QHBoxLayout()
+        centralWidget = QtWidgets.QWidget()
+        centralWidget.setLayout(mainLayout)
+        self.setCentralWidget(centralWidget)
 
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
+    def stuff(self):
+        area = DockArea()
 
-        layout = QVBoxLayout()
-        central_widget.setLayout(layout)
-
-        self.nmr_button = QPushButton("NMR")
-        # nmr_button.setFont(nmr_button.font().bold())
-        self.nmr_button.setStyleSheet("font-size: 18px")
-        self.nmr_button.clicked.connect(self.open_nmr)
-
-        ir_button = QPushButton("IR")
-        # ir_button.setFont(ir_button.font().bold())
-        ir_button.setStyleSheet("font-size: 18px")
-        ir_button.clicked.connect(self.open_ir)
-
-        sec_button = QPushButton("SEC")
-        # sec_button.setFont(sec_button.font().bold())
-        sec_button.setStyleSheet("font-size: 18px")
-        sec_button.clicked.connect(self.open_sec)
-
-        layout.addWidget(self.nmr_button)
-        layout.addWidget(ir_button)
-        layout.addWidget(sec_button)
-
-    def open_nmr(self):
-        print("Opening NMR analysis")
-        x = [0, 1, 2, 3, 4, 5]
-        y = [0, 1, 0.5, 2, 1, 3]
-        plot_widget = pg.PlotWidget()
-        plot_widget.plot(x, y, pen=pg.mkPen("b"))
-
-        layout = self.centralWidget().layout()
-        layout.addWidget(plot_widget)
-        self.nmr_button.hide()
+        d1 = Dock("Dock1", size=(800, 400), hideTitle=True)  ## give this dock the minimum possible size
+        d2 = Dock("Dock2 - Console", size=(800, 100), hideTitle=True)
+        d3 = Dock("Dock3", size=(200, 500), hideTitle=True)
+        area.addDock(d1,'left')
+        area.addDock(d2, 'bottom')  ## place d2 at right edge of dock area
+        area.addDock(d3, 'right')  ## place d3 at bottom edge of d1
 
 
-    def open_ir(self):
-        print("Opening IR analysis")
+        class CustomViewBox(pg.ViewBox):
+            def __init__(self, *args, **kwds):
+                kwds['enableMenu'] = False
+                pg.ViewBox.__init__(self, *args, **kwds)
+                self.setMouseMode(self.RectMode)
 
-    def open_sec(self):
-        print("Opening SEC analysis")
+            ## reimplement right-click to zoom out
+            def mouseClickEvent(self, ev):
+                if ev.button() == QtCore.Qt.MouseButton.RightButton:
+                    self.autoRange()
 
-def main():
-    app = QApplication(sys.argv)
-    window = MainMenu()
-    window.show()
-    sys.exit(app.exec())
+            ## reimplement mouseDragEvent to disable continuous axis zoom
+            def mouseDragEvent(self, ev, axis=None):
+                if axis is not None and ev.button() == QtCore.Qt.MouseButton.RightButton:
+                    ev.ignore()
+                else:
+                    pg.ViewBox.mouseDragEvent(self, ev, axis=axis)
 
-if __name__ == "__main__":
-    main()
+        vb = CustomViewBox()
+        widget = pg.PlotWidget(viewBox=vb, enableMenu=False)
+        d1.addWidget(widget)
 
-# class MainMenu(QMainWindow):
-#     def __init__(self):
-#         super().__init__()
-#
-#         menubar = self.menuBar()
-#         nmr_menu = menubar.addMenu("NMR")
-#         ir_menu = menubar.addMenu("IR")
-#         sec_menu = menubar.addMenu("SEC")
-#
-#         menu_style = "QMenu { font-size: 20px; }"
-#         nmr_menu.setStyleSheet(menu_style)
-#         ir_menu.setStyleSheet(menu_style)
-#         sec_menu.setStyleSheet(menu_style)
-#
-#         nmr_action = QtGui.QAction("NMR Option", self)
-#         nmr_action.triggered.connect(self.showNMRPlot)
-#         ir_action = QtGui.QAction("IR Option", self)
-#         sec_action = QtGui.QAction("SEC Option", self)
-#
-#         nmr_menu.addAction(nmr_action)
-#         ir_menu.addAction(ir_action)
-#         sec_menu.addAction(sec_action)
-#
-#         self.setWindowTitle("Main Menu Example")
-#         self.setGeometry(100, 100, 600, 400)
-#
-#         self.stacked_widget = QStackedWidget(self)
-#         self.setCentralWidget(self.stacked_widget)
-#
-#         self.nmr_plot_widget = self.createNMRPlot()
-#         self.stacked_widget.addWidget(self.nmr_plot_widget)
-#
-#     def createNMRPlot(self):
-#         plot_widget = pg.PlotWidget()
-#         random_data = np.random.normal(size=100)
-#         plot_widget.plot(random_data, pen=pg.mkPen('b'))
-#         plot_widget.setTitle("Random NMR Data")
-#         plot_widget.setLabel("left", "Amplitude")
-#         plot_widget.setLabel("bottom", "Time")
-#
-#         central_widget = QWidget()
-#         layout = QVBoxLayout()
-#         layout.addWidget(plot_widget)
-#         central_widget.setLayout(layout)
-#
-#         return central_widget
-#
-#     def showNMRPlot(self):
-#         self.stacked_widget.setCurrentWidget(self.nmr_plot_widget)
-#
-#
-# def main():
-#     app = QApplication(sys.argv)
-#     window = MainMenu()
-#     window.show()
-#     sys.exit(app.exec())
-#
-# if __name__ == "__main__":
-#     main()
+
+
+
+
+        widget2 = pg.PlotWidget()
+        x= ir_data.time_zeroed
+        y=np.trapz(y=ir_data.data, axis=1)
+        widget2.plot(x, y, pen=(255,255,255,200))
+        lr = pg.InfiniteLine(201, movable=True, bounds=(0, np.max(x)), label='x={value:0.2f}',
+                             labelOpts={'position':0.1, 'color': (200,200,100), 'fill': (200,200,200,50), 'movable': True})
+        widget2.addItem(lr)
+        widget2.setLimits(xMin=0, xMax=np.max(x))
+        d2.addWidget(widget2)
+
+
+        tree = ParameterTree()
+        tree.setMinimumWidth(150)
+        i3 = pg.TreeWidgetItem(["# Spectra"])
+        i3_ = pg.SpinBox(value=5, int=True, dec=True, minStep=1, step=1, bounds=[1, 10])
+        i3.setWidget(1, i3_)
+        tree.addTopLevelItem(i3)
+        d3.addWidget(tree)
+
+
+        def update_plot():
+            num_curves = i3_.value()
+            index = np.argmin(np.abs(ir_data.time_zeroed - lr.value()))
+            widget.clearPlots()
+            for i in range(1, num_curves + 1):
+                color = pg.intColor(i, num_curves)
+                curve = widget.plot(ir_data.x[::10], ir_data.data[i + index, ::10], pen=color, name=f"Curve {i}")
+            widget.setLabels(left='Y-Axis', bottom='X-Axis')
+
+
+        lr.sigPositionChanged.connect(update_plot)
+        i3_.sigValueChanged.connect(update_plot)
+        update_plot()
+
+
+
+        vLine = pg.InfiniteLine(movable=True)
+        widget.addItem(vLine)
+        i4 = pg.TreeWidgetItem(["x"])
+        i4_ = pg.ValueLabel(formatStr='{value:4.0f}')
+        i4.setWidget(1, i4_)
+        tree.addTopLevelItem(i4)
+        i5 = pg.TreeWidgetItem(["y"])
+        i5_ = pg.ValueLabel(formatStr='{value:1.4f}')
+        i5.setWidget(1, i5_)
+        tree.addTopLevelItem(i5)
+
+        def mouseMoved():
+            x = vLine.value()
+            i4_.setValue(x)
+            index = np.argmin(np.abs(ir_data.x-x))
+            y = ir_data.data[299, index]
+            i5_.setValue(y)
+            # label.setText(
+            #     f"<span style='font-size: 12pt'>x={vLine.value()}</span>, "
+            #     f"<span style='color: red'>y1={2}</span>, "  # data1[index]
+            #     f"<span style='color: green'>y2={1}</span>")  # data2[index]
+            #     # vLine.setPos(mousePoint.x())
+
+        vLine.sigPositionChanged.connect(mouseMoved)
+
+

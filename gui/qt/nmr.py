@@ -10,51 +10,22 @@ pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
 
 
-class NMRDock(QtWidgets.QDockWidget):
+class NMRView(QtWidgets.QWidget):
     def __init__(self, window: QtWidgets.QMainWindow):
-        menubar = self.menuBar()
+        super().__init__()
 
-        menu_file = menubar.addMenu("File")
-        menu_processing = menubar.addMenu("Processing")
-        menu_analysis = menubar.addMenu("Analysis")
+        menubar = window.menuBar()
 
-        action_open = menu_file.addAction("Open", self.open)
-        action_save = menu_file.addAction("Save")
-        action_quit = menu_file.addAction("Quit", self.destroy)
+        window.statusBar().showMessage("Welcome to Chem Analysis GUI")
 
-        self.settings = QtCore.QSettings('apps', 'settings')
-
-        # Toolbars
-        TBfile = self.addToolBar("File")
-        TBfile.addAction(action_open)
-        TBfile.addAction(action_save)
-
-        open_icon = self.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon)
-        save_icon = self.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_DialogSaveButton)
-
-        action_open.setIcon(open_icon)
-        action_save.setIcon(save_icon)
-
-        TBfile.setAllowedAreas(QtCore.Qt.ToolBarArea.AllToolBarAreas)
-
-        TBviewerNavigation = self.addToolBar("Viewer Navigation")
-
-        action_previous = QtGui.QAction("<", self)
-        action_next = QtGui.QAction(">", self)
-
-        TBviewerNavigation.addAction(action_previous)
-        TBviewerNavigation.addAction(action_next)
-        TBviewerNavigation.setAllowedAreas(
-            QtCore.Qt.ToolBarArea.TopToolBarArea | QtCore.Qt.ToolBarArea.BottomToolBarArea
-        )
 
         mainLayout = QtWidgets.QHBoxLayout()
         centralWidget = QtWidgets.QWidget()
         centralWidget.setLayout(mainLayout)
         self.setCentralWidget(centralWidget)
 
-        if model is not None:
-            self.updateView()
+        # if model is not None:
+        #     self.updateView()
 
     def updateView(self):
         widgetAll = QtWidgets.QWidget()
@@ -75,13 +46,13 @@ class NMRDock(QtWidgets.QDockWidget):
         self.show()
 
     def open(self, exampleData=False):
-        if exampleData:
-            path = "/Users/benno/Dropbox/Software/pyNMR/examples/data/bruker/INADEQUATE/2/"
-
-        else:
-            path = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Experiment", os.path.expanduser('~')) + "/"
-
-            print(path)
+        # if exampleData:
+        #     path = "/Users/benno/Dropbox/Software/pyNMR/examples/data/bruker/INADEQUATE/2/"
+        #
+        # else:
+        #     path = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Experiment", os.path.expanduser('~')) + "/"
+        #
+        #     print(path)
         #
         # data = topSpin.TopSpin(path)
         #
