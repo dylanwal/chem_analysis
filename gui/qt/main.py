@@ -83,14 +83,14 @@ class MainMenu(QtWidgets.QWidget):
         print("Opening SEC analysis")
 
     def open_ir_timeseries(self):
-        print("Opening NMR timeseries analysis")
+        print("Opening IR timeseries analysis")
         self.delete()
         ir = IRArrayView(self.parent())
         ir.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         self.parent().setWidget(ir)
 
     def open_nmr_timeseries(self):
-        print("Opening IR timeseries analysis")
+        print("Opening NMR timeseries analysis")
 
     def open_sec_timeseries(self):
         print("Opening SEC timeseries analysis")
