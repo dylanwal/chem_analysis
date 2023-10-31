@@ -1,5 +1,4 @@
 import sys
-import os
 
 from PyQt6 import QtWidgets
 from PyQt6 import QtCore
@@ -19,17 +18,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.width = 1000
         self.height = 600
         self.setWindowTitle("chem_analysis")
-        self.settings = QtCore.QSettings('apps', 'settings')
+        # self.settings = QtCore.QSettings('apps', 'settings')
 
-        menu = MainMenu(self)
-        self.setCentralWidget(menu)
+        self.setCentralWidget(MainDock(parent=self))
         self.show()
 
 
+class MainDock(QtWidgets.QDockWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFeatures(QtWidgets.QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
+        self.main_menu()
+
+    def main_menu(self):
+        self.setWidget(MainMenu(self))
+
+
 class MainMenu(QtWidgets.QWidget):
-    def __init__(self, window: QtWidgets.QMainWindow):
-        super().__init__()
-        self.window = window
+    def __init__(self, parent):
+        super().__init__(parent)
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
@@ -67,7 +74,7 @@ class MainMenu(QtWidgets.QWidget):
 
     def open_nmr(self):
         print("Opening NMR analysis")
-        self.window.setCentralWidget(NMRView(self.window))
+        # self.window.setCentralWidget(NMRView(self.window))
 
     def open_ir(self):
         print("Opening IR analysis")
@@ -77,7 +84,10 @@ class MainMenu(QtWidgets.QWidget):
 
     def open_ir_timeseries(self):
         print("Opening NMR timeseries analysis")
-        self.window.setCentralWidget(IRArrayView(self.window))
+        self.delete()
+        ir = IRArrayView(self.parent())
+        ir.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
+        self.parent().setWidget(ir)
 
     def open_nmr_timeseries(self):
         print("Opening IR timeseries analysis")
@@ -85,8 +95,11 @@ class MainMenu(QtWidgets.QWidget):
     def open_sec_timeseries(self):
         print("Opening SEC timeseries analysis")
 
+    def delete(self):
+        self.parent().layout().removeWidget(self)
+
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-    window = MainWindow()
-    app.exec()
+    app = QtWidgets.QApplication(sys.argv)
+    main_window = MainWindow()
+    sys.exit(app.exec())

@@ -1,10 +1,10 @@
-import numpy as np
 
+import numpy as np
 from PyQt6 import QtWidgets 
 from PyQt6 import QtCore
 from PyQt6 import QtGui
-
 import pyqtgraph as pg
+
 
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
@@ -15,10 +15,7 @@ class NMRView(QtWidgets.QWidget):
         super().__init__()
 
         menubar = window.menuBar()
-
-        window.statusBar().showMessage("Welcome to Chem Analysis GUI")
-
-
+        NMRMenuBar(menubar)
         mainLayout = QtWidgets.QHBoxLayout()
         centralWidget = QtWidgets.QWidget()
         centralWidget.setLayout(mainLayout)
@@ -345,3 +342,41 @@ class ProcessorViewWidget(QtWidgets .QFrame):
             print("F5 pressed. Run processor.")
             self.model.dataSets[0].processorStack[0].runStack(
                 self.model.dataSets[self.dataSetIndex])
+
+
+class NMRMenuBar:
+    def __init__(self, window):
+        menubar = window.menuBar()
+        menu_file = menubar.addMenu("File")
+        menu_processing = menubar.addMenu("Processing")
+        menu_analysis = menubar.addMenu("Analysis")
+
+        action_open = menu_file.addAction("Open", self.open)
+        action_save = menu_file.addAction("Save")
+        action_quit = menu_file.addAction("Quit", self.destroy)
+
+
+
+        # Toolbars
+        TBfile = window.addToolBar("File")
+        TBfile.addAction(action_open)
+        TBfile.addAction(action_save)
+
+        open_icon = self.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon)
+        save_icon = self.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_DialogSaveButton)
+
+        action_open.setIcon(open_icon)
+        action_save.setIcon(save_icon)
+
+        TBfile.setAllowedAreas(QtCore.Qt.ToolBarArea.AllToolBarAreas)
+
+        TBviewerNavigation = window.addToolBar("Viewer Navigation")
+
+        action_previous = QtGui.QAction("<", self)
+        action_next = QtGui.QAction(">", self)
+
+        TBviewerNavigation.addAction(action_previous)
+        TBviewerNavigation.addAction(action_next)
+        TBviewerNavigation.setAllowedAreas(
+            QtCore.Qt.ToolBarArea.TopToolBarArea | QtCore.Qt.ToolBarArea.BottomToolBarArea
+        )

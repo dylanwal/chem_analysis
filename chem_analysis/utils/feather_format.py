@@ -79,5 +79,6 @@ def unpack_and_merge_time_series_feather_files(paths: Sequence[str | pathlib.Pat
     for path in paths:
         x, time_, z = unpack_time_series(feather_to_numpy(path))
         z_data.append(z)
+        time_data.append(time_)
 
     return x, np.concatenate(time_data), np.concatenate(z_data)

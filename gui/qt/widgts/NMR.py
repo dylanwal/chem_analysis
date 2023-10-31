@@ -3,6 +3,7 @@ from PyQt6 import QtGui
 from PyQt6 import QtCore 
 
 
+
 class LeftShiftWidget(QtWidgets.QWidget):
     def __init__(self, operation):
         super().__init__()
