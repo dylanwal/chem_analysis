@@ -12,6 +12,7 @@ from pyqtgraph.dockarea.Dock import Dock
 from pyqtgraph.dockarea.DockArea import DockArea
 from pyqtgraph.Qt import QtCore
 
+
 from chem_analysis.utils.feather_format import unpack_and_merge_time_series_feather_files, feather_to_numpy, \
     unpack_time_series
 
@@ -20,16 +21,16 @@ pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
 
 
-class IRData:
-    def __init__(self, wavenumber, times, data):
+class Data:
+    def __init__(self, retention_time: np.ndarray, times: np.ndarray, data: np.ndarray):
         self.time = times
         self.time_zeroed = self.time - self.time[0]
-        self.wavenumber = wavenumber
+        self.retention_time = retention_time
         self.data = data
 
     @property
     def x(self):
-        return self.wavenumber
+        return self.retention_time
 
 
 def load_example() -> IRData:
@@ -212,7 +213,6 @@ class IRArrayView(QtWidgets.QWidget):
         path = QtWidgets.QFileDialog.getOpenFileName(parent=self,
                                                      caption="Open feather file",
                                                      directory=os.path.expanduser('~'),
-                                                     # filter="feather",
                                                      initialFilter="feather"
                                                      )
         print(path)
