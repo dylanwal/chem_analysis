@@ -84,7 +84,7 @@ def rename_spectra(path: pathlib.Path):
 
 
 def main():
-    path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2_6_flow")
+    path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2-7")
     times, ppm, data = process_many(path)
     data = repackage(ppm, times, data)
 
@@ -99,7 +99,7 @@ def main():
 
     # feather
     start = time.perf_counter()
-    write(data, "DW2_6_flow_NMR.feather")
+    write(data, "DW2_7_NMR.feather")
     print(time.perf_counter()-start)
     #
     # start = time.perf_counter()
