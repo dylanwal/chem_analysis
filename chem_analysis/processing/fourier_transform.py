@@ -4,7 +4,7 @@ import numpy as np
 from scipy.fft import fft
 from scipy.fftpack import fftshift
 
-from chem_analysis.algorithms.processing.base import ProcessingMethod
+from chem_analysis.processing.base import ProcessingMethod
 
 
 class FourierTransform(ProcessingMethod, abc.ABC):

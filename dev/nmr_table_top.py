@@ -5,7 +5,7 @@ import time
 
 import numpy as np
 
-from chem_analysis.nmr.parse_spinsolve_parameters import parse_acqu_file
+from chem_analysis.nmr.parse_spinsolve import parse_acqu_file
 
 
 def process_one(path: pathlib.Path) -> tuple[float, np.ndarray]:
@@ -84,32 +84,19 @@ def rename_spectra(path: pathlib.Path):
 
 
 def main():
-    path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2-7")
+    path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2-flow_rate")
     times, ppm, data = process_many(path)
     data = repackage(ppm, times, data)
 
     # csv
-    # start = time.perf_counter()
     # np.savetxt("DW2_5_1_NMR.csv", data, delimiter=",")
-    # print(time.perf_counter() - start)
-    #
-    # start = time.perf_counter()
-    # data = np.loadtxt("DW2_5_1_NMR.csv", delimiter=",")
-    # print(time.perf_counter() - start)
 
     # feather
-    start = time.perf_counter()
-    write(data, "DW2_7_NMR.feather")
-    print(time.perf_counter()-start)
-    #
-    # start = time.perf_counter()
-    # data_ = read("DW2_5_1.feather")
-    # print(time.perf_counter()-start)
-    # print(data_.shape)
+    write(data, "DW2_flow_rate_NMR.feather")
 
 
 def main2():
-    path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2-5-1")
+    path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2-flow_rate")
     rename_spectra(path)
 
 

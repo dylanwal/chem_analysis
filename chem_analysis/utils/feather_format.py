@@ -1,3 +1,4 @@
+
 import pathlib
 from typing import Sequence
 
@@ -15,7 +16,6 @@ def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path):
         numpy array
     file_path:
         file path
-
     """
     if not isinstance(file_path, pathlib.Path):
         file_path = pathlib.Path(file_path)

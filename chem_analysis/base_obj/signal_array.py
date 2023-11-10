@@ -1,9 +1,6 @@
-from collections import OrderedDict
-
 import numpy as np
 
-from chem_analysis.utils.sig_fig import apply_sig_figs
-from chem_analysis.algorithms.processing.base import Processor
+from chem_analysis.processing.base import Processor
 from chem_analysis.base_obj.signal_ import Signal
 
 

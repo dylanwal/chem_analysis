@@ -2,8 +2,7 @@ import logging
 
 logger = logging.getLogger("chem_analysis")  # pathlib.Path(sys.argv[0]).stem
 
-import chem_analysis.algorithms.processing as processing
-import chem_analysis.algorithms.analysis as analysis
+import chem_analysis.analysis as analysis
 
 import chem_analysis.sec as sec
 import chem_analysis.nmr as nmr

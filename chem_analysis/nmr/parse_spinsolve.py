@@ -1,11 +1,12 @@
-from __future__ import annotations
 from dataclasses import dataclass
 import pathlib
 from datetime import datetime, timedelta
 
+from chem_analysis.nmr.parameters import NMRParameters
+
 
 @dataclass(slots=True)
-class NMRParameters:
+class NMRParameters(NMRParameters):
     is2D: bool = None
     sample_name: str = None
     solvent: str = None

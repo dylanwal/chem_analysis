@@ -2,7 +2,7 @@ import abc
 
 import numpy as np
 
-from chem_analysis.algorithms.processing.base import ProcessingMethod
+from chem_analysis.processing.base import ProcessingMethod
 
 
 class Despike(ProcessingMethod, abc.ABC):

@@ -505,15 +505,15 @@ def plotly_signal_array_surface(array: SignalArray, config: PlotConfig) -> go.Fi
 ## matplotlib ##
 #######################################################################################################################
 #######################################################################################################################
-import matplotlib.pyplot as plt
-
-
-def matplotlib_signal(fig, signal, config):
-    x, y = config.get_signal_xy(signal)
-    plt.plot(x, y, label=signal.name, linestyle='-', color=config.get_signal_color(signal),
-             linewidth=config.signal_line_width)
-
-    if config.signal_connect_gaps:
-        plt.plot(x, y, linestyle='-', color=config.get_signal_color(signal), linewidth=config.signal_line_width)
-
-    return fig
+# import matplotlib.pyplot as plt
+#
+#
+# def matplotlib_signal(fig, signal, config):
+#     x, y = config.get_signal_xy(signal)
+#     plt.plot(x, y, label=signal.name, linestyle='-', color=config.get_signal_color(signal),
+#              linewidth=config.signal_line_width)
+#
+#     if config.signal_connect_gaps:
+#         plt.plot(x, y, linestyle='-', color=config.get_signal_color(signal), linewidth=config.signal_line_width)
+#
+#     return fig

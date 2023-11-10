@@ -22,7 +22,7 @@ def main():
     fig = ca.ir.plot_ir_array_overlap(array)
     fig.write_html("temp.html", auto_open=True)
 
-    array.processor.add(ca.processing.baseline_correction.Polynomial(degree=3))
+    array.processor.add(chem_analysis.processing.baseline_correction.Polynomial(degree=3))
 
     # array.analysis.add(ca.analysis.peak_picking.)
 

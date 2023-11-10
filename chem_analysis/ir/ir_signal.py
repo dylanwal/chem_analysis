@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from chem_analysis.base_obj.signal_ import Signal

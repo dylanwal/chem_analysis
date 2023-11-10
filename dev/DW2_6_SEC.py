@@ -1,7 +1,6 @@
 
 import numpy as np
 
-import chem_analysis as ca
 import chem_analysis.sec as ca_sec
 
 
@@ -27,7 +26,7 @@ def main():
     peaks = []
     for sig in signals:
         peaks.append(
-            ca.analysis.peak_picking.scipy_find_peaks(sig)
+            chem_analysis.analysis.peak_picking.scipy_find_peaks(sig)
         )
 
 

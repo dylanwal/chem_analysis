@@ -1,7 +1,5 @@
 import numpy as np
 
-import chem_analysis.algorithms.processing as ca_processing
-import chem_analysis.algorithms.analysis as ca_analysis
 import chem_analysis.sec as ca_sec
 
 
@@ -26,8 +24,8 @@ def main():
     calibration = ca_sec.ConventionalCalibration(cal_func, lower_bound_mw=900, upper_bound_mw=319_000)
 
     signal = ca_sec.SECSignal(x=retention_time, y=weight_fraction, calibration=calibration)
-    signal.processor.add(ca_processing.baseline_correction.Polynomial(degree=3))
-    peaks = ca_analysis.peak_picking.find_peaks(signal, lower_bound, upper_bound, )
+    signal.processor.add(chem_analysis.processing.baseline_correction.Polynomial(degree=3))
+    peaks = chem_analysis.analysis.peak_picking.find_peaks(signal, lower_bound, upper_bound, )
     signal.print_stats()
     ca_sec.plot(signal)
 

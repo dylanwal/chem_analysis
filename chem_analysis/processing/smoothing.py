@@ -4,7 +4,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from scipy.signal import savgol_filter
 
-from chem_analysis.algorithms.processing.base import ProcessingMethod
+from chem_analysis.processing.base import ProcessingMethod
 
 
 class Smoothing(ProcessingMethod, abc.ABC):

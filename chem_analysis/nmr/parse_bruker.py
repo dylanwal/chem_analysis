@@ -1,13 +1,16 @@
-from __future__ import annotations
 from typing import Iterable
 from dataclasses import dataclass
 import pathlib
 from datetime import datetime
 import math
 
+import numpy as np
+
+from chem_analysis.nmr.parameters import NMRParameters
+
 
 @dataclass(slots=True)
-class NMRParameters:
+class NMRParametersBruker(NMRParameters):
     is2D: bool = None
     sizeTD1: int = None
     spectral_width: float = None
@@ -28,12 +31,23 @@ class NMRParameters:
     shift_points: int = None
     nucleus: str = None
 
-    @property
-    def dwell_time(self) -> float:
-        return 1 / self.spectral_width
+
 
 
 parseDict = {3: "i4", 4: "f8"}
+
+
+def parse_bruker_folder(path: pathlib.Path) -> tuple[np.ndarray, NMRParametersBruker]:
+    parameters = parse_acqus_file(path / "acqus")
+    data = get_fid(path / "fid")
+    return parameters, data
+
+
+def get_fid(path: pathlib.Path, endianess: str = "<", dtype: np.dtype = np.dtype("f8")) -> np.ndarray:
+    dtype_ = dtype.newbyteorder(endianess)
+    with open(path, mode='rb') as f:
+        d = f.read()
+        return np.frombuffer(d, dtype=dtype_)
 
 
 def get_line(lines: Iterable[str], startswith: str) -> str | None:
@@ -60,57 +74,57 @@ def parse_acqus_file(path: pathlib.Path) -> NMRParameters:
         text = f.read()
 
     lines = text.split("\n")
-    acqusfile = NMRParameters()
+    parameters = NMRParametersBruker()
 
     line = get_line(lines, "##$SW_h=").strip("##$SW_h= ")
-    acqusfile.spectral_width = float(line)
+    parameters.spectral_width = float(line)
 
     line = get_line(lines, "##$TD").strip("##$TD= ")
-    acqusfile.sizeTD2 = int(int(line) / 2)
+    parameters.sizeTD2 = int(int(line) / 2)
 
     line = get_line(lines, "##$TD").strip("##$TD= ")
-    acqusfile.carrier = float(line) * 1e6
+    parameters.carrier = float(line) * 1e6
 
     line = get_line(lines, "##$DATE_START").strip("##$DATE_START= ")
-    acqusfile.date_start = datetime.fromtimestamp(int(line))
+    parameters.date_start = datetime.fromtimestamp(int(line))
 
     line = get_line(lines, "##$NS=").strip("##$NS= ")
-    acqusfile.number_scans = int(line)
+    parameters.number_scans = int(line)
 
     line = get_line(lines, "##$SOLVENT=").strip("##$SOLVENT= ").replace("<", "").replace(">", "")
-    acqusfile.solvent = line
+    parameters.solvent = line
 
     line = get_line(lines, "##$shimCoilTempK=").strip("##$shimCoilTempK= ")
-    acqusfile.temperature_coil = float(line)
+    parameters.temperature_coil = float(line)
 
     line = get_line(lines, "##$INSTRUM=").strip("##$INSTRUM= ").replace("<", "").replace(">", "")
-    acqusfile.instrument = line
+    parameters.instrument = line
 
     line = get_line(lines, "##$PULPROG=").strip("##$PULPROG= ").replace("<", "").replace(">", "")
-    acqusfile.pulse_sequence = line
+    parameters.pulse_sequence = line
 
     line = get_line(lines, "##$PROBHD=").strip("##$PROBHD= ").replace("<", "").replace(">", "")
-    acqusfile.probe = line
+    parameters.probe = line
 
     line = get_line(lines, "##$RG=").strip("##$RG= ")
-    acqusfile.receiver_gain = float(line)
+    parameters.receiver_gain = float(line)
 
     line = get_line(lines, "##$SFO1=").strip("##$SFO1= ")
-    acqusfile.spectrometer_frequency = float(line)
+    parameters.spectrometer_frequency = float(line)
 
     line = get_line(lines, "##$TD=").strip("##$TD= ")
-    acqusfile.spectral_size = float(line)
+    parameters.spectral_size = float(line)
 
     line = get_line(lines, "##TITLE").strip("##TITLE= Parameter file, TopSpin ")
-    acqusfile.top_spin_version = line
+    parameters.top_spin_version = line
 
     line = get_line(lines, "##$HOLDER").strip("##$HOLDER= ")
-    acqusfile.instrument_position = int(line)
+    parameters.instrument_position = int(line)
 
     line = get_line(lines, "##$GRPDLY").strip("##$GRPDLY= ")
-    acqusfile.shift_points = int(math.floor(float(line)))
+    parameters.shift_points = int(math.floor(float(line)))
 
     line = get_line(lines, "##$NUC1").strip("##$NUC1= ").replace("<", "").replace(">", "")
-    acqusfile.nucleus = line
+    parameters.nucleus = line
 
-    return acqusfile
+    return parameters

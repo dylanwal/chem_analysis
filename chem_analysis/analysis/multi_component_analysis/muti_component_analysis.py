@@ -3,9 +3,9 @@ from typing import Callable
 
 import numpy as np
 
-from chem_analysis.algorithms.analysis.multi_component_analysis.constraints import Constraint
-from chem_analysis.algorithms.analysis.multi_component_analysis.regressors import LinearRegressor, LeastSquares
-from chem_analysis.algorithms.analysis.multi_component_analysis.metrics import MetricType, mean_square_error
+from chem_analysis.analysis.multi_component_analysis.constraints import Constraint
+from chem_analysis.analysis.multi_component_analysis.regressors import LinearRegressor, LeastSquares
+from chem_analysis.analysis.multi_component_analysis.metrics import MetricType, mean_square_error
 
 logger = logging.getLogger(__name__)
 

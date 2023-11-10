@@ -2,7 +2,7 @@ import abc
 
 import numpy as np
 
-from chem_analysis.algorithms.analysis.base import Analysis
+from chem_analysis.analysis import Analysis
 
 
 class BoundDetection(Analysis, abc.ABC):

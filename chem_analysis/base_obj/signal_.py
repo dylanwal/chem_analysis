@@ -2,8 +2,8 @@ from typing import Sequence
 
 import numpy as np
 
-import chem_analysis.algorithms.general_math as general_math
-from chem_analysis.algorithms.processing.base import Processor
+import chem_analysis.utils.general_math as general_math
+from chem_analysis.processing.base import Processor
 
 
 class Signal:
@@ -23,8 +23,8 @@ class Signal:
     __count = 0
 
     def __init__(self,
-                 x: np.ndarray,
-                 y: np.ndarray,
+                 x_raw: np.ndarray,
+                 y_raw: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  name: str = None,
@@ -34,10 +34,10 @@ class Signal:
 
         Parameters
         ----------
-        x: np.ndarray
-            x data
-        y: np.ndarray
-            y data
+        x_raw: np.ndarray
+            raw x data
+        y_raw: np.ndarray
+            raw y data
         x_label: str
             x-axis label
         y_label: str
@@ -50,8 +50,8 @@ class Signal:
         * Either 'ser' or 'x' and 'y' are required but not both.
 
         """
-        self.x_raw = x
-        self.y_raw = y
+        self.x_raw = x_raw
+        self.y_raw = y_raw
         self.id_ = id_ if id_ is not None else Signal.__count
         Signal.__count += 1
         self.name = name if name is not None else f"signal_{self.id_}"

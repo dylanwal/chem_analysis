@@ -5,7 +5,7 @@ import numpy as np
 from chem_analysis.base_obj.calibration import Calibration
 from chem_analysis.base_obj.peak import Peak, PeakSupports
 from chem_analysis.sec.sec_math_functions import calculate_Mn_D_from_wi
-import chem_analysis.algorithms.general_math as general_math
+import chem_analysis.utils.general_math as general_math
 
 
 class SECPeakSupports(PeakSupports):
