@@ -1,5 +1,5 @@
 
-from chem_analysis.base_obj.peak import Peak, PeakSupports
+from chem_analysis.analysis.peak import Peak
 
 
 class IRPeak(Peak):

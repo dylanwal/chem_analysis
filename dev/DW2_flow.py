@@ -1,58 +1,10 @@
-from typing import Callable
-from collections import OrderedDict
-import functools
 
 import numpy as np
-from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
 import plotly.graph_objs as go
 
-from chem_analysis.utils.general_math import get_slice
 from chem_analysis.utils.feather_format import feather_to_numpy, unpack_time_series
-
-
-def distribution_normal(x, amp=1, mean=0, sigma=1):
-    return amp / (sigma * np.sqrt(2 * np.pi)) * np.exp(-(x - mean) ** 2 / (2 * sigma ** 2))
-
-
-# from scipy.stats import cauchy
-def distribution_cauchy(x, amp=1, gamma=1, mean=0):
-    return amp / (np.pi * gamma * (1 + ((x - mean) / 2) ** 2))
-
-
-from scipy.special import voigt_profile
-def distribution_volt(x, amp, sigma, gamma, mean):
-    """
-    gamma = 0 normal
-    sigma = 0 cauchy distribution
-    """
-    x = x - mean
-    return amp * voigt_profile(x, sigma=sigma, gamma=gamma)
-
-
-def multi_distribution(func: Callable, x: np.ndarray, n: int, *args) -> np.ndarray:
-    if (len(args) % n) != 0:
-        raise ValueError("issue with args")
-
-    y = np.zeros_like(x, dtype=x.dtype)
-    arg_n = int(len(args)/n)
-    for i in range(n):
-        y += func(x, args[arg_n*i:arg_n*(i+1)])
-
-    return y
-
-
-def multi_distribution_integration(func: Callable, x: np.ndarray, n: int, args) -> np.ndarray:
-    if (len(args) % n) != 0:
-        raise ValueError("issue")
-
-    area = np.zeros_like(n, dtype=x.dtype)
-    arg_n = int(len(args)/n)
-    for i in range(n):
-        y = func(x, args[arg_n*i:arg_n*(i+1)])
-        area[i] = np.trapz(x=x, y=y)
-
-    return area
+from chem_analysis.utils.general_math import get_slice
+from chem_analysis.analysis.line_fitting import DistributionNormalPeak, peak_deconvolution
 
 
 def conv_from_integration(data, range_1: list, range_2: list):
@@ -65,57 +17,50 @@ def conv_from_integration(data, range_1: list, range_2: list):
     return area_2 / (area_1 + area_2)
 
 
-def get_peaks(data, slice_, n: int = 10):
-    prob_peaks = np.zeros((n, 2), dtype=data.data.dtype)
-    for i in range(n):
-        ii = np.random.randint(0, len(data.time))
-        y = data.data[ii, slice_]
-        peaks, prop = find_peaks(y, prominence=1, width=0.1)
-        peaks[i, :] = peaks
-
-    return np.mean(prob_peaks, axis=0)
-
-
 def conv_from_normal(data):
     range_ = [3.4, 3.9]
-    p0 = OrderedDict(
-        (
-            ("amp1", 1),
-            ("mean1", 3.53),
-            ("sigma1", 0.01),
-            ("amp2", 1),
-            ("mean2", 3.65),
-            ("sigma2", 0.01)
-        )
-    )
     slice_ = get_slice(data.x, start=range_[0], end=range_[1])
     x = data.x[slice_]
+
+    peaks = [
+        DistributionNormalPeak(x, 1, 3.53, 0.01),
+        DistributionNormalPeak(x, 1, 3.65, 0.01),
+    ]
+    result = peak_deconvolution(peaks=peaks, xdata=x, ydata=data.data[-1, slice_])
+    peaks = result.peaks
 
     areas = np.empty((data.time.size, 2), dtype=np.float64)
     issues = []
     good = []
     for i, row in enumerate(data.data):
         try:
-            result = curve_fit(
-                functools.partial(multi_distribution, func=distribution_normal, n=2),
-                x,
-                data.data[i, slice_],
-                p0=list(p0.values())
-            )
-            params, covariance = result
-            areas[i] = multi_distribution_integration(func=distribution_normal, n=2, x=data.x, args=params)
+            y = data.data[i, slice_]
+            result = peak_deconvolution(peaks=peaks, xdata=x, ydata=y)
+            areas[i] = list(peak.stats.area for peak in result.peaks)
         except Exception as e:
             issues.append(i)
-            print(e)
+            print(i, e)
             continue
 
         good.append(i)
 
     print("issues: ", len(issues), "| total:", len(data.time))
     areas = areas[good]
-    times_ = data.time[good]
+    times_ = data.time_zeroed[good]
 
-    return np.column_stack((times_, areas[:, 1] / (areas[:, 0] + areas[:, 1])))
+    plot_fit(data.x, data.data[-1], result.peaks)
+
+    return np.column_stack((times_, areas[:, 0] / (areas[:, 0] + areas[:, 1])))
+
+
+def plot_fit(x, y, peaks):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=y))
+    for peak in peaks:
+        fig.add_trace(go.Scatter(x=peak.x, y=peak.y))
+
+    # fig.show()
+    fig.write_html("spectra.html", auto_open=True)
 
 
 class NMRData:
@@ -134,15 +79,20 @@ def conv_analysis(data: NMRData):
     conv_integration = conv_from_integration(data, range_1=[3.65, 3.8], range_2=[3.488, 3.65])
     print("integration:", conv_integration[-1])
     conv_normal = conv_from_normal(data)
+    print("normal:", conv_normal[-1, 1])
     # conv_cauchy = conv_from_fit(data, range_=range_, func=distribution_cauchy)
     # conv_voigt = conv_from_fit(data, range_=range_, func=distribution_volt)
 
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data.x, y=conv_integration, name="conv_int"))
-    # fig.add_trace(go.Scatter(x=data.x, y=conv_normal, name="conv_normal"))
-    # fig.add_trace(go.Scatter(x=data.x, y=conv_cauchy, name="conv_cauchy"))
-    # fig.add_trace(go.Scatter(x=data.x, y=conv_voigt, name="conv_cauchy"))
+    fig.add_trace(go.Scatter(x=data.time_zeroed, y=conv_integration, name="conv_int"))
+    fig.add_trace(go.Scatter(x=conv_normal[:, 0], y=conv_normal[:, 1], name="conv_normal"))
+    # fig.add_trace(go.Scatter(x=data.time_zeroed, y=conv_cauchy, name="conv_cauchy"))
+    # fig.add_trace(go.Scatter(x=data.time_zeroed, y=conv_voigt, name="conv_voigt"))
+    fig.add_trace(go.Scatter(x=[data.time_zeroed[0], data.time_zeroed[-1]], y=[conv_integration[-1], conv_integration[-1]], name="true"))
+    fig.add_trace(
+        go.Scatter(x=[data.time_zeroed[0], data.time_zeroed[-1]], y=[conv_normal[-1, 1], conv_normal[-1, 1]],
+                   name="true_normal"))
     fig.update_layout(autosize=False, width=800, height=600, font=dict(family="Arial", size=18, color="black"),
                       plot_bgcolor="white", showlegend=True)
     fig.update_xaxes(title="<b>rxn time (min)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
@@ -151,22 +101,26 @@ def conv_analysis(data: NMRData):
     fig.update_yaxes(title="<b>conversion</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                      gridwidth=1, gridcolor="lightgray", range=[0, 1])
-    fig.show()
+    # fig.show()
+    fig.write_html("temp.html", auto_open=True)
 
 
-def plot(data):
+def plot_spectra(data):
     n = [0, 2, 5, 10, 20, 30, 200, -1]
     fig = go.Figure()
     for i in n:
         fig.add_trace(go.Scatter(x=data.x, y=data.data[i]))
 
-    fig.show()
+    # fig.show()
+    fig.write_html("spectra.html", auto_open=True)
 
 
 def clean_data(data):
     remove_spectra = []
+
+    # remove spectra with no signals
     for i in range(len(data.time)):
-        if np.max(data.data[i]) < 10:
+        if np.max(data.data[i]) < 1:
             remove_spectra.append(i)
 
     data.time = np.delete(data.time, remove_spectra)
@@ -175,12 +129,14 @@ def clean_data(data):
 
 
 def main():
-    path = r"C:\Users\nicep\Desktop\DW2_flow_rate_NMR.feather"
-    data = feather_to_numpy(path)
-    data = NMRData(*unpack_time_series(data))
+    path = r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW_flow\DW2_flow_rate_NMR.feather"
+    #r"C:\Users\nicep\Desktop\DW2_flow_rate_NMR.feather"
+    data_ = feather_to_numpy(path)
+    # data = np.vstack((data_[0, :], data_[30:, :]))
+    data = NMRData(*unpack_time_series(data_))
     clean_data(data)
 
-    # plot(data)
+    # plot_spectra(data)
     conv_analysis(data)
 
 

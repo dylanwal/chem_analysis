@@ -6,7 +6,7 @@ import plotly.graph_objs as go  # TODO: move somewhere else
 
 from chem_analysis.config import global_config
 from chem_analysis.utils.plot_format import get_plot_color, bold_in_html
-from chem_analysis.base_obj.peak import Peak
+from chem_analysis.analysis.peak import Peak
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.chromatogram import Chromatogram
 from chem_analysis.base_obj.signal_array import SignalArray

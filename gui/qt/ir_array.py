@@ -75,6 +75,7 @@ class IRArrayView(QtWidgets.QWidget):
         self._plot_index = None
         self._tree_x = None
         self._tree_y = None
+        self._tree_spectra_index = None
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
@@ -103,11 +104,19 @@ class IRArrayView(QtWidgets.QWidget):
 
         self.tree = ParameterTree()
         self.tree.setMinimumWidth(150)
-        i3 = pg.TreeWidgetItem(["# Spectra"])
+        d3.addWidget(self.tree)
+
+        # number spectra showsn
+        i3 = pg.TreeWidgetItem(["# spectra"])
         self._num_curves = pg.SpinBox(value=5, int=True, dec=True, minStep=1, step=1, bounds=[1, 10])
         i3.setWidget(1, self._num_curves)
         self.tree.addTopLevelItem(i3)
-        d3.addWidget(self.tree)
+
+        # add index to tree
+        i4 = pg.TreeWidgetItem(["spectra index"])
+        self._tree_spectra_index = pg.ValueLabel(formatStr='{value:5}')
+        i4.setWidget(1, self._tree_spectra_index)
+        self.tree.addTopLevelItem(i4)
 
         self._num_curves.sigValueChanged.connect(self.update_main_plot)
 
@@ -127,6 +136,7 @@ class IRArrayView(QtWidgets.QWidget):
             end = len(self.data.time)
 
         self._plot_index = start
+        self._tree_spectra_index.setValue(start)
 
         self.main_plot.clearPlots()
         for i in range(start, end):
@@ -161,8 +171,8 @@ class IRArrayView(QtWidgets.QWidget):
 
         x = self.data.time_zeroed
         y = np.trapz(y=self.data.data, axis=1)
-        y, x = np.histogram(self.data.time, bins=30)
-        self.time_plot.plot(x[1:], y, pen=(255, 0, 255, 200))
+        # y, x = np.histogram(self.data.time, bins=30)
+        self.time_plot.plot(x, y, pen=(255, 0, 255, 200))
         self._time_line = pg.InfiniteLine(201, movable=True, bounds=(0, np.max(x)), label='x={value:0.2f}',
                              labelOpts={
                                  'position': 0.1, 'color': (200, 200, 100), 'fill': (200, 200, 200, 50), 'movable': True
