@@ -1,7 +1,6 @@
 
-
 from chem_analysis.ir.ir_signal import IRSignal
-from chem_analysis.ir.ir_array import IRArray
+from chem_analysis.ir.ir_array import IRSignalArray
 import chem_analysis.base_obj.plotting as base_plotting
 
 
@@ -14,7 +13,7 @@ class PlotConfigIR(base_plotting.PlotConfig):
 
 
 def plot_signal_array_overlap(
-        array: IRArray,
+        array: IRSignalArray,
         *,
         config: PlotConfigIR = None,
         **kwargs
@@ -23,7 +22,7 @@ def plot_signal_array_overlap(
 
 
 def plot_signal_array_3D(
-        array: IRArray,
+        array: IRSignalArray,
         *,
         config: PlotConfigIR = None,
         **kwargs
@@ -32,7 +31,7 @@ def plot_signal_array_3D(
 
 
 def plot_signal_array_surface(
-        array: IRArray,
+        array: IRSignalArray,
         *,
         config: PlotConfigIR = None,
         **kwargs

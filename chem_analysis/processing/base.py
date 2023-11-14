@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import abc
+import copy
 
 import numpy as np
 
@@ -71,3 +74,8 @@ class Processor:
         if z is None:
             return x, y
         return x, y, z
+
+    def get_copy(self) -> Processor:
+        copy_ = copy.deepcopy(self)
+        copy_.processed = False
+        return copy_

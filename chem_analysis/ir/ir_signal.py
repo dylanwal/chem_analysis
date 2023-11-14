@@ -1,36 +1,20 @@
 import numpy as np
 
 from chem_analysis.base_obj.signal_ import Signal
-from chem_analysis.ir.ir_peak import IRPeak
 
 
 class IRSignal(Signal):
     """ IR Signal
     """
     def __init__(self,
-                 x: np.ndarray,
-                 y: np.ndarray,
+                 x_raw: np.ndarray,
+                 y_raw: np.ndarray,
                  x_label: str = "wave_number",
                  y_label: str = "absorbance",
                  name: str = None,
-                 var=None,
-                 _parent=None
+                 id_: int = None
                  ):
-        super().__init__(x, y, x_label, y_label, name, var, _parent)
-
-    def __repr__(self):
-        text = super().__repr__()
-        return text
-
-    @property
-    def peaks(self) -> list[IRPeak]:
-        return self._peaks
-
-    def add_peak(self, peak: IRPeak):
-        super().add_peak(peak)
-
-    def delete_peak(self, peak: IRPeak | int):
-        super().delete_peak(peak)
+        super().__init__(x_raw, y_raw, x_label, y_label, name, id_)
 
     @property
     def cm_1(self) -> np.ndarray:
@@ -38,7 +22,7 @@ class IRSignal(Signal):
 
     @property
     def micrometer(self) -> np.ndarray:
-        return 1 / self.x
+        return 1 / self.x * 1000
 
     @property
     def absorbance(self) -> np.ndarray:

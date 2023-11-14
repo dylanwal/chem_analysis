@@ -1,9 +1,11 @@
 from typing import Sequence
+import pathlib
 
 import numpy as np
 
 import chem_analysis.utils.general_math as general_math
 from chem_analysis.processing.base import Processor
+from chem_analysis.analysis.peak import PeakBoundedStats
 
 
 class Signal:
@@ -21,6 +23,7 @@ class Signal:
         y-axis label
     """
     __count = 0
+    _peak_type = PeakBoundedStats
 
     def __init__(self,
                  x_raw: np.ndarray,
@@ -85,7 +88,6 @@ class Signal:
 
         return self._y
 
-    @property
     def y_normalized_by_max(self, x_range: Sequence[int | float] = None) -> np.ndarray:
         if x_range is None:
             return self.y/np.max(self.y)
@@ -93,10 +95,61 @@ class Signal:
         slice_ = general_math.get_slice(self.x, *x_range)
         return general_math.normalize_by_max(self.y[slice_])
 
-    @property
     def y_normalized_by_area(self, x_range: Sequence[int | float] = None) -> np.ndarray:
         if x_range is None:
             return general_math.normalize_by_area(self.x, self.y)
 
         slice_ = general_math.get_slice(self.x, *x_range)
         return general_math.normalize_by_area(self.x[slice_], self.y[slice_])
+
+    @classmethod
+    def from_file(cls, path: str | pathlib.Path):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        if path.suffix == ".csv":
+            x, y, x_label, y_label = load_csv(path)
+        elif path.suffix == ".feather":
+            from chem_analysis.utils.feather_format import feather_to_numpy
+            data = feather_to_numpy(path)
+            x, y,  = data[:, 0], data[:, 1]
+            x_label, y_label = None, None
+        else:
+            raise NotImplemented("File type currently not supported.")
+
+        return cls(x, y, x_label=x_label, y_label=y_label)
+
+
+def load_csv(path: pathlib):
+    import csv
+
+    # Initialize variables to store data
+    data = []
+    x_label = None
+    y_label = None
+
+    # Read CSV file
+    with open(path, 'r') as file:
+        csv_reader = csv.reader(file)
+
+        # Check if the first row contains numbers
+        first_row = next(csv_reader, None)
+
+        if len(first_row) != 2:
+            raise ValueError("Data not correct format.")
+
+        if any(cell.isalpha() for cell in first_row):
+            # If the first row contains non-numeric values, consider it as column labels
+            x_label, y_label = first_row
+        else:
+            # If the first row contains numbers, treat them as data and set labels to None
+            data.append([float(cell) for cell in first_row])
+
+        # Read the remaining rows
+        for row in csv_reader:
+            data.append([float(cell) for cell in row])
+
+    # Convert data to NumPy array
+    data_array = np.array(data)
+
+    return data_array[:, 0], data_array[:, 1], x_label, y_label

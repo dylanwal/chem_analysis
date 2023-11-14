@@ -2,8 +2,8 @@ from collections import OrderedDict
 
 import numpy as np
 
-from chem_analysis.utils.sig_fig import apply_sig_figs
 from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.utils.printing_tables import StatsTable
 
 
 class Chromatogram:
@@ -49,32 +49,12 @@ class Chromatogram:
     def number_of_signals(self):
         return len(self.signals)
 
-    def stats(self) -> list[OrderedDict]:
+    def get_stats(self) -> list[OrderedDict]:
         dicts_ = []
         for sig in self.signals:
-            dicts_.append(sig.stats())
+            dicts_.append(sig.get_stats())
 
         return dicts_
 
-    def print_stats(self, sig_figs: int = 3, output_str: bool = False, **kwargs):
-        """ Prints stats out for peak. """
-        from tabulate import tabulate
-
-        if "tablefmt" not in kwargs:
-            kwargs["tablefmt"] = "simple_grid"
-
-        stats_list = self.stats()
-        rows = []
-        for stats in stats_list:
-            values = []
-            for value in stats.values():
-                if isinstance(value, float) or isinstance(value, int):
-                    value = apply_sig_figs(value, sig_figs)
-                values.append(value)
-            rows.append(values)
-
-        text = tabulate(rows, stats_list[0].keys(), **kwargs)
-        if output_str:
-            return text
-
-        print(text)
+    def stats_table(self) -> StatsTable:
+        return StatsTable.from_list_dicts(self.get_stats())

@@ -10,10 +10,10 @@ class SECCalibration(Calibration):
 
 class ConventionalCalibration(SECCalibration):
     def __init__(self,
-                 calibration_function: Callable,
+                 func: Callable,
                  *,
                  mw_bounds: Sequence[int | float] = None,
                  time_bounds: Sequence[int | float] = None,
                  name: str = None
                  ):
-        super().__init__(calibration_function, y_bounds=mw_bounds, x_bounds=time_bounds, name=name)
+        super().__init__(func, y_bounds=mw_bounds, x_bounds=time_bounds, name=name)

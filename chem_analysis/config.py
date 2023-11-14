@@ -10,6 +10,7 @@ class Configuration:
 
     def __init__(self):
         self.plotting_library = PlottingLibraries.PLOTLY
+        self.sig_fig = 3
 
     def load_from_env(self):
         pass  # TODO: add support
