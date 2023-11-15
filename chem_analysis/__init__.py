@@ -1,6 +1,6 @@
 import logging
 
-logger = logging.getLogger("chem_analysis")  # pathlib.Path(sys.argv[0]).stem
+logger = logging.getLogger("chem_analysis")
 
 import chem_analysis.processing as processing
 import chem_analysis.analysis as analysis

@@ -41,8 +41,20 @@ class StatsTable:
         return f"rows: {len(self.rows)}, cols: {len(self.headers)}"
 
     def to_str(self, sig_figs: int = global_config.sig_fig, **kwargs):
+        if "tablefmt" not in kwargs:
+            kwargs["tablefmt"] = global_config.table_format
         rows = process_rows_to_str(self.rows, sig_figs)
         return tabulate(rows, self.headers, **kwargs)
+
+    def to_csv(self, with_headers: bool = True, sig_figs: int = global_config.sig_fig) -> str:
+        rows = process_rows_to_str(self.rows, sig_figs)
+        if with_headers:
+            inner_strings = [",".join(self.headers)]
+        else:
+            inner_strings = []
+
+        inner_strings += [",".join(map(str, row)) for row in rows]
+        return "\n".join(inner_strings)
 
     @classmethod
     def from_dict(cls, dict_: dict) -> StatsTable:
@@ -74,6 +86,9 @@ def convert_to_str(value, sig_figs: int):
 
 
 def get_headers_from_list_dicts(list_) -> list[str]:
+    if len(list_) == 0:
+        return []
+
     headers = list(list_[0].keys())
     if len(list_) == 0:
         return headers

@@ -5,7 +5,7 @@ from chem_analysis.config import global_config
 from chem_analysis.sec.sec_signal import SECSignal
 from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.base_obj.plotting import PlotConfig
-from chem_analysis.analysis.boundry_detection.bound_detection import ResultPeakBound
+from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
 
 
 def plot_sec_signal(signal: SECSignal, *, fig=None, config=PlotConfig()):

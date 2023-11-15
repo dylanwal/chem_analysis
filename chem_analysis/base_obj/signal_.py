@@ -53,6 +53,11 @@ class Signal:
         * Either 'ser' or 'x' and 'y' are required but not both.
 
         """
+        # flip data if giving backwards; it should be low to high
+        if x_raw[1] > x_raw[-1]:
+            x_raw = np.flip(x_raw)
+            y_raw = np.flip(y_raw)
+
         self.x_raw = x_raw
         self.y_raw = y_raw
         self.id_ = id_ if id_ is not None else Signal.__count

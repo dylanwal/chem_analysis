@@ -9,7 +9,7 @@ from chem_analysis.analysis.peak import Peak
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.chromatogram import Chromatogram
 from chem_analysis.base_obj.signal_array import SignalArray
-from chem_analysis.analysis.boundry_detection.bound_detection import ResultPeakBound
+from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
 
 
 logger = logging.getLogger("plotting")

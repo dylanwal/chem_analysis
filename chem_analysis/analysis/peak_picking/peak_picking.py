@@ -28,10 +28,24 @@ class ResultPeakPicking:
         pass
 
 
+def apply_limits(signal, result: ResultPeakPicking):
+    if hasattr(signal, "_limits") and signal._limits() is not None:
+        limits = signal._limits()
+        remove_index = []
+        for i, index in enumerate(result.indexes):
+            x = signal.x[index]
+            if not (limits[0] <= x <= limits[1]):
+                remove_index.append(i)
+        result.indexes = np.delete(result.indexes, remove_index)
+
+
 @wraps(find_peaks)
-def scipy_find_peaks(signal: SignalProtocol, *args, **kwargs) -> ResultPeakPicking:
-    indices_of_peaks, _ = find_peaks(signal.y, *args, **kwargs)
+def scipy_find_peaks(signal: SignalProtocol, ignore_limits: bool = False, **kwargs) -> ResultPeakPicking:
+    indices_of_peaks, _ = find_peaks(signal.y, **kwargs)
     result = ResultPeakPicking(signal)
     result.indexes = indices_of_peaks
+
+    if not ignore_limits:
+        apply_limits(signal, result)
 
     return result

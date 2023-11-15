@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Sequence
 
 import numpy as np
 
@@ -36,6 +37,8 @@ class SECSignal(Signal):
         self.calibration = calibration
         self.type_ = type_
 
+        self._mw_i = None
+
     def __repr__(self):
         text = super().__repr__()
         if self.type_ is not SECTypes.UNKNOWN:
@@ -43,9 +46,28 @@ class SECSignal(Signal):
 
         return text
 
+    # overload
+    def y_normalized_by_max(self, x_range: Sequence[int | float] = None) -> np.ndarray:
+        if x_range is None and self.calibration is not None:
+            x_range = self.calibration.x_bounds
+        return super().y_normalized_by_max(x_range)
+
+    # overload
+    def y_normalized_by_area(self, x_range: Sequence[int | float] = None) -> np.ndarray:
+        if x_range is None and self.calibration is not None:
+            x_range = self.calibration.x_bounds
+        return super().y_normalized_by_area(x_range)
+
     @property
     def mw_i(self) -> np.ndarray | None:
         if self.calibration is None:
             return None
+        if self._mw_i is None:
+            self._mw_i = self.calibration.get_y(self.x)
 
-        return self.calibration.get_y(self.x)
+        return self._mw_i
+
+    def _limits(self) -> tuple[int, int] | None:
+        if not self.calibration:
+            return None
+        return self.calibration.x_bounds

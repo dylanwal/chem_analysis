@@ -9,7 +9,7 @@ from chem_analysis.base_obj.signal_ import Signal
 # from chem_analysis.base_obj.signal_array import SignalArray
 from chem_analysis.base_obj.plotting import PlotConfig, NormalizationOptions
 from chem_analysis.analysis.peak import PeakBoundedStats
-from chem_analysis.analysis.boundry_detection.bound_detection import ResultPeakBound
+from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
 
 
 # def plotly_signal_array(fig: go.Figure, array: SignalArray, config: PlotConfig):
@@ -32,10 +32,6 @@ from chem_analysis.analysis.boundry_detection.bound_detection import ResultPeakB
 
 def plotly_layout(fig: go.Figure, config: PlotConfig):
     if config.default_formatting:
-        layout = {}
-        layout_xaxis = {}
-        layout_yaxis = {}
-
         if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
             layout = {
                 # "autosize": False,
@@ -73,9 +69,9 @@ def plotly_layout(fig: go.Figure, config: PlotConfig):
                 "gridwidth": 1,
                 "gridcolor": 'lightgray'
             }
-        fig.update_layout(**layout)
-        fig.update_xaxes(**layout_xaxis)
-        fig.update_yaxes(**layout_yaxis)
+            fig.update_layout(**layout)
+            fig.update_xaxes(**layout_xaxis)
+            fig.update_yaxes(**layout_yaxis)
 
 
 def plotly_signal(fig: go.Figure, signal: Signal, config: PlotConfig) -> go.Figure:
@@ -133,8 +129,9 @@ def plotly_add_peak_shade(fig: go.Figure, peak: PeakBoundedStats, config: PlotCo
         mode="lines",
         fill='tozeroy',
         line={"width": 0},
-        showlegend=False,
-        legendgroup=label
+        showlegend=True,
+        legendgroup=label,
+        name=label
     ))
 
 

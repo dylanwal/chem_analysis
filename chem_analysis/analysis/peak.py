@@ -63,8 +63,8 @@ class PeakBounded(Peak):
 
     def get_stats(self) -> OrderedDict:
         dict_ = OrderedDict()
-        dict_['slice'] = f"[{self.bounds.start}, {self.bounds.stop}]"
-        dict_['slice_loc'] = f"[{apply_sig_figs(self.low_bound_location)}, {apply_sig_figs(self.high_bound_location)}]"
+        dict_['slice'] = f"[{self.bounds.start}-{self.bounds.stop}]"
+        dict_['slice_loc'] = f"[{apply_sig_figs(self.low_bound_location)}-{apply_sig_figs(self.high_bound_location)}]"
 
         return dict_
 
@@ -108,7 +108,7 @@ class PeakStats:
         center line of the peak to the front slope;
         >1 tailing to larger values; <1 tailing to smaller numbers
     """
-    def __init__(self, parent: Peak):
+    def __init__(self, parent: PeakBounded):
         self.parent = parent
         self._y_norm = None
 
@@ -136,11 +136,11 @@ class PeakStats:
 
     @property
     def max_index(self) -> int:
-        return int(np.argmax(self.parent.y))
+        return int(np.argmax(self.parent.y)) + self.parent.bounds.start
 
     @property
     def max_loc(self) -> float:
-        return self.parent.x[self.max_index]
+        return self.parent.x[self.max_index - self.parent.bounds.start]
 
     @property
     def mean(self) -> float:
@@ -186,5 +186,5 @@ class PeakStats:
             dict_[stat] = getattr(self, stat)
         return dict_
 
-    def stats_table(self, sig_figs: int = 3) -> StatsTable:
-        return StatsTable.from_dict(self.get_stats(), sig_figs)
+    def stats_table(self) -> StatsTable:
+        return StatsTable.from_dict(self.get_stats())

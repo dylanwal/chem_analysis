@@ -1,5 +1,6 @@
 import dataclasses
 from collections import OrderedDict
+import logging
 
 import numpy as np
 
@@ -8,6 +9,8 @@ from chem_analysis.sec.sec_math_functions import calculate_Mn_D_from_wi
 from chem_analysis.analysis.peak import PeakBounded, PeakStats, PeakParent
 from chem_analysis.base_obj.calibration import Calibration
 from chem_analysis.utils.printing_tables import StatsTable
+
+logger = logging.getLogger("chem_analysis.peak_SEC")
 
 
 @dataclasses.dataclass
@@ -42,45 +45,72 @@ class PeakSEC(PeakBounded):
         else:
             self.stats = PeakStatsSEC(self)
 
+        self._mw_n = None
+        self._mw_d = None
+        self._w_i = None
+        self._x_i = None
+        self._mw_i_None = False
+
     @property
     def mw_i(self) -> np.ndarray | None:
         if self.parent.mw_i is None:
             return None
-        return self.parent.mw_i[self.bounds]
+        if self._mw_i_None:
+            return None
+        mw_i = self.parent.mw_i[self.bounds]
+        if np.min(mw_i) == 0 and np.max(mw_i) == 0:
+            # if mw_i is all zero, then peak is outside calibration and we shouldn't try to do calculations around it
+            self._mw_i_None = True
+            self.stats = PeakStats(self)
+            return None
+
+        return mw_i
 
     @property
     def w_i(self) -> np.ndarray | None:
         """ w_i = mole fraction """
-        if self.parent.mw_i is None:
+        if self.mw_i is None:
             return None
-        return self.y / np.trapz(x=self.mw_i, y=self.y)
+        if self._w_i is None:
+            self._w_i = self.y / np.trapz(x=self.mw_i, y=self.y)
+        return self._w_i
 
     @property
     def mw_n(self) -> float | None:
-        if self.parent.mw_i is None:
+        if self.mw_i is None:
             return None
-        mw_n, mw_d = calculate_Mn_D_from_wi(mw_i=self.mw_i, wi=self.w_i)
-        return mw_n
+        if self._mw_n is None:
+            self._mw_n, self._mw_d = calculate_Mn_D_from_wi(mw_i=self.mw_i, wi=self.w_i)
+        return self._mw_n
 
     @property
     def mw_d(self) -> float | None:
-        if self.parent.mw_i is None:
+        if self.mw_i is None:
             return None
-        mw_n, mw_d = calculate_Mn_D_from_wi(mw_i=self.mw_i, wi=self.w_i)
-        return mw_d
+        if self._mw_n is None:
+            self._mw_n, self._mw_d = calculate_Mn_D_from_wi(mw_i=self.mw_i, wi=self.w_i)
+        return self._mw_d
 
     @property
     def mw_w(self) -> float | None:
-        if self.parent.mw_i is None:
+        if self.mw_i is None:
             return None
         return self.mw_n * self.mw_d
 
     @property
     def x_i(self) -> np.ndarray | None:
         """ x_i = mole fraction """
-        if self.parent.mw_i is None:
+        if self.mw_i is None:
             return None
-        return self.w_i * self.mw_n / self.mw_i
+        if self._x_i is None:
+            numerator = self.w_i * self.mw_n
+            zero_mask = (self.mw_i == 0)
+            if np.sum(zero_mask) != 0:
+                logger.warning("Peak extends outside calibration window. Results may contain errors.")
+            self._x_i = np.divide(numerator, self.mw_i, out=np.zeros_like(numerator), where=~zero_mask)
+            # self._x_i = self.w_i * self.mw_n / self.mw_i
+
+        return self._x_i
 
     def get_stats(self) -> OrderedDict:
         dict_ = super().get_stats()
