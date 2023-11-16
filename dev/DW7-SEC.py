@@ -16,17 +16,27 @@ def main2():
     stats = ""
     for i in range(data.time.size): # data.x.size
         signal = data.get_signal(i)
+        weights = ca.processing.weights.AdaptiveDistanceMedian(amount=0.5, normalized=False)
+        baseline_corr = ca.processing.baselines.ImprovedAsymmetricLeastSquared(lambda_=1e6, weights=weights)
+        signal.processor.add(baseline_corr)
+
         result_peaks_max = ca.analysis.peak_picking.scipy_find_peaks(signal, height=2, distance=500, prominence=1)
-        if len(result_peaks_max.indexes) == 0:
+        result_peaks = ca.analysis.boundary_detection.rolling_ball(result_peaks_max, n=40, min_height=0.03)
+
+        if len(result_peaks) == 0:
             print(i, "no peaks")
             stats += f"\n{i} No peaks"
-            continue
-        result_peaks = ca.analysis.boundary_detection.rolling_ball(result_peaks_max, n=15)
-        if stats == "":
-            stats += "signal," + ",".join(result_peaks.stats_table().headers)
 
-        stats += f"\n{i}," + result_peaks.stats_table().to_csv(with_headers=False)
-        print(i, len(result_peaks.peaks))
+        else:
+            if stats == "":
+                stats += "time,signal," + ",".join(result_peaks.stats_table().headers)
+            stats += f"\n{signal.time},{i}," + result_peaks.stats_table().to_csv(with_headers=False)
+            print(i, len(result_peaks.peaks))
+
+        fig = ca.sec.plot_calibration(signal.calibration)
+        fig = ca.sec.plot_peaks(result_peaks, fig=fig)
+        fig = ca.sec.plot_signal(signal, fig=fig)
+        fig.write_image(f"plots/{i}.png")
 
     with open("table.csv", "w", encoding="UTF-8") as f:
         f.write(stats)
@@ -42,56 +52,30 @@ def main():
     )
 
     # single
-    signal = data.get_signal(12)
-    signal.processor.add(
-        ca.processing.baseline_correction.Polynomial(
-            degree=2,
-            mask=ca.processing.masks.DataMaskDistanceRemove(amount=0.2)
-        )
-    )
-    result_peaks_max = ca.analysis.peak_picking.scipy_find_peaks(signal, height=2, distance=500, prominence=1)
-    result_peaks = ca.analysis.boundary_detection.rolling_ball(result_peaks_max, n=20, n_points_with_pos_slope=5)
-    print(result_peaks.stats_table().to_str(sig_figs=4))
+    signal = data.get_signal(43)
 
-    # with open("table.csv", "w", encoding="UTF-8") as f:
-    #     f.write(result_peaks.stats_table().to_csv(with_headers=False))
-
-    fig = ca.sec.plot_sec_calibration(signal.calibration)
-    fig = ca.sec.plot_sec_peaks(result_peaks, fig=fig)
-    fig = ca.sec.plot_sec_signal(signal, fig=fig)
-    fig.write_html("temp.html", auto_open=True)
-    # print("hi")
-
-def main3():
-    from pybaselines import Baseline, utils
-
-    def cal_func(x: np.ndarray) -> np.ndarray:
-        return 10**(-0.6035623045394646*x + 10.70478909408625)
-    cal = ca.sec.ConventionalCalibration(cal_func, time_bounds=[8.377, 13.1])
-    data = ca.sec.SECSignalArray.from_file(
-        r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_SEC.feather",
-        calibration=cal
-    )
-
-    # single
-    signal = data.get_signal(12)
-
-    mask= ca.processing.masks.DataMaskDistanceRemove(amount=0.5, keep_ends=True)
-    x, y = mask.get_data(signal.x, signal.y)
-
-    baseline_fitter = Baseline(x_data=x)
-
-    bkg_1 = baseline_fitter.modpoly(y, poly_order=3)[0]
-    bkg_2 = baseline_fitter.asls(y, lam=1e7, p=0.02)[0]
+    weights = ca.processing.weights.AdaptiveDistanceMedian(amount=0.5, normalized=False)
+    baseline_corr = ca.processing.baselines.ImprovedAsymmetricLeastSquared(lambda_=1e6, weights=weights)
+    signal.processor.add(baseline_corr)
 
     import plotly.graph_objs as go
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=signal.x, y=signal.y))
-    fig.add_trace(go.Scatter(x=x, y=bkg_2))
+    fig.add_trace(go.Scatter(x=signal.x_raw, y=signal.y_raw, name="raw"))
+    fig.add_trace(go.Scatter(x=signal.x, y=signal.y, name="processed"))
+    fig.add_trace(go.Scatter(x=baseline_corr.x, y=baseline_corr.y, name="baseline"))
     fig.write_html("temp.html", auto_open=True)
+
+    result_peaks_max = ca.analysis.peak_picking.scipy_find_peaks(signal, height=2, distance=500, prominence=1)
+    if len(result_peaks_max.indexes) == 0:
+        print("no peaks")
+    result_peaks = ca.analysis.boundary_detection.rolling_ball(result_peaks_max, n=40, min_height=0.03)
+
+    fig = ca.sec.plot_calibration(signal.calibration)
+    fig = ca.sec.plot_peaks(result_peaks, fig=fig)
+    fig = ca.sec.plot_signal(signal, fig=fig)
+    fig.write_html("temp2.html", auto_open=True)
 
 
 if __name__ == "__main__":
     # main()
-    # main2()
-    main3()
+    main2()

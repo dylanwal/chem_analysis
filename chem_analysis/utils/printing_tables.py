@@ -59,12 +59,12 @@ class StatsTable:
     @classmethod
     def from_dict(cls, dict_: dict) -> StatsTable:
         headers = list(dict_.keys())
-        return StatsTable(rows=[values_from_dict(dict_, headers, 0)], headers=headers)
+        return StatsTable(rows=[values_from_dict(dict_, headers, 0)], headers=["peak"] + headers)
 
     @classmethod
     def from_list_dicts(cls, list_: list[dict]) -> StatsTable:
         headers = get_headers_from_list_dicts(list_)
-        return StatsTable(rows=values_from_list_of_dict(list_, headers), headers=headers)
+        return StatsTable(rows=values_from_list_of_dict(list_, headers), headers=["peak"] + headers)
 
 
 def process_rows_to_str(rows: list[list], sig_figs: int) -> list[list]:

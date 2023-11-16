@@ -21,6 +21,12 @@ class ResultPeakPicking:
     def __repr__(self):
         return self.__str__()
 
+    def __iter__(self):
+        return iter(self.indexes)
+
+    def __len__(self):
+        return len(self.indexes)
+
     def values(self):
         return self.signal.x[self.indexes]
 

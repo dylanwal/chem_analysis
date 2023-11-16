@@ -2,6 +2,16 @@ import logging
 
 import numpy as np
 
+MIN_FLOAT = np.finfo(float).eps
+
+
+def check_for_flip(x: np.ndarray, y: np.ndarray):
+    """flip data if giving backwards; it should be low to high"""
+    if x[0] > x[-1]:
+        x = np.flip(x)
+        y = np.flip(y)
+    return x, y
+
 
 def get_slice(x: np.ndarray, start=None, end=None) \
         -> slice:
@@ -22,11 +32,13 @@ def normalize_by_max(y: np.ndarray) -> np.ndarray:
 
 
 def normalize_by_area(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    x, y = check_for_flip(x, y)
     return y / np.trapz(x=x, y=y)
 
 
 # pdf = probability distribution function
 def get_mean_of_pdf(x: np.ndarray, y: np.ndarray = None, *, y_norm: np.ndarray = None) -> float:
+    x, y = check_for_flip(x, y)
     if y_norm is None:
         y_norm = normalize_by_area(x, y)
 
@@ -36,6 +48,7 @@ def get_mean_of_pdf(x: np.ndarray, y: np.ndarray = None, *, y_norm: np.ndarray =
 def get_standard_deviation_of_pdf(x: np.ndarray, y: np.ndarray = None, *,
                                   y_norm: np.ndarray, mean: int | float = None
                                   ) -> float:
+    x, y = check_for_flip(x, y)
     if y_norm is None:
         y_norm = normalize_by_area(x, y)
     if mean is None:
@@ -49,6 +62,7 @@ def get_skew_of_pdf(x: np.ndarray, y: np.ndarray = None, *,
                     mean: int | float = None,
                     standard_deviation: int | float = None
                     ) -> float:
+    x, y = check_for_flip(x, y)
     if y_norm is None:
         y_norm = normalize_by_area(x, y)
     if mean is None:
@@ -64,6 +78,7 @@ def get_kurtosis_of_pdf(x: np.ndarray, y: np.ndarray = None, *,
                         mean: int | float = None,
                         standard_deviation: int | float = None
                         ) -> float:
+    x, y = check_for_flip(x, y)
     if y_norm is None:
         y_norm = normalize_by_area(x, y)
     if mean is None:
@@ -90,6 +105,7 @@ def get_asymmetry_factor(x: np.ndarray, y: np.ndarray, height: float | int = 0.1
 
 def get_width_at(x: np.ndarray, y: np.ndarray, height: float | int = 0.5) -> tuple[float, float]:
     """ Determine full-width-x_max of a peaked set of points, x and y. """
+    x, y = check_for_flip(x, y)
     height_half_max = np.max(y) * height
     index_max = np.argmax(y)
     if index_max == 0 or index_max == len(x):  # peak max is at end.

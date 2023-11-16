@@ -1,9 +1,10 @@
 import logging
-from typing import Protocol
+from typing import Protocol, Iterator
 from collections import OrderedDict
 
 import numpy as np
 
+from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.analysis.peak_picking.peak_picking import ResultPeakPicking
 from chem_analysis.utils.printing_tables import StatsTable
 
@@ -19,13 +20,19 @@ class SignalProtocol(Protocol):
 class ResultPeakBound:
     def __init__(self, signal: SignalProtocol):
         self.signal = signal
-        self.peaks = []
+        self.peaks: list[PeakBounded] = []
 
     def __str__(self):
         return f"# of Peaks: {len(self.peaks)}"
 
     def __repr__(self):
         return self.__str__()
+
+    def __iter__(self) -> Iterator[PeakBounded]:
+        return iter(self.peaks)
+
+    def __len__(self):
+        return len(self.peaks)
 
     def get_stats(self) -> list[OrderedDict]:
         dicts_ = []
@@ -36,69 +43,6 @@ class ResultPeakBound:
 
     def stats_table(self) -> StatsTable:
         return StatsTable.from_list_dicts(self.get_stats())
-
-
-def rolling_ball_single(
-        peak_index: int,
-        x: np.ndarray,
-        y: np.ndarray = None,
-        max_slope: float = 0,
-        n_points_with_pos_slope: int = 1,
-        min_height: float = 0.01
-) -> tuple[int, int]:
-    """
-    Returns
-    -------
-    lb_index: int
-        index of lower bound
-    ub_index: int
-        index of upper bound
-    """
-    min_height = min_height * y[peak_index]
-    # lower bound
-    if peak_index == 0:
-        lb_index = peak_index
-    else:
-        points_with_positive_slope = 0
-        for i in range(peak_index-1, 0, -1):
-            slope = (y[i] - y[i + 1]) / (x[i + 1] - x[i])
-            if slope > max_slope:
-                points_with_positive_slope += 1
-                if points_with_positive_slope >= n_points_with_pos_slope:
-                    lb_index = i + points_with_positive_slope
-                    break
-            else:
-                points_with_positive_slope = 0
-
-            if y[i] < min_height:
-                lb_index = i
-                break
-        else:
-            lb_index = 0
-
-    # upper bound
-    if peak_index == len(x):
-        ub_index = peak_index
-    else:
-        points_with_positive_slope = 0
-        for i in range(peak_index + 1, len(x)):
-            slope = (y[i] - y[i-1]) / (x[i] - x[i-1])
-            if slope > max_slope:
-                points_with_positive_slope += 1
-                if points_with_positive_slope >= n_points_with_pos_slope:
-                    ub_index = i + points_with_positive_slope
-                    break
-            else:
-                points_with_positive_slope = 0
-
-            if y[i] < min_height:
-                ub_index = i
-                break
-
-        else:
-            ub_index = len(x)
-
-    return lb_index, ub_index
 
 
 def rolling_ball_n_points(
@@ -205,6 +149,11 @@ def rolling_ball(
     for i, index in enumerate(picking_result.indexes):
         lb_index, ub_index = rolling_ball_n_points(index, result.signal.x, result.signal.y, n, poly_degree,
                                                    deriv_degree, max_derivative,  n_points_with_pos_slope, min_height)
+
+        if not check_end_points(result.signal.y, index, lb_index, ub_index):
+            # TODO: improve checks
+            continue
+
         result.peaks.append(
             picking_result.signal._peak_type(
                 parent=picking_result.signal,
@@ -213,3 +162,9 @@ def rolling_ball(
             )
         )
     return result
+
+
+def check_end_points(y, max_index, lb_index: int, ub_index: int):
+    if y[max_index] < y[lb_index] or y[max_index] < y[ub_index]:
+        return False
+    return True

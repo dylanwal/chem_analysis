@@ -3,7 +3,22 @@ import numpy as np
 import plotly.graph_objs as go
 
 from chem_analysis.config import global_config
+from chem_analysis.utils.general_math import get_slice
+from chem_analysis.base_obj.plotting_plotly import plotly_signal as plotly_signal_base
+from chem_analysis.sec.sec_signal import SECSignal
 from chem_analysis.sec.sec_calibration import SECCalibration
+
+
+def plotly_signal(fig: go.Figure, signal: SECSignal, config) -> go.Figure:
+    fig = plotly_signal_base(fig, signal, config)
+    if signal.calibration is not None:
+        slice_ = get_slice(signal.x, *signal.calibration.x_bounds)
+        max_ = np.max([2, np.max(signal.y[slice_])])
+        min_ = np.min([0, np.min(signal.y[slice_])])
+        span = (max_ - min_) * 0.05
+        fig.layout.yaxis.range = [min_-span, max_-span]
+
+    return fig
 
 
 def plotly_sec_calibration(calibration: SECCalibration, *, fig: go.Figure, config):

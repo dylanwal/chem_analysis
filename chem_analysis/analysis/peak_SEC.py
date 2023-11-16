@@ -72,7 +72,7 @@ class PeakSEC(PeakBounded):
         if self.mw_i is None:
             return None
         if self._w_i is None:
-            self._w_i = self.y / np.trapz(x=self.mw_i, y=self.y)
+            self._w_i = self.y / np.abs(np.trapz(x=self.mw_i, y=self.y))  # abs because mw_i and y are reversed order
         return self._w_i
 
     @property
