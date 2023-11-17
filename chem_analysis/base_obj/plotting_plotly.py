@@ -74,7 +74,7 @@ def plotly_layout(fig: go.Figure, config: PlotConfig):
             fig.update_yaxes(**layout_yaxis)
 
 
-def plotly_signal(fig: go.Figure, signal: Signal, config: PlotConfig) -> go.Figure:
+def plotly_signal(fig: go.Figure | None, signal: Signal, config: PlotConfig) -> go.Figure:
     if fig is None:
         fig = go.Figure()
 

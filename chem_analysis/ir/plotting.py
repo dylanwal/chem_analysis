@@ -1,7 +1,10 @@
 
+from chem_analysis.config import global_config
 from chem_analysis.ir.ir_signal import IRSignal
 from chem_analysis.ir.ir_array import IRSignalArray
 import chem_analysis.base_obj.plotting as base_plotting
+from chem_analysis.base_obj.plotting import PlotConfig
+from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
 
 
 class PlotConfigIR(base_plotting.PlotConfig):
@@ -12,37 +15,17 @@ class PlotConfigIR(base_plotting.PlotConfig):
         return layout, layout_xaxis, layout_yaxis
 
 
-def plot_signal_array_overlap(
-        array: IRSignalArray,
-        *,
-        config: PlotConfigIR = None,
-        **kwargs
-):
-    return base_plotting.plot_signal_array_overlap(array, config=config, _default_config=PlotConfigIR, **kwargs)
+def plot_signal(signal: IRSignal, *, fig=None, config=PlotConfig()):
+    if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
+        from chem_analysis.base_obj.plotting_plotly import plotly_signal
+        return plotly_signal(fig, signal, config)
+
+    raise NotImplementedError()
 
 
-def plot_signal_array_3D(
-        array: IRSignalArray,
-        *,
-        config: PlotConfigIR = None,
-        **kwargs
-):
-    return base_plotting.plot_signal_array_3D(array, config=config, _default_config=PlotConfigIR, **kwargs)
+def plot_peaks(peaks: ResultPeakBound, *, fig=None, config=PlotConfig()):
+    if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
+        from chem_analysis.base_obj.plotting_plotly import plotly_peaks
+        return plotly_peaks(fig, peaks, config)
 
-
-def plot_signal_array_surface(
-        array: IRSignalArray,
-        *,
-        config: PlotConfigIR = None,
-        **kwargs
-):
-    return base_plotting.plot_signal_array_surface(array, config=config, _default_config=PlotConfigIR, **kwargs)
-
-
-def plot_signal(
-        signal: IRSignal,
-        *,
-        config: PlotConfigIR = None,
-        **kwargs
-):
-    return base_plotting.plot_signal(signal, config=config, _default_config=PlotConfigIR, **kwargs)
+    raise NotImplementedError()

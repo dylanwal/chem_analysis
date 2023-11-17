@@ -39,5 +39,6 @@ class IRSignalArray(SignalArray):
     def get_signal(self, index: int) -> IRSignal:
         sig = IRSignal(x_raw=self.x, y_raw=self.data[index, :], x_label=self.x_label, y_label=self.y_label,
                        name=f"time: {self.time[index]}", id_=index)
-        sig.processor = self.processor
+        sig.time = self.time[index]
+        sig.processor = self.processor.get_copy()
         return sig
