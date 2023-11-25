@@ -66,6 +66,9 @@ class Polynomial(BaselineCorrection):
         return x, y
 
 
+
+
+
 # Bernstein polynomial (order = 3)
 # Splines
 # multipoint

@@ -1,16 +1,16 @@
+from typing import Iterable
 
 import numpy as np
 from scipy.spatial import ConvexHull
 
+from chem_analysis.processing.baselines.base import BaselineCorrection
+from chem_analysis.processing.weigths.weights import DataWeights
 
-def hyperConvexHullRemoval(U, wavelengths):
+
+def convex_hull_removal(U, wavelengths):
     """
      Performs spectral normalization via convex hull removal
 
-    References
-    Clark, R.N. and T.L. Roush (1984) Reflectance Spectroscopy: Quantitative
-    Analysis Techniques for Remote Sensing Applications, J. Geophys. Res., 89,
-    6329-6340.
     Parameters
     ----------
     U(p x q)
@@ -19,6 +19,12 @@ def hyperConvexHullRemoval(U, wavelengths):
     Returns
     -------
     (p x q)
+
+    Reference
+    ---------
+    Clark, R.N. and T.L. Roush (1984) Reflectance Spectroscopy: Quantitative
+    Analysis Techniques for Remote Sensing Applications, J. Geophys. Res., 89, 6329-6340.
+
     """
     # Metadata and formatting
     wavelengths = np.reshape(wavelengths, (-1, 1))
@@ -54,5 +60,19 @@ def hyperConvexHullRemoval(U, wavelengths):
 
     return normalizedU.T
 
-# Example usage:
-# normalizedU = hyperConvexHullRemoval(U, wavelengths)
+
+class ConvexHull(BaselineCorrection):
+    def __init__(self, degree: int = 1, weights: DataWeights | Iterable[DataWeights] = None):
+        super().__init__(weights)
+        self.degree = degree
+
+    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        weights = self.get_weights(x, y)
+        params = np.polyfit(x, y, self.degree, w=weights)
+        func_baseline = np.poly1d(params)
+        y_baseline = func_baseline(x)
+        y = y - y_baseline
+
+        self._y = y_baseline
+        self._x = x
+        return x, y
