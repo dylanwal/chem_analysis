@@ -81,13 +81,17 @@ class NMRSignal(Signal):
     def from_spinsolve(cls, path: pathlib.Path | str) -> NMRSignal:
         if isinstance(path, str):
             path = pathlib.Path(path)
-        from chem_analysis.nmr.parse_spinsolve import
+        from chem_analysis.nmr.parse_spinsolve import parse_spinsolve_parameters, get_spinsolve_data
         # load data from file
-        parameters = parse_acqus_file(path / "acqus")
-        data = get_fid(path / "fid")
+        parameters = parse_spinsolve_parameters(path)
+        data, is_fid = get_spinsolve_data(path)
+        if is_fid:
+            pass
+        else:
+            pass
 
         # construct NMR object
-        nmr = NMRSignal(parameters=parameters)
+        nmr = NMRSignal(data, parameters=parameters)
         nmr.load_from_raw_FID_data(data)
         return nmr
 
@@ -99,6 +103,3 @@ class NMRSignal(Signal):
             OPS.Phase0D(-90),
             OPS.Phase1D(self.parameters.shift_points, unit="time")
         ]
-
-
-

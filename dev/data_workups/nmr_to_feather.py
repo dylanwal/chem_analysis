@@ -1,10 +1,11 @@
-from dataclasses import dataclass
+
+import os
 import pathlib
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 import numpy as np
-
-from chem_analysis.nmr.parameters import NMRParameters, NMRExperiments
+import pyarrow as pa
 
 
 @dataclass(slots=True)
@@ -114,78 +115,80 @@ def parse_acqu_file(path: pathlib.Path) -> SpinSolveParameters:
     return SpinSolveParameters(**parameters)
 
 
-def get_nmr_experiment(parameters: SpinSolveParameters) -> NMRExperiments:
-    if parameters.Protocol == "1D EXTENDED+":
-        return NMRExperiments.PROTON
+def process_one(path: pathlib.Path) -> tuple[float, np.ndarray]:
+    parameters = parse_acqu_file(path)
 
-    return NMRExperiments.UNKNOWN
+    data = np.loadtxt(path / "spectrum_processed.csv", delimiter=",", skiprows=1)
 
-
-def parse_spinsolve_parameters(path: pathlib.Path) -> NMRParameters:
-    spinsolve = parse_acqu_file(path)
-    parameters = NMRParameters()
-
-    parameters.solvent = spinsolve.Solvent
-    parameters.sample_name = spinsolve.Sample
-    parameters.date_start = spinsolve.startTime
-    parameters.date_end = spinsolve.CurrentTime
-    parameters.spectrometer_frequency = spinsolve.b1Freq
-    parameters.type_ = get_nmr_experiment(spinsolve)
-
-    parameters.number_scans = spinsolve.nrScans
-    parameters.pulse_width = spinsolve.pulseLength  # TODO: check
-    parameters.repetition_delay = spinsolve.dwellTime
-    parameters.acquisition_time = spinsolve.repTime - spinsolve.dwellTime
-    parameters.pulse_angle = spinsolve.pulseAngle
-    parameters.number_points = spinsolve.nrPnts
-
-    return parameters
+    return parameters.CurrentTime.timestamp(), data
 
 
-def get_spinsolve_data(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
-    if (path / "nmr_fid.dx").exists():
-        pass  # TODO: JCAMP-DX is the IUPAC standard format https://iupac.org/what-we-do/digital-standards/jcamp-dx/
-        # return
+def process_many(path: pathlib.Path):
+    files = tuple(os.scandir(path))
+    files = sorted(files, key=lambda x: int(x.name[1:]))
+    times = np.empty(len(files))
+    ppm = None
+    data = None
+    ppm_slice = slice(-2, 12)  # ppm
+    ppm_slice_index = None
+    for i, file in enumerate(files):
+        t, d = process_one(path / file.name)
 
-    # 1d files
-    options = ["data.1d", "spectrum.1d", "spectrum_processed.1d"]
-    for option in options:
-        path_ = path / option
-        if path_.exists():
-            break
-    else:
-        raise ValueError("No valid data file found")
+        if ppm is None:
+            ppm = d[:, 0]
+            ppm_slice_index = slice(np.argmin(np.abs(ppm-ppm_slice.start)), np.argmin(np.abs(ppm-ppm_slice.stop)))
+            ppm = ppm[ppm_slice_index]
+            data = np.empty((len(files), len(ppm)), dtype=d.dtype)
+        data[i, :] = d[ppm_slice_index, 1]
+        times[i] = t
+        print(i, ":", len(files), "done")
 
-    with open(path_, "rb") as f:
-        raw_data = f.read()
-
-    # first 32 bytes are parameters
-    keys = ["owner", "format", "version", "dataType", "xDim", "yDim", "zDim", "qDim"]
-    dict_ = dict()
-    for i, k in enumerate(keys):
-        dict_[k] = int.from_bytes(raw_data[i * 4:i * 4 + 4], "little")
-    data = np.frombuffer(raw_data[32:], "<f")
-
-    # The first 1/3 of the file is xaxis
-    split = int(data.shape[-1] / 3)
-    x = data[0: split]
-
-    # Then real and imaginary data points interleaved
-    y = data[split:: 2] + 1j * data[split + 1:: 2]
-
-    return x, y
+    return times, ppm, data
 
 
-def is_spin_solve_file(path: pathlib.Path) -> bool:
-    target_string = "Spinsolve"
-    try:
-        with open(path / "nmr_fid.dx", 'r') as file:
-            for line_number, line in enumerate(file):
-                if target_string in line:
-                    return True
-                if line_number > 10:
-                    break
-    except FileNotFoundError:
-        pass
+def pack_time_series(x: np.ndarray, time_: np.ndarray, z: np.array) -> np.ndarray:
+    data = np.empty((len(time_) + 1, len(x) + 1), dtype=z.dtype)
+    data[0, 0] = 0
+    data[0, 1:] = x
+    data[1:, 0] = time_
+    data[1:, 1:] = z
+    return data
 
-    return False
+
+def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path):
+    """
+    Save numpy array to feather file
+
+    Parameters
+    ----------
+    array_:
+        numpy array
+    file_path:
+        file path
+    """
+    if not isinstance(file_path, pathlib.Path):
+        file_path = pathlib.Path(file_path)
+    if file_path.suffix != ".feather":
+        file_path = file_path.with_suffix(".feather")
+
+    arrays = [pa.array(col) for col in array_]
+    names = [str(i) for i in range(len(arrays))]
+    batch = pa.RecordBatch.from_arrays(arrays, names=names)
+    with pa.OSFile(str(file_path), 'wb') as sink:
+        with pa.RecordBatchStreamWriter(sink, batch.schema) as writer:
+            writer.write_batch(batch)
+
+
+def main():
+    path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2-7")
+    times, ppm, data = process_many(path)
+    data = pack_time_series(ppm, times, data)
+
+    # save
+    # np.savetxt("DW2_5_1_NMR.csv", data, delimiter=",")
+    numpy_to_feather(data, r"C:\Users\nicep\Desktop\DW2_flow_rate_NMR.feather")
+    print("done")
+
+
+if __name__ == "__main__":
+    main()

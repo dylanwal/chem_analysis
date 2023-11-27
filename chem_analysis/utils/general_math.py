@@ -5,6 +5,22 @@ import numpy as np
 MIN_FLOAT = np.finfo(float).eps
 
 
+def pack_time_series(x: np.ndarray, time_: np.ndarray, z: np.array) -> np.ndarray:
+    data = np.empty((len(time_) + 1, len(x) + 1), dtype=z.dtype)
+    data[0, 0] = 0
+    data[0, 1:] = x
+    data[1:, 0] = time_
+    data[1:, 1:] = z
+    return data
+
+
+def unpack_time_series(data: np.array) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    x = data[0, 1:]
+    time_ = data[1:, 0]
+    z = data[1:, 1:]
+    return x, time_, z
+
+
 def check_for_flip(x: np.ndarray, y: np.ndarray):
     """flip data if giving backwards; it should be low to high"""
     if x[0] > x[-1]:

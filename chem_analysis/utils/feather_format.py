@@ -5,6 +5,8 @@ from typing import Sequence
 import numpy as np
 import pyarrow as pa
 
+from chem_analysis.utils.general_math import unpack_time_series
+
 
 def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path):
     """
@@ -51,22 +53,6 @@ def feather_to_numpy(file_path: str | pathlib.Path) -> np.ndarray:
     for col in range(table.num_columns):
         data[col, :] = table.column(str(col))
     return data
-
-
-def pack_time_series(x: np.ndarray, time_: np.ndarray, z: np.array) -> np.ndarray:
-    data = np.empty((len(time_) + 1, len(x) + 1), dtype=z.dtype)
-    data[0, 0] = 0
-    data[0, 1:] = x
-    data[1:, 0] = time_
-    data[1:, 1:] = z
-    return data
-
-
-def unpack_time_series(data: np.array) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    x = data[0, 1:]
-    time_ = data[1:, 0]
-    z = data[1:, 1:]
-    return x, time_, z
 
 
 def unpack_and_merge_time_series_feather_files(paths: Sequence[str | pathlib.Path]) \
