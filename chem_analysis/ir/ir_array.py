@@ -13,11 +13,14 @@ class IRSignalArray(SignalArray):
                  x_raw: np.ndarray,
                  time_raw: np.ndarray,
                  data_raw: np.ndarray,
-                 x_label: str = "wave_number",
-                 y_label: str = "time",
-                 z_label: str = "absorbance",
+                 x_label: str = None,
+                 y_label: str = None,
+                 z_label: str = None,
                  name: str = None
                  ):
+        x_label = x_label or "wave_number"
+        y_label = y_label or "time"
+        z_label = z_label or "absorbance"
         super().__init__(x_raw, time_raw, data_raw, x_label, y_label, z_label, name)
 
     @property

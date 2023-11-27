@@ -1,4 +1,5 @@
 import pathlib
+from typing import Sequence
 
 import numpy as np
 
@@ -11,6 +12,7 @@ class SignalArray:
     """
     A grouping of Signals where each Signal occurred at a different time interval.
     """
+    _signal = Signal
     _peak_type = PeakBoundedStats
 
     def __init__(self,
@@ -26,9 +28,9 @@ class SignalArray:
         self.x_raw = x_raw
         self.time_raw = time_raw
         self.raw_data = data_raw
-        self.x_label = x_label if x_label is not None else "x_axis"
-        self.y_label = y_label if y_label is not None else "time"
-        self.z_label = z_label if z_label is not None else "z_axis"
+        self.x_label = x_label or "x_axis"
+        self.y_label = y_label or "time"
+        self.z_label = z_label or "z_axis"
 
         self.processor = Processor()
         self._x = None
@@ -74,21 +76,83 @@ class SignalArray:
         sig = Signal(x_raw=self.x, y_raw=self.data[index, :], x_label=self.x_label,
                      y_label=self.y_label, name=f"time: {self.time[index]}", id_=index)
         sig.processor = self.processor.get_copy()
+        sig.time_ = self.time[index]
         return sig
 
     @classmethod
+    def from_signals(cls, signals: Sequence[Signal]):
+        # TODO: add interplation option
+        x = signals[0].x
+        x_label = signals[0].x_label
+        z_label = signals[0].y_label
+
+        time_ = np.empty(len(signals))
+        data = np.empty((len(signals), len(x)), dtype=signals[0].y.dtype)
+        for i, sig in enumerate(signals):
+            if np.all(sig.x != x):
+                raise ValueError(f"Signal {i} has a different x-axis than first signal.")
+            data[i, :] = sig.y
+            if hasattr(sig, "time_"):
+                time_[i] = sig.time_
+            else:
+                time_[i] = i
+
+        return cls(x_raw=x, time_raw=time_, data_raw=data, x_label=x_label, z_label=z_label)
+
+    @classmethod
     def from_file(cls, path: str | pathlib.Path):
-        from chem_analysis.utils.feather_format import feather_to_numpy, unpack_time_series
+        from chem_analysis.utils.feather_format import feather_to_numpy
+        from chem_analysis.utils.general_math import unpack_time_series
+
         if isinstance(path, str):
             path = pathlib.Path(path)
 
         if path.suffix == ".csv":
             data = np.loadtxt(path, delimiter=",")
             x, time_, data = unpack_time_series(data)
+            x_label = y_label = z_label = None
+
         elif path.suffix == ".feather":
-            data = feather_to_numpy(path)
+            data, names = feather_to_numpy(path)
             x, time_, data = unpack_time_series(data)
+            if names[0] != "0":
+                x_label = names[0]
+                y_label = names[1]
+                z_label = names[2]
+            else:
+                x_label = y_label = z_label = None
+
+        elif path.suffix == ".npy":
+            data = np.load(str(path))
+            x, time_, data = unpack_time_series(data)
+            x_label = y_label = z_label = None
         else:
             raise NotImplemented("File type currently not supported.")
 
-        return cls(x, time_, data)
+        return cls(x_raw=x, time_raw=time_, data_raw=data, x_label=x_label, y_label=y_label, z_label=z_label)
+
+    def to_feather(self, path: str | pathlib.Path):
+        from chem_analysis.utils.feather_format import numpy_to_feather
+        from chem_analysis.utils.general_math import pack_time_series
+
+        headers = list(str(0) for i in range(len(self.x)))
+        headers[0] = self.x_label
+        headers[1] = self.y_label
+        headers[2] = self.z_label
+
+        numpy_to_feather(pack_time_series(self.x, self.time, self.data), path, headers=headers)
+
+    def to_csv(self, path: str | pathlib.Path, **kwargs):
+        from chem_analysis.utils.general_math import pack_time_series
+
+        if "encodings" not in kwargs:
+            kwargs["encoding"] = "utf-8"
+        if "delimiter" not in kwargs:
+            kwargs["delimiter"] = ","
+
+        np.savetxt(path, pack_time_series(self.x, self.time, self.data), **kwargs)  # noqa
+
+    def to_npy(self, path: str | pathlib.Path, **kwargs):
+        from chem_analysis.utils.general_math import pack_time_series
+
+        np.save(path, pack_time_series(self.x, self.time, self.data), **kwargs)

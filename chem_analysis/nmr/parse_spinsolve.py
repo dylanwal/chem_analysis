@@ -142,10 +142,10 @@ def parse_spinsolve_parameters(path: pathlib.Path) -> NMRParameters:
     return parameters
 
 
-def get_spinsolve_data(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
+def get_spinsolve_data(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray, bool]:
     if (path / "nmr_fid.dx").exists():
         pass  # TODO: JCAMP-DX is the IUPAC standard format https://iupac.org/what-we-do/digital-standards/jcamp-dx/
-        # return
+        # return x, y, True
 
     # 1d files
     options = ["data.1d", "spectrum.1d", "spectrum_processed.1d"]
@@ -173,7 +173,12 @@ def get_spinsolve_data(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
     # Then real and imaginary data points interleaved
     y = data[split:: 2] + 1j * data[split + 1:: 2]
 
-    return x, y
+    return x, y, False
+
+
+def get_spinsolve_data_csv(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
+    data = np.loadtxt(path / "spectrum_processed.csv", delimiter=",", skiprows=1)
+    return data[:, 0], data[:, 1]
 
 
 def is_spin_solve_file(path: pathlib.Path) -> bool:

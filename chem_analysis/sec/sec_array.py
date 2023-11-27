@@ -19,11 +19,14 @@ class SECSignalArray(SignalArray):
                  data_raw: np.ndarray,
                  calibration: SECCalibration = None,
                  type_: SECTypes = SECTypes.UNKNOWN,
-                 x_label: str = "retention_time",
-                 y_label: str = "time",
-                 z_label: str = "signal",
+                 x_label: str = None,
+                 y_label: str = None,
+                 z_label: str = None,
                  name: str = None
                  ):
+        x_label = x_label or "retention_time"
+        y_label = y_label or "time"
+        z_label = z_label or "signal"
         super().__init__(x_raw, time_raw, data_raw, x_label, y_label, z_label, name)
         self.calibration = calibration
         self.type_ = type_

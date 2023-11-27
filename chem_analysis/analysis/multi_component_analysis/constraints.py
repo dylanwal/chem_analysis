@@ -30,12 +30,20 @@ class ConstraintNonneg(Constraint):
         Make copy of input data, A; otherwise, overwrite (if mutable)
     """
 
-    def __init__(self, copy=False):
+    def __init__(self, index=None, copy=False):
         """ A must be non-negative"""
         super().__init__(copy)
+        self.index = index
 
     def transform(self, A):
         """ Apply nonnegative constraint"""
+        if self.index is not None:
+            if self.copy:
+                A = np.copy(A)
+            selected_columns = A[:, self.index]
+            A[:, self.index] = selected_columns * (selected_columns > 0)
+            return A
+
         if self.copy:
             return A * (A > 0)
         else:
@@ -736,32 +744,25 @@ class ConstraintConv(Constraint):
         Make copy of input data, A; otherwise, overwrite (if mutable)
     """
 
-    def __init__(self, copy=False):
+    def __init__(self, index=None, copy=False):
         """ A must be non-negative"""
         super().__init__(copy)
+        self.index = index
 
     def transform(self, A):
         """ Apply nonnegative constraint"""
-        if self.copy:
-            B = np.copy(A)
-            for i, row in enumerate(B):
-                total = np.sum(row)
-                B[i] = B[i] / total
-            return B
-        else:
-            for i, row in enumerate(A):
-                total = np.sum(row)
-                A[i] = A[i] / total
+        if self.index is not None:
+            if self.copy:
+                A = np.copy(A)
+            selected_columns = A[:, self.index]
+            row_sums = selected_columns.sum(axis=1)
+            selected_columns /= row_sums[:, np.newaxis]
+            A[:, self.index] = selected_columns
             return A
-        
 
-if __name__ == '__main__':  # pragma: no cover
-    A = np.array([[1, 2, 3, 4], [4, 5, 6, 7], [7, 8, 9, 10]]).astype(float)
-    A_transform = np.array([[1, 2, 3, 4], [4, 0, 0, 0], [0, 0, 0, 0]]).astype(float)
-
-    constr = ConstraintCutAbove(copy=True, value=4)
-    out = constr.transform(A)
-
-    from numpy.testing import assert_allclose as _assert_allclose
-
-    _assert_allclose(out, A_transform)
+        row_sums = A.sum(axis=1)
+        if self.copy:
+            return A / row_sums[:, np.newaxis]
+        else:
+            A /= row_sums[:, np.newaxis]
+            return A

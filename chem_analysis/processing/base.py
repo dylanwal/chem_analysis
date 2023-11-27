@@ -11,7 +11,12 @@ from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 class ProcessingMethod(MixinSubClassList, abc.ABC):
 
     @abc.abstractmethod
-    def run(self, *args, **kwargs):
+    def run(self, x: np.ndarray, y: np.ndarray, **kwargs) -> tuple[np.ndarray, np.ndarray]:
+        ...
+
+    @abc.abstractmethod
+    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray | None = None, **kwargs) \
+            -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         ...
 
 
@@ -54,7 +59,7 @@ class Processor:
             if z is None:
                 x, y = method.run(x, y)
             else:
-                x, y, z = method.run(x, y, z)
+                x, y, z = method.run_array(x, y, z)
 
         self.processed = True
         if z is None:

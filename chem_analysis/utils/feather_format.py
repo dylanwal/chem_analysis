@@ -8,7 +8,7 @@ import pyarrow as pa
 from chem_analysis.utils.general_math import unpack_time_series
 
 
-def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path):
+def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path, headers: Sequence[str] = None):
     """
     Save numpy array to feather file
 
@@ -23,16 +23,23 @@ def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path):
         file_path = pathlib.Path(file_path)
     if file_path.suffix != ".feather":
         file_path = file_path.with_suffix(".feather")
+    if headers is None:
+        headers = [str(i) for i in range(array_.shape[1])]
+    else:
+        if len(headers) != array_.shape[1]:
+            raise ValueError(f"header need to be the same length as array_.shape[1]."
+                             f"\n\tExpected: {array_.shape[1]}"
+                             f"\n\tGiven: {len(headers)}"
+                             )
 
     arrays = [pa.array(col) for col in array_]
-    names = [str(i) for i in range(len(arrays))]
-    batch = pa.RecordBatch.from_arrays(arrays, names=names)
+    batch = pa.RecordBatch.from_arrays(arrays, names=headers)
     with pa.OSFile(str(file_path), 'wb') as sink:
         with pa.RecordBatchStreamWriter(sink, batch.schema) as writer:
             writer.write_batch(batch)
 
 
-def feather_to_numpy(file_path: str | pathlib.Path) -> np.ndarray:
+def feather_to_numpy(file_path: str | pathlib.Path) -> tuple[np.ndarray, list[str]]:
     """
 
     Parameters
@@ -49,10 +56,10 @@ def feather_to_numpy(file_path: str | pathlib.Path) -> np.ndarray:
 
     source = pa.memory_map(file_path, 'r')
     table = pa.ipc.RecordBatchStreamReader(source).read_all()
-    data = np.empty((table.num_columns, table.num_rows))
+    data = np.empty(np.flip(table.shape))
     for col in range(table.num_columns):
         data[col, :] = table.column(str(col))
-    return data
+    return data, table.column_names
 
 
 def unpack_and_merge_time_series_feather_files(paths: Sequence[str | pathlib.Path]) \

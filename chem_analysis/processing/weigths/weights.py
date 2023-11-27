@@ -1,8 +1,9 @@
 import abc
-from typing import Iterable, Callable
+from typing import Iterable, Callable, Sequence
 
 import numpy as np
 
+from chem_analysis.utils.general_math import get_slice
 from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 import chem_analysis.processing.weigths.penalty_functions as penalty_functions
 
@@ -39,7 +40,7 @@ class DataWeights(MixinSubClassList, abc.ABC):
         # avoid divide by zero
         if replace_zero is None:
             replace_zero = np.min(weights[weights > 0]) * 0.9
-            # 0.9 is just to make it just a bit smaller than smallest value
+            # 0.9 is just to make it just a bit smaller than the smallest value
 
         mask = weights == 0
         weights[mask] = replace_zero
@@ -48,27 +49,76 @@ class DataWeights(MixinSubClassList, abc.ABC):
 
     def apply_as_mask(self, x: np.ndarray, y: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray]:
+        """ Only use first row of mask because not returning multiple x. """
         if self.normalized:
             weights = self.get_normalized_weights(x, y)
         else:
             weights = self.get_weights(x, y)
 
-        indexes = weights <= self.threshold
-        return x[indexes], y[indexes]
+        indexes = weights >= self.threshold
+        if len(y.shape) == 1:
+            return x[indexes], y[indexes]
+        return x[indexes[0, :]], y[:, indexes[0, :]]
 
 
 class Slices(DataWeights):
-    def __init__(self, slices: slice | Iterable[slice], threshold: float = 0.5, normalized: bool = True):
+    def __init__(self,
+                 slices: slice | Iterable[slice],
+                 threshold: float = 0.5,
+                 normalized: bool = True,
+                 invert: bool = False
+                 ):
         super().__init__(threshold, normalized)
         self.slices = slices
+        self.invert = invert
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        weights = np.ones_like(y)
-        if isinstance(self.slices, list):
-            for slice_ in self.slices:
-                weights[slice_] = 0
+        if not isinstance(self.slices, list):
+            slices = [self.slices]
         else:
-            weights[self.slices] = 0
+            slices = self.slices
+
+        weights = np.ones_like(y)
+
+        for slice_ in slices:
+            if len(y.shape) == 1:
+                weights[slice_] = 0
+            else:
+                weights[:, slice_] = 0
+
+        if self.invert:
+            return np.logical_not(weights)
+        return weights
+
+
+class Spans(DataWeights):
+    def __init__(self,
+                 x_spans: Sequence[float] | Iterable[Sequence[float]] = None,  # Sequence of length 2
+                 threshold: float = 0.5,
+                 normalized: bool = True,
+                 invert: bool = False
+                 ):
+        super().__init__(threshold, normalized)
+        self.x_spans = x_spans
+        self.invert = invert
+
+    def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        if not isinstance(self.x_spans, list):
+            x_spans = [self.x_spans]
+        else:
+            x_spans = self.x_spans
+
+        weights = np.ones_like(y)
+
+        for x_span in x_spans:
+            slice_ = get_slice(x, x_span[0], x_span[1])
+            if len(y.shape) == 1:
+                weights[slice_] = 0
+            else:
+                weights[:, slice_] = 0
+
+        if self.invert:
+            return np.logical_not(weights)
         return weights
 
 

@@ -116,13 +116,35 @@ class Signal:
             x, y, x_label, y_label = load_csv(path)
         elif path.suffix == ".feather":
             from chem_analysis.utils.feather_format import feather_to_numpy
-            data = feather_to_numpy(path)
-            x, y,  = data[:, 0], data[:, 1]
-            x_label, y_label = None, None
+            data, headers = feather_to_numpy(path)
+            x, y = data[:, 0], data[:, 1]
+            if headers[0] != "0":
+                x_label = headers[0]
+                y_label = headers[1]
+            else:
+                x_label = y_label = None
+        elif path.suffix == ".npy":
+            x, y = np.load(str(path))
+            x_label = y_label = None
         else:
             raise NotImplemented("File type currently not supported.")
 
         return cls(x, y, x_label=x_label, y_label=y_label)
+
+    def to_feather(self, path: str | pathlib.Path):
+        from chem_analysis.utils.feather_format import numpy_to_feather
+
+        headers = [self.x_label, self.y_label]
+        numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
+
+    def to_csv(self, path: str | pathlib.Path, headers: bool = False, encoding: str = "utf-8"):
+        kwargs = {"encoding": encoding}
+        if headers:
+            kwargs["headers"] = [self.x_label, self.y_label]
+        np.savetxt(path, np.column_stack((self.x, self.y)), delimiter=",", **kwargs)
+
+    def to_npy(self, path: str | pathlib.Path, **kwargs):
+        np.save(path, np.column_stack((self.x, self.y)), **kwargs)
 
 
 def load_csv(path: pathlib):
@@ -158,3 +180,4 @@ def load_csv(path: pathlib):
     data_array = np.array(data)
 
     return data_array[:, 0], data_array[:, 1], x_label, y_label
+
