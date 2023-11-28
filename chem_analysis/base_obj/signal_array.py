@@ -73,7 +73,7 @@ class SignalArray:
         return len(self.time_raw)
 
     def get_signal(self, index: int) -> Signal:
-        sig = Signal(x_raw=self.x, y_raw=self.data[index, :], x_label=self.x_label,
+        sig = Signal(x_raw=self.x_raw, y_raw=self.raw_data[index, :], x_label=self.x_label,
                      y_label=self.y_label, name=f"time: {self.time[index]}", id_=index)
         sig.processor = self.processor.get_copy()
         sig.time_ = self.time[index]

@@ -8,53 +8,30 @@ from chem_analysis.processing.base import ProcessingMethod
 
 
 class Smoothing(ProcessingMethod, abc.ABC):
-
-    @abc.abstractmethod
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        ...
-
-
-class Exponential(Smoothing):
-    def __init__(self, a: int | float = 0.8):
-        """
-        The exponential filter is a weighted combination of the previous estimate (output) with the newest input data,
-        with the sum of the weights equal to 1 so that the output matches the input at steady state.
-
-        Parameters
-        ----------
-        a:
-            smoothing constant
-            a is a constant between 0 and 1, normally between 0.8 and 0.99
-        """
-        self.a = a
-        self._other_a = 1-a
-
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        raise NotImplementedError()
-
-    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        for row in range(1, z.shape[0]):
-            z[:, row] = self.a * z[:, row - 1] + self._other_a * z[:, row]
-        return x, y, z
-
-    def run_2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        raise NotImplementedError()
+    ...
 
 
 class Gaussian(Smoothing):
     def __init__(self, sigma: float | int = 10):
+        """
+
+        Parameters
+        ----------
+        sigma
+            Standard deviation for Gaussian kernel.
+        """
         self.sigma = sigma
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x, gaussian_filter(y, self.sigma)
 
     def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        for row in range(z.shape[0]):
-            _, z[row, :] = self.run(x, z[row, :])
+        for i in range(z.shape[0]):
+            _, z[i, :] = self.run(x, z[i, :])
         return x, y, z
 
-    def run_2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return x, y, gaussian_filter(z, self.sigma)
+    # def run_2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    #     return x, y, gaussian_filter(z, self.sigma)
 
 
 class SavitzkyGolay(Smoothing):
@@ -95,12 +72,36 @@ class SavitzkyGolay(Smoothing):
                              f"equal to the first dimension of z ({len(z.shape[0])}).")
         return x, y, savgol_filter(z, self.window_length, self.order, axis=0)
 
-    def run_2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        # TODO: double check if this truely does 2D
-        if self.window_length > len(z.shape[0]) or self.window_length > len(z.shape[1]):
-            raise ValueError(f"'SavitzkyGolay.window_length'({self.window_length}) must be less than or "
-                             f"equal to both dimensions of z ({len(z.shape)}).")
-        return x, y, savgol_filter(z, self.window_length, self.order)
+    # def run_2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    #     # TODO: double check if this truely does 2D
+    #     if self.window_length > len(z.shape[0]) or self.window_length > len(z.shape[1]):
+    #         raise ValueError(f"'SavitzkyGolay.window_length'({self.window_length}) must be less than or "
+    #                          f"equal to both dimensions of z ({len(z.shape)}).")
+    #     return x, y, savgol_filter(z, self.window_length, self.order)
+
+
+class ExponentialTime(Smoothing):
+    def __init__(self, a: int | float = 0.8):
+        """
+        The exponential filter is a weighted combination of the previous estimate (output) with the newest input data,
+        with the sum of the weights equal to 1 so that the output matches the input at steady state.
+
+        Parameters
+        ----------
+        a:
+            smoothing constant
+            a is a constant between 0 and 1, normally between 0.8 and 0.99
+        """
+        self.a = a
+        self._other_a = 1-a
+
+    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError("Only valid for SignalArrays")
+
+    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        for row in range(1, z.shape[0]):
+            z[:, row] = self.a * z[:, row - 1] + self._other_a * z[:, row]
+        return x, y, z
 
 
 class LineBroadening(Smoothing):

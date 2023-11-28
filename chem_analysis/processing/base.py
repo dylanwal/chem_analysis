@@ -11,12 +11,11 @@ from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 class ProcessingMethod(MixinSubClassList, abc.ABC):
 
     @abc.abstractmethod
-    def run(self, x: np.ndarray, y: np.ndarray, **kwargs) -> tuple[np.ndarray, np.ndarray]:
+    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         ...
 
     @abc.abstractmethod
-    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray | None = None, **kwargs) \
-            -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         ...
 
 

@@ -25,7 +25,7 @@ class NMRSignalArray(SignalArray):
         super().__init__(x_raw, time_raw, data_raw, x_label, y_label, z_label, name)
 
     def get_signal(self, index: int) -> NMRSignal:
-        sig = NMRSignal(x_raw=self.x, y_raw=self.data[index, :], x_label=self.x_label, y_label=self.y_label,
+        sig = NMRSignal(x_raw=self.x_raw, y_raw=self.raw_data[index, :], x_label=self.x_label, y_label=self.y_label,
                        name=f"time: {self.time[index]}", id_=index)
         sig.time = self.time[index]
         sig.processor = self.processor.get_copy()

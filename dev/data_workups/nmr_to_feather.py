@@ -189,6 +189,28 @@ def main():
     numpy_to_feather(data, r"C:\Users\nicep\Desktop\DW2_flow_rate_NMR.feather")
     print("done")
 
+import chem_analysis as ca
+
+def load_many(path: pathlib.Path):
+    files = tuple(os.scandir(path))
+    files = sorted(files, key=lambda x: int(x.name[1:]))
+    nmr_signals = []
+    for file in files:
+        nmr_ = ca.nmr.NMRSignal.from_spinsolve_csv(file.path)
+        nmr_signals.append(nmr_)
+        if len(nmr_signals) == 10:
+            break
+
+    return ca.nmr.NMRSignalArray.from_signals(nmr_signals)
+
+
+def main2():
+    path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2-7")
+    data = load_many(path)
+    data.processor.add(ca.processing.re_sampling.CutSpans(x_spans=(-2, 12), invert=True))
+
+    data.to_npy(r"C:\Users\nicep\Desktop\DW2-7\nmr_data.npy")
+
 
 if __name__ == "__main__":
-    main()
+    main2()

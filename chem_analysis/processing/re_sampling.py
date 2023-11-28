@@ -8,10 +8,7 @@ from chem_analysis.processing.weigths.weights import Slices, Spans
 
 
 class ReSampling(ProcessingMethod, abc.ABC):
-
-    @abc.abstractmethod
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        ...
+    ...
 
 
 class EveryN(ReSampling):
@@ -21,40 +18,44 @@ class EveryN(ReSampling):
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x[::self.n], y[::self.n]
 
+    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return x[::self.n], y, z[:, ::self.n]
+
 
 class CutSlices(ReSampling):
     def __init__(self,
                  slices: slice | Iterable[slice],
-                 invert: bool = True
+                 invert: bool = False
                  ):
         self.slices = slices
         self.invert = invert
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        span = Slices(self.slices)
-        mask = span.apply_as_mask(x, y)
+        slice_ = Slices(self.slices, invert=self.invert)
+        return slice_.apply_as_mask(x, y)
 
-        if len(y.shape) == 1:
-            return x[mask], y[mask]
-        return x[mask], y[:, mask]
+    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        slice_ = Slices(self.slices, invert=self.invert)
+        x, z = slice_.apply_as_mask(x, z)
+        return x, y, z
 
 
 class CutSpans(ReSampling):
     def __init__(self,
                  x_spans: Sequence[float] | Iterable[Sequence[float]] = None,  # Sequence of length 2
-                 invert: bool = True
+                 invert: bool = False
                  ):
         self.x_spans = x_spans
         self.invert = invert
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        span = Spans(self.x_spans)
-        mask = span.apply_as_mask(x, y)
+        span = Spans(self.x_spans, invert=self.invert)
+        return span.apply_as_mask(x, y)
 
-        if len(y.shape) == 1:
-            return x[mask], y[mask]
-        return x[mask], y[:, mask]
-
+    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        span = Spans(self.x_spans, invert=self.invert)
+        x, z = span.apply_as_mask(x, z)
+        return x, y, z
 
 # class FitResample(ReSampling):
 #     def __init__(self, n: int = 2):
