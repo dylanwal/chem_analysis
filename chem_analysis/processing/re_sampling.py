@@ -12,14 +12,15 @@ class ReSampling(ProcessingMethod, abc.ABC):
 
 
 class EveryN(ReSampling):
-    def __init__(self, n: int = 2):
+    def __init__(self, n: int = 2, start_index: int = 0):
         self.n = n
+        self.start_index = start_index
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x[::self.n], y[::self.n]
 
     def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return x[::self.n], y, z[:, ::self.n]
+        return x[self.start_index::self.n], y, z[:, self.start_index::self.n]
 
 
 class CutSlices(ReSampling):

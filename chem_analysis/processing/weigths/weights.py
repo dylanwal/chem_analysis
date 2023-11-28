@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 from typing import Iterable, Callable, Sequence
 
@@ -8,7 +9,7 @@ from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 import chem_analysis.processing.weigths.penalty_functions as penalty_functions
 
 
-class DataWeights(MixinSubClassList, abc.ABC):
+class DataWeightsBase(MixinSubClassList, abc.ABC):
     def __init__(self, threshold: float = 0.5, normalized: bool = True):
         self._weights = None
         self.threshold = threshold
@@ -19,16 +20,8 @@ class DataWeights(MixinSubClassList, abc.ABC):
         return self._weights
 
     @abc.abstractmethod
-    def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        ...
-
     def get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self._weights is None:
-            self._weights = self._get_weights(x, y)
-            if np.all(self._weights == 0):
-                raise ValueError(f"All weights are zero after applying {type(self).__name__}")
-
-        return self._weights
+        ...
 
     def get_normalized_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         weights = self.get_weights(x, y)
@@ -56,12 +49,83 @@ class DataWeights(MixinSubClassList, abc.ABC):
             weights = self.get_weights(x, y)
 
         indexes = weights >= self.threshold
-        if len(y.shape) == 1:
-            return x[indexes], y[indexes]
-        return x[indexes[0, :]], y[:, indexes[0, :]]
+        return x[indexes], y[indexes]
+
+    def get_weights_array(self, x: np.ndarray, _: np.ndarray, z: np.ndarray) -> np.ndarray:
+        mask = np.ones_like(z)
+        for i in range(z.shape[0]):
+            mask[i, :] = self.get_weights(x, z[i, :])
+
+        return mask
+
+    def get_normalized_weights_array(self, x: np.ndarray, _: np.ndarray, z: np.ndarray) -> np.ndarray:
+        mask = np.ones_like(z)
+        for i in range(z.shape[0]):
+            mask[i, :] = self.get_normalized_weights(x, z[i, :])
+
+        return mask
+
+    def get_inverted_weights_array(self, x: np.ndarray, _: np.ndarray, z: np.ndarray, replace_zero: float = None) \
+            -> np.ndarray:
+        mask = np.ones_like(z)
+        for i in range(z.shape[0]):
+            mask[i, :] = self.get_inverted_weights(x, z[i, :], replace_zero)
+
+        return mask
+
+    def apply_as_mask_array_index(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, index: int = 0) \
+            -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if self.normalized:
+            weights = self.get_normalized_weights(x, z[index, :])
+        else:
+            weights = self.get_weights(x, z[index, :])
+
+        indexes = weights >= self.threshold
+        return x[indexes], y, z[:, indexes]
+
+    # def apply_as_mask_array(self, x: np.ndarray, _: np.ndarray, z: np.ndarray) \
+    #         -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    #     mask = np.ones_like(z)
+    #     for i in range(z.shape[0]):
+    #         x, z = self.apply_as_mask(x, z[i, :])
+    #
+    #     return x, y, z
+    # TODO: x is no long universal
 
 
-class Slices(DataWeights):
+class DataWeight(DataWeightsBase, abc.ABC):
+
+    @abc.abstractmethod
+    def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        ...
+
+    def get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        if self._weights is None:
+            self._weights = self._get_weights(x, y)
+            if np.all(self._weights == 0):
+                raise ValueError(f"All weights are zero after applying {type(self).__name__}")
+
+        return self._weights
+
+
+class DataWeightChain(DataWeightsBase):
+    def __init__(self, weights: DataWeight | Iterable[DataWeight] | DataWeightChain = None):
+        super().__init__()
+        if weights is None:
+            weights = []
+        if not isinstance(weights, Iterable):
+            weights = list(weights)
+        self.weights_list = weights
+
+    def get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        weights = np.ones_like(y)
+        for weight in self.weights_list:
+            weights *= weight.get_weights(x, y)
+        self._weights = weights
+        return weights
+
+
+class Slices(DataWeight):
     def __init__(self,
                  slices: slice | Iterable[slice],
                  threshold: float = 0.5,
@@ -91,7 +155,7 @@ class Slices(DataWeights):
         return weights
 
 
-class Spans(DataWeights):
+class Spans(DataWeight):
     def __init__(self,
                  x_spans: Sequence[float] | Iterable[Sequence[float]] = None,  # Sequence of length 2
                  threshold: float = 0.5,
@@ -122,7 +186,7 @@ class Spans(DataWeights):
         return weights
 
 
-class MultiPoint(DataWeights):
+class MultiPoint(DataWeight):
     def __init__(self, indexes: Iterable[int], threshold: float = 0.5, normalized: bool = True):
         """
 
@@ -140,7 +204,22 @@ class MultiPoint(DataWeights):
         return weights
 
 
-class DistanceMedian(DataWeights):
+class Distance(DataWeight):
+    def __init__(self,
+                 reference_value: float | int = 0,
+                 penalty_function: Callable = penalty_functions.penalty_function_linear,
+                 threshold: float = 0.5,
+                 normalized: bool = True
+                 ):
+        super().__init__(threshold, normalized)
+        self.reference_value = reference_value
+        self.penalty_function = penalty_function
+
+    def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        return self.penalty_function(y-self.reference_value)
+
+
+class DistanceMedian(DataWeight):
     def __init__(self,
                  penalty_function: Callable = penalty_functions.penalty_function_linear,
                  threshold: float = 0.5,
@@ -174,7 +253,7 @@ def get_distance_remove(y: np.ndarray, amount: float = 0.7, speed: float = 0.1, 
     return indexes
 
 
-class AdaptiveDistanceMedian(DataWeights):
+class AdaptiveDistanceMedian(DataWeight):
     def __init__(self,
                  penalty_function: Callable = penalty_functions.penalty_function_linear,
                  amount: float = 0.5,

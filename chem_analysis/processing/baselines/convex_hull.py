@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 
 from chem_analysis.processing.baselines.base import BaselineCorrection
-from chem_analysis.processing.weigths.weights import DataWeights
+from chem_analysis.processing.weigths.weights import DataWeight
 
 
 def convex_hull_removal(U, wavelengths):
@@ -62,7 +62,7 @@ def convex_hull_removal(U, wavelengths):
 
 
 class ConvexHull(BaselineCorrection):
-    def __init__(self, degree: int = 1, weights: DataWeights | Iterable[DataWeights] = None):
+    def __init__(self, degree: int = 1, weights: DataWeight | Iterable[DataWeight] = None):
         super().__init__(weights)
         self.degree = degree
 

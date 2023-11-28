@@ -30,3 +30,14 @@ class A:
 aa = A()
 b = stuff(aa)
 
+
+
+
+import functools
+
+def func(x,y):
+    return 1
+
+new_func = functools.partial(func, cen1= 2, cen1=2)
+
+new_func()

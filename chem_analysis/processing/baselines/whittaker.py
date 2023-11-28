@@ -4,7 +4,7 @@ import numpy as np
 from scipy import sparse
 
 from chem_analysis.utils.general_math import MIN_FLOAT
-from chem_analysis.processing.weigths.weights import DataWeights
+from chem_analysis.processing.weigths.weights import DataWeight
 import chem_analysis.utils.validation as validation
 from chem_analysis.processing.baselines.base import BaselineCorrection
 
@@ -100,7 +100,7 @@ class AsymmetricLeastSquared(BaselineCorrection):
                  diff_order=2,
                  max_iter=50,
                  tol=1e-3,
-                 weights: DataWeights | Iterable[DataWeights] = None
+                 weights: DataWeight | Iterable[DataWeight] = None
                  ):
         super().__init__(weights)
         self.lambda_ = lambda_
@@ -108,6 +108,13 @@ class AsymmetricLeastSquared(BaselineCorrection):
         self.diff_order = diff_order
         self.max_iter = max_iter
         self.tol = tol
+
+    def get_baseline(self, x: np.ndarray, y: np.ndarray, weights: np.ndarray = None) -> np.ndarray:
+        if weights is None:
+            if self.weights:
+                x, y = self.weights.apply_as_mask(x, y)
+            else:
+                weights = np.ones_like(y)
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         x_, y_ = self.apply_weights(x, y)
@@ -218,7 +225,7 @@ class ImprovedAsymmetricLeastSquared(BaselineCorrection):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 weights: DataWeights | Iterable[DataWeights] = None
+                 weights: DataWeight | Iterable[DataWeight] = None
                  ):
         super().__init__(weights)
         self.lambda_ = lambda_
@@ -331,7 +338,7 @@ class ReweightedImprovedAsymmetricLeastSquared(BaselineCorrection):
                  diff_order=2,
                  max_iter=50,
                  tol=1e-3,
-                 weights: DataWeights | Iterable[DataWeights] = None
+                 weights: DataWeight | Iterable[DataWeight] = None
                  ):
         super().__init__(weights)
         self.lambda_ = lambda_
@@ -442,7 +449,7 @@ class AdaptiveAsymmetricLeastSquared(BaselineCorrection):
                  diff_order=2,
                  max_iter=50,
                  tol=1e-3,
-                 weights: DataWeights | Iterable[DataWeights] = None
+                 weights: DataWeight | Iterable[DataWeight] = None
                  ):
         super().__init__(weights)
         self.lambda_ = lambda_

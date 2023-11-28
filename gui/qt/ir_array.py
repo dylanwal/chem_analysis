@@ -1,4 +1,3 @@
-import pathlib
 import os
 
 import numpy as np
@@ -12,35 +11,11 @@ from pyqtgraph.dockarea.Dock import Dock
 from pyqtgraph.dockarea.DockArea import DockArea
 from pyqtgraph.Qt import QtCore
 
-from chem_analysis.utils.feather_format import unpack_and_merge_time_series_feather_files, feather_to_numpy, \
-    unpack_time_series
+import chem_analysis as ca
 
 
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
-
-
-class IRData:
-    def __init__(self, wavenumber, times, data):
-        self.time = times
-        self.time_zeroed = self.time - self.time[0]
-        self.wavenumber = wavenumber
-        self.data = data
-
-    @property
-    def x(self):
-        return self.wavenumber
-
-
-def load_example() -> IRData:
-    x, y, z = unpack_and_merge_time_series_feather_files(
-            [
-                r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_flow_ATIR.feather",
-                r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_flow_ATIR2.feather",
-                r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_flow_ATIR3.feather"
-            ]
-        )
-    return IRData(x, y, z)
 
 
 class CustomViewBox(pg.ViewBox):
@@ -233,7 +208,7 @@ class IRArrayView(QtWidgets.QWidget):
                                                      initialFilter="feather"
                                                      )
         print(path)
-        self.data = IRData(*unpack_time_series(feather_to_numpy(path[0])))
+        self.data = ca.ir.IRSignalArray.from_file(path[0])
         self.update()
 
     def save(self):
