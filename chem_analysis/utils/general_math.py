@@ -29,18 +29,38 @@ def check_for_flip(x: np.ndarray, y: np.ndarray):
     return x, y
 
 
-def get_slice(x: np.ndarray, start=None, end=None) \
+def get_slice(x: np.ndarray, start=None, end=None, flip: bool = True) \
         -> slice:
-    if start is None:
-        start_ = 0
-    else:
-        start_ = np.argmin(np.abs(x - start))
-    if end is None:
-        end_ = -1
-    else:
+    if start is None and end is None:
+        return slice(0, len(x))
+    elif start is None and end is not None:
         end_ = np.argmin(np.abs(x - end))
+        return slice(0, end_)
+    elif start is not None and end is None:
+        start_ = np.argmin(np.abs(x - start))
+        return slice(start_, len(x))
 
+    if flip and start > end:
+        start, end = end, start
+    start_ = np.argmin(np.abs(x - start))
+    end_ = np.argmin(np.abs(x - end))
     return slice(start_, end_)
+
+
+def map_argmax_to_original(index: int | np.ndarray, mask) -> int | np.ndarray:
+    """
+    Map the index from masked array back to the index of the original array.
+
+    Parameters:
+    - argmax_index: Index obtained from the argmax of the masked array.
+    - mask: Boolean mask indicating which elements were retained in the original array.
+
+    Returns:
+    - original_index: Index in the original array corresponding to the argmax of the masked array.
+    """
+    masked_indices = np.where(mask)[0]  # Get the indices of the retained elements
+    original_index = masked_indices[index]
+    return original_index
 
 
 def normalize_by_max(y: np.ndarray) -> np.ndarray:

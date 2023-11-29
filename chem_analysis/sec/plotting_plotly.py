@@ -16,7 +16,7 @@ def plotly_signal(fig: go.Figure, signal: SECSignal, config) -> go.Figure:
         max_ = np.max([2, np.max(signal.y[slice_])])
         min_ = np.min([0, np.min(signal.y[slice_])])
         span = (max_ - min_) * 0.05
-        fig.layout.yaxis.range = [min_-span, max_-span]
+        fig.layout.yaxis.range = [min_-span, max_+span]
 
     return fig
 

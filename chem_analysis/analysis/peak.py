@@ -10,6 +10,7 @@ from chem_analysis.utils.printing_tables import StatsTable, apply_sig_figs
 class Peak(abc.ABC):
     def __init__(self, id_: int = None):
         self.id_ = id_
+        self.stats = PeakStats(self)
 
     @property
     @abc.abstractmethod
@@ -61,6 +62,14 @@ class PeakBounded(Peak):
     def high_bound_location(self) -> float:
         return self.parent.x[self.bounds.stop]
 
+    @property
+    def max_index(self) -> int:
+        return int(np.argmax(self.parent.y)) + self.bounds.start
+
+    @property
+    def max_loc(self) -> float:
+        return self.parent.x[self.max_index - self.bounds.start]
+
     def get_stats(self) -> OrderedDict:
         dict_ = OrderedDict()
         dict_['slice'] = f"[{self.bounds.start}-{self.bounds.stop}]"
@@ -75,7 +84,7 @@ class PeakBounded(Peak):
 class PeakBoundedStats(PeakBounded):
     def __init__(self, parent: PeakParent, bounds: slice, id_: int = None):
         super().__init__(parent, bounds, id_)
-        self.stats = PeakStats(self)
+        # self.stats = PeakStats(self)
 
     def get_stats(self) -> OrderedDict:
         dict_ = super().get_stats()
@@ -108,7 +117,7 @@ class PeakStats:
         center line of the peak to the front slope;
         >1 tailing to larger values; <1 tailing to smaller numbers
     """
-    def __init__(self, parent: PeakBounded):
+    def __init__(self, parent: Peak):
         self.parent = parent
         self._y_norm = None
 
@@ -133,14 +142,6 @@ class PeakStats:
     @property
     def max_value(self) -> float:
         return np.max(self.parent.y)
-
-    @property
-    def max_index(self) -> int:
-        return int(np.argmax(self.parent.y)) + self.parent.bounds.start
-
-    @property
-    def max_loc(self) -> float:
-        return self.parent.x[self.max_index - self.parent.bounds.start]
 
     @property
     def mean(self) -> float:

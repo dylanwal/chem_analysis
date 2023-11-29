@@ -84,7 +84,7 @@ def mca_2(data: ca.base.SignalArray):
 
 def mca_2_mask(data: ca.base.SignalArray):
     t_slice = slice(0, -1)
-    x_slice = ca.utils.general_math.get_slice(data.x, start=750, end=1900)
+    x_slice = ca.utils.general_math.get_slice(data.x, start=760, end=1900)
 
     mca_times = data.time_zeroed[t_slice]
     mca_x = data.x[x_slice]
@@ -92,11 +92,13 @@ def mca_2_mask(data: ca.base.SignalArray):
 
     mask = ca.processing.weigths.Slices(
         [
-            ca.utils.general_math.get_slice(mca_x, start=870, end=1500),
-            ca.utils.general_math.get_slice(mca_x, start=1250, end=1500),
-        ]
+            ca.utils.general_math.get_slice(mca_x, start=875, end=1100),
+            ca.utils.general_math.get_slice(mca_x, start=1350, end=1500),
+        ],
     )
-    mca_x, mca_data = mask.apply_as_mask(mca_x, mca_data)
+    mask = mask.get_mask(mca_x, mca_data[0, :])
+    mca_x = mca_x[mask]
+    mca_data = mca_data[:, mask]
 
     # baseline = ca.processing.baselines.AsymmetricLeastSquared()
     # baseline.run(x=mca_x, y=mca_data[-1,:])
@@ -162,16 +164,20 @@ def main():
 
     # signal = data.get_signal(0)
     # fig = ca.ir.plot_signal(signal)
+    # fig.add_trace(go.Scatter(x=signal.x_raw, y=signal.y_raw))
     # fig.write_html("temp.html", auto_open=True)
 
     data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.01))
-    data.processor.add(ca.processing.baselines.AsymmetricLeastSquared(
-        weights=ca.processing.weigths.AdaptiveDistanceMedian()
-    ))
+    # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
+    # data.processor.add(ca.processing.smoothing.GaussianTime(sigma=1))
+    # data.processor.add(ca.processing.smoothing.ExponentialTime(a=0.7))
+    # data.processor.add(ca.processing.baselines.Polynomial(
+    #         degree=1,
+    #         weights=ca.processing.weigths.AdaptiveDistanceMedian(threshold=0.03)
+    # ))
     # data.processor.add(ca.processing.smoothing.Gaussian(sigma=2))
     # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
 
-    # data.processor.add(ca.processing.smoothing.ExponentialTime(a=0.95))
     mca_result_1 = mca_2_mask(data)
     for i in range(mca_result_1.shape[0]):
         print(mca_result_1[i, 0], mca_result_1[i, 1])

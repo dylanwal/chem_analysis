@@ -100,8 +100,31 @@ class ExponentialTime(Smoothing):
 
     def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         for row in range(1, z.shape[0]):
-            z[:, row] = self.a * z[:, row - 1] + self._other_a * z[:, row]
+            z[row, :] = self.a * z[row - 1, :] + self._other_a * z[row, :]
         return x, y, z
+
+
+class GaussianTime(Smoothing):
+    def __init__(self, sigma: float | int = 10):
+        """
+
+        Parameters
+        ----------
+        sigma
+            Standard deviation for Gaussian kernel.
+        """
+        self.sigma = sigma
+
+    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError("Only valid for SignalArrays")
+
+    def run_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        for row in range(z.shape[1]):
+            z[:, row] = gaussian_filter(z[:, row], self.sigma)
+        return x, y, z
+
+    # def run_2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    #     return x, y, gaussian_filter(z, self.sigma)
 
 
 class LineBroadening(Smoothing):

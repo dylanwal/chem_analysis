@@ -48,7 +48,7 @@ class DataWeight(MixinSubClassList, abc.ABC):
         else:
             weights = self.get_weights(x, y)
 
-        return weights >= self.threshold
+        return weights <= self.threshold
 
     # def apply_as_mask(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     #     indexes = self.get_weights(x, y)
@@ -82,7 +82,7 @@ class DataWeight(MixinSubClassList, abc.ABC):
         else:
             weights = self.get_weights_array(x, y, z)
 
-        return weights >= self.threshold
+        return weights <= self.threshold
 
     # def apply_as_mask_array_index(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, index: int = 0) \
     #         -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -150,18 +150,15 @@ class Slices(DataWeight):
         self.invert = invert
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if not isinstance(self.slices, list):
+        if not isinstance(self.slices, Iterable):
             slices = [self.slices]
         else:
             slices = self.slices
 
-        weights = np.ones_like(x)
+        weights = np.zeros_like(x, dtype=bool)
 
         for slice_ in slices:
-            if len(y.shape) == 1:
-                weights[slice_] = 0
-            else:
-                weights[:, slice_] = 0
+            weights[slice_] = 1
 
         if self.invert:
             return np.logical_not(weights)
@@ -180,19 +177,16 @@ class Spans(DataWeight):
         self.invert = invert
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if not isinstance(self.x_spans, list):
+        if not isinstance(self.x_spans[0], Iterable):
             x_spans = [self.x_spans]
         else:
             x_spans = self.x_spans
 
-        weights = np.ones_like(x)
+        weights = np.zeros_like(x, dtype=bool)
 
         for x_span in x_spans:
             slice_ = get_slice(x, x_span[0], x_span[1])
-            if len(y.shape) == 1:
-                weights[slice_] = 0
-            else:
-                weights[:, slice_] = 0
+            weights[slice_] = 1
 
         if self.invert:
             return np.logical_not(weights)

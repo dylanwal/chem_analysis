@@ -4,6 +4,9 @@ from typing import Protocol
 import numpy as np
 from scipy.signal import find_peaks
 
+from chem_analysis.utils.general_math import map_argmax_to_original
+from chem_analysis.processing.weigths.weights import DataWeight
+
 
 class SignalProtocol(Protocol):
     x: np.ndarray
@@ -40,16 +43,44 @@ def apply_limits(signal, result: ResultPeakPicking):
         remove_index = []
         for i, index in enumerate(result.indexes):
             x = signal.x[index]
-            if not (limits[0] <= x <= limits[1]):
+            if not (limits[1] <= x <= limits[0]):  # flipped cuz MW goes from big to small
                 remove_index.append(i)
         result.indexes = np.delete(result.indexes, remove_index)
 
 
 @wraps(find_peaks)
-def scipy_find_peaks(signal: SignalProtocol, ignore_limits: bool = False, **kwargs) -> ResultPeakPicking:
-    indices_of_peaks, _ = find_peaks(signal.y, **kwargs)
+def scipy_find_peaks(signal: SignalProtocol, ignore_limits: bool = False, weights: DataWeight = None, **kwargs) \
+        -> ResultPeakPicking:
+    if weights is not None:
+        mask = weights.get_mask(signal.x, signal.y)
+        y = signal.y[mask]
+    else:
+        y = signal.y
+    indices_of_peaks, _ = find_peaks(y, **kwargs)
+    if weights is not None:
+        indices_of_peaks = map_argmax_to_original(indices_of_peaks, mask)
     result = ResultPeakPicking(signal)
     result.indexes = indices_of_peaks
+
+    if not ignore_limits:
+        apply_limits(signal, result)
+
+    return result
+
+
+@wraps(find_peaks)
+def max_find_peaks(signal: SignalProtocol, ignore_limits: bool = False, weights: DataWeight = None, **kwargs) \
+        -> ResultPeakPicking:
+    if weights is not None:
+        mask = weights.get_mask(signal.x, signal.y)
+        y = signal.y[mask]
+    else:
+        y = signal.y
+    indices_of_peaks = np.argmax(y)
+    if weights is not None:
+        indices_of_peaks = map_argmax_to_original(indices_of_peaks, mask)
+    result = ResultPeakPicking(signal)
+    result.indexes = [indices_of_peaks]
 
     if not ignore_limits:
         apply_limits(signal, result)

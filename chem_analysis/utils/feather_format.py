@@ -24,9 +24,9 @@ def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path, headers:
     if file_path.suffix != ".feather":
         file_path = file_path.with_suffix(".feather")
     if headers is None:
-        headers = [str(i) for i in range(array_.shape[1])]
+        headers = [str(i) for i in range(array_.shape[0])]
     else:
-        if len(headers) != array_.shape[1]:
+        if len(headers) != array_.shape[0]:
             raise ValueError(f"header need to be the same length as array_.shape[1]."
                              f"\n\tExpected: {array_.shape[1]}"
                              f"\n\tGiven: {len(headers)}"
@@ -57,8 +57,8 @@ def feather_to_numpy(file_path: str | pathlib.Path) -> tuple[np.ndarray, list[st
     source = pa.memory_map(file_path, 'r')
     table = pa.ipc.RecordBatchStreamReader(source).read_all()
     data = np.empty(np.flip(table.shape))
-    for col in range(table.num_columns):
-        data[col, :] = table.column(str(col))
+    for i, col in enumerate(table):
+        data[i, :] = col.to_numpy()
     return data, table.column_names
 
 

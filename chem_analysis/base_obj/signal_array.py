@@ -135,7 +135,7 @@ class SignalArray:
         from chem_analysis.utils.feather_format import numpy_to_feather
         from chem_analysis.utils.general_math import pack_time_series
 
-        headers = list(str(0) for i in range(len(self.x)))
+        headers = list(str(0) for i in range(len(self.time)+1))
         headers[0] = self.x_label
         headers[1] = self.y_label
         headers[2] = self.z_label

@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from typing import Callable
 
 import numpy as np
-import scipy.optimize
+from scipy.optimize import brentq
 
 
 def check_bounds(bound: Sequence[int | float]) -> tuple[int | float, int | float]:
@@ -19,11 +19,30 @@ def check_bounds(bound: Sequence[int | float]) -> tuple[int | float, int | float
 
 
 def compute_x_bound_from_y_bound(func: Callable, y_bound: tuple[int | float, int | float]) \
-        -> tuple[int | float, int | float]:
-    # TODO: make better
-    result_lb = scipy.optimize.minimize(lambda x: np.abs(func(x) - y_bound[0]), x0=1.1)
-    result_ub = scipy.optimize.minimize(lambda x: np.abs(func(x) - y_bound[1]), x0=result_lb.x + 1)
-    return result_lb.x, result_ub.x
+        -> tuple[int | float, int | float] | None:
+    b = 100
+    for i in range(5):
+        try:
+            lb_x, result_lb = brentq(lambda x: func(x) - y_bound[0], 1, b, full_output=True)
+        except ValueError:
+            b = b*100
+            continue
+        if result_lb.converged:
+            break
+    else:
+        logging.error("Could not converge Calibration.y_bound calculation. Take cautions using the calibration.")
+        return None
+
+    try:
+        ub_x, result_ub = brentq(lambda x: func(x) - y_bound[1], 1, lb_x, full_output=True)
+        if not result_ub.converged:
+            logging.error("Could not converge Calibration.y_bound calculation. Take cautions using the calibration.")
+            return None
+    except ValueError:
+        logging.error("Could not converge Calibration.y_bound calculation. Take cautions using the calibration.")
+        return None
+
+    return lb_x, ub_x
 
 
 class Calibration:
@@ -40,8 +59,7 @@ class Calibration:
         self._x_bounds = None
         self._y_bounds = None
         self.x_bounds = x_bounds
-        if y_bounds is not None:
-            self.y_bounds = y_bounds
+        self.y_bounds = y_bounds
 
     def __repr__(self):
         text = ""
@@ -98,9 +116,9 @@ class Calibration:
                 else:
                     return 0
             else:
-                if np.min(y) < self.y_bounds[0]:
-                    y = np.where(y > self.y_bounds[0], 0, y)
-                if np.max(y) > self.y_bounds[1]:
-                    y = np.where(y < self.y_bounds[1], 0, y)
+                mask = y < self.y_bounds[0]
+                y[mask] = 0
+                mask = y > self.y_bounds[1]
+                y[mask] = 0
 
         return y

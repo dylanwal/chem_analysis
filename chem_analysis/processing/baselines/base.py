@@ -73,7 +73,7 @@ class Polynomial(BaselineCorrection):
         baseline = np.empty_like(z)
 
         if self.poly_weights is None:
-            self.poly_weights = np.ones_like(z.shape[1])
+            self.poly_weights = np.ones_like(z[0, :])
 
         if self.poly_weights.shape == z.shape:
             for i in range(z.shape[0]):
