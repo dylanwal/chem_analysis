@@ -9,19 +9,21 @@ from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 import chem_analysis.processing.weigths.penalty_functions as penalty_functions
 
 
-class DataWeightsBase(MixinSubClassList, abc.ABC):
+class DataWeight(MixinSubClassList, abc.ABC):
     def __init__(self, threshold: float = 0.5, normalized: bool = True):
-        self._weights = None
         self.threshold = threshold
         self.normalized = normalized
 
-    @property
-    def weights(self) -> np.ndarray | None:
-        return self._weights
-
     @abc.abstractmethod
-    def get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         ...
+
+    def get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        weights = self._get_weights(x, y)
+        if np.all(weights == 0):
+            raise ValueError(f"All weights are zero after applying {type(self).__name__}")
+
+        return weights
 
     def get_normalized_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         weights = self.get_weights(x, y)
@@ -40,16 +42,17 @@ class DataWeightsBase(MixinSubClassList, abc.ABC):
 
         return 1 / weights
 
-    def apply_as_mask(self, x: np.ndarray, y: np.ndarray) \
-            -> tuple[np.ndarray, np.ndarray]:
-        """ Only use first row of mask because not returning multiple x. """
+    def get_mask(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if self.normalized:
             weights = self.get_normalized_weights(x, y)
         else:
             weights = self.get_weights(x, y)
 
-        indexes = weights >= self.threshold
-        return x[indexes], y[indexes]
+        return weights >= self.threshold
+
+    # def apply_as_mask(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    #     indexes = self.get_weights(x, y)
+    #     return x[indexes], y[indexes]
 
     def get_weights_array(self, x: np.ndarray, _: np.ndarray, z: np.ndarray) -> np.ndarray:
         mask = np.ones_like(z)
@@ -73,56 +76,66 @@ class DataWeightsBase(MixinSubClassList, abc.ABC):
 
         return mask
 
-    def apply_as_mask_array_index(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, index: int = 0) \
-            -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def get_mask_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> np.ndarray:
         if self.normalized:
-            weights = self.get_normalized_weights(x, z[index, :])
+            weights = self.get_normalized_weights_array(x, y, z)
         else:
-            weights = self.get_weights(x, z[index, :])
+            weights = self.get_weights_array(x, y, z)
 
-        indexes = weights >= self.threshold
-        return x[indexes], y, z[:, indexes]
+        return weights >= self.threshold
 
-    # def apply_as_mask_array(self, x: np.ndarray, _: np.ndarray, z: np.ndarray) \
+    # def apply_as_mask_array_index(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, index: int = 0) \
     #         -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    #     mask = np.ones_like(z)
-    #     for i in range(z.shape[0]):
-    #         x, z = self.apply_as_mask(x, z[i, :])
+    #     if self.normalized:
+    #         weights = self.get_normalized_weights(x, z[index, :])
+    #     else:
+    #         weights = self.get_weights(x, z[index, :])
     #
-    #     return x, y, z
-    # TODO: x is no long universal
+    #     indexes = weights >= self.threshold
+    #     return x[indexes], y, z[:, indexes]
+    #
+    # def apply_as_mask_array(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) \
+    #         -> tuple[list[np.ndarray], np.ndarray, list[np.ndarray]]:
+    #     """
+    #     Size of x and z are different so treated separately
+    #
+    #     Parameters
+    #     ----------
+    #     x
+    #     y
+    #     z
+    #
+    #     Returns
+    #     -------
+    #
+    #     """
+    #     x_list = []
+    #     z_list = []
+    #     for i in range(z.shape[0]):
+    #         x_, z_ = self.apply_as_mask(x, z[i, :])
+    #         x_list.append(x_)
+    #         z_list.append(z_)
+    #
+    #     return x_list, y, z_list
 
 
-class DataWeight(DataWeightsBase, abc.ABC):
-
-    @abc.abstractmethod
-    def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        ...
-
-    def get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self._weights is None:
-            self._weights = self._get_weights(x, y)
-            if np.all(self._weights == 0):
-                raise ValueError(f"All weights are zero after applying {type(self).__name__}")
-
-        return self._weights
-
-
-class DataWeightChain(DataWeightsBase):
-    def __init__(self, weights: DataWeight | Iterable[DataWeight] | DataWeightChain = None):
+class DataWeightChain(DataWeight):
+    def __init__(self, weights: DataWeight | Iterable[DataWeight] = None):
         super().__init__()
         if weights is None:
             weights = []
         if not isinstance(weights, Iterable):
             weights = list(weights)
-        self.weights_list = weights
+        self.weights = weights
 
     def get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        weights = np.ones_like(y)
-        for weight in self.weights_list:
+        weights = np.ones_like(x)
+        for weight in self.weights:
             weights *= weight.get_weights(x, y)
-        self._weights = weights
         return weights
+
+    def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        pass
 
 
 class Slices(DataWeight):
@@ -142,7 +155,7 @@ class Slices(DataWeight):
         else:
             slices = self.slices
 
-        weights = np.ones_like(y)
+        weights = np.ones_like(x)
 
         for slice_ in slices:
             if len(y.shape) == 1:
@@ -172,7 +185,7 @@ class Spans(DataWeight):
         else:
             x_spans = self.x_spans
 
-        weights = np.ones_like(y)
+        weights = np.ones_like(x)
 
         for x_span in x_spans:
             slice_ = get_slice(x, x_span[0], x_span[1])
@@ -199,7 +212,7 @@ class MultiPoint(DataWeight):
         self.indexes = indexes
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        weights = np.zeros_like(y)
+        weights = np.zeros_like(x)
         weights[self.indexes] = 1
         return weights
 

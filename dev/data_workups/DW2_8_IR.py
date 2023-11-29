@@ -164,7 +164,7 @@ def main():
     # fig = ca.ir.plot_signal(signal)
     # fig.write_html("temp.html", auto_open=True)
 
-    data.processor.add(ca.processing.remove.CutOffValue(x_span=529, cut_off_value=0.01))
+    data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.01))
     data.processor.add(ca.processing.baselines.AsymmetricLeastSquared(
         weights=ca.processing.weigths.AdaptiveDistanceMedian()
     ))

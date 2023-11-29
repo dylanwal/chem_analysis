@@ -54,6 +54,8 @@ def asymmetric_least_squared(
 
     """
     # check inputs
+    if max_iter < 2:
+        raise ValueError("max_iter needs to be greater than 2")
     if p < 0 or p > 1:
         raise ValueError('p must be between 0 and 1')
     if diff_order not in (1, 2, 3):
@@ -109,27 +111,17 @@ class AsymmetricLeastSquared(BaselineCorrection):
         self.max_iter = max_iter
         self.tol = tol
 
-    def get_baseline(self, x: np.ndarray, y: np.ndarray, weights: np.ndarray = None) -> np.ndarray:
-        if weights is None:
-            if self.weights:
-                x, y = self.weights.apply_as_mask(x, y)
-            else:
-                weights = np.ones_like(y)
-
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x_, y_ = self.apply_weights(x, y)
+    def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        mask = self.weights.get_mask(x, y)
         y_baseline, params = asymmetric_least_squared(
-            y_,
+            y[mask],
             self.lambda_,
             self.p,
             self.diff_order,
             self.max_iter,
             self.tol,
         )
-        y_baseline = np.interp(x, x_, y_baseline)
-        self._y = y_baseline
-        self._x = x
-        return x, y - y_baseline
+        return np.interp(x, x[mask], y_baseline)
 
 
 def improved_asymmetric_least_squared(
@@ -172,6 +164,8 @@ def improved_asymmetric_least_squared(
 
     """
     # check inputs
+    if max_iter < 2:
+        raise ValueError("max_iter needs to be greater than 2")
     if p < 0 or p > 1:
         raise ValueError('p must be between 0 and 1')
     if diff_order not in (1, 2, 3):
@@ -236,10 +230,10 @@ class ImprovedAsymmetricLeastSquared(BaselineCorrection):
         self.tol = tol
         self._weights = weights
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x_, y_ = self.apply_weights(x, y)
+    def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        mask = self.weights.get_mask(x, y)
         y_baseline, params = improved_asymmetric_least_squared(
-            y_,
+            y[mask],
             self.lambda_,
             self.lambda_1,
             self.p,
@@ -247,10 +241,7 @@ class ImprovedAsymmetricLeastSquared(BaselineCorrection):
             self.max_iter,
             self.tol
         )
-        y_baseline = np.interp(x, x_, y_baseline)
-        self._y = y_baseline
-        self._x = x
-        return x, y - y_baseline
+        return np.interp(x, x[mask], y_baseline)
 
 
 def reweighted_improved_asymmetric_least_squared(
@@ -288,6 +279,8 @@ def reweighted_improved_asymmetric_least_squared(
 
     """
     # check inputs
+    if max_iter < 2:
+        raise ValueError("max_iter needs to be greater than 2")
     if diff_order not in (1, 2, 3):
         raise ValueError(f'diff_order must be 1,2,3. \n\tgiven: {diff_order}')
     if weights is None:
@@ -347,19 +340,16 @@ class ReweightedImprovedAsymmetricLeastSquared(BaselineCorrection):
         self.tol = tol
         self._weights = weights
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x_, y_ = self.apply_weights(x, y)
+    def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        mask = self.weights.get_mask(x, y)
         y_baseline, params = reweighted_improved_asymmetric_least_squared(
-            y_,
+            y[mask],
             self.lambda_,
             self.diff_order,
             self.max_iter,
             self.tol
         )
-        y_baseline = np.interp(x, x_, y_baseline)
-        self._y = y_baseline
-        self._x = x
-        return x, y - y_baseline
+        return np.interp(x, x[mask], y_baseline)
 
 
 def adaptive_asymmetric_least_squared(
@@ -406,6 +396,8 @@ def adaptive_asymmetric_least_squared(
 
     """
     # check inputs
+    if max_iter < 2:
+        raise ValueError("max_iter needs to be greater than 2")
     if diff_order not in (1, 2, 3):
         raise ValueError(f'diff_order must be 1,2,3. \n\tgiven: {diff_order}')
     if weights is None:
@@ -458,16 +450,13 @@ class AdaptiveAsymmetricLeastSquared(BaselineCorrection):
         self.tol = tol
         self._weights = weights
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x_, y_ = self.apply_weights(x, y)
+    def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        mask = self.weights.get_mask(x, y)
         y_baseline, params = adaptive_asymmetric_least_squared(
-            y_,
+            y[mask],
             self.lambda_,
             self.diff_order,
             self.max_iter,
             self.tol
         )
-        y_baseline = np.interp(x, x_, y_baseline)
-        self._y = y_baseline
-        self._x = x
-        return x, y - y_baseline
+        return np.interp(x, x[mask], y_baseline)
