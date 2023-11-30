@@ -158,16 +158,17 @@ def mca_3(data: ca.base.SignalArray):
 
 def main():
     data = ca.ir.IRSignalArray.from_file(
-        r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-8\DW2_8_IR2.feather",
+        r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-8\DW2_8_IR2.feather"
     )
     # data.raw_data = np.flip(data.raw_data, axis=1)
+    # data.to_feather(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-8\DW2_8_IR2_fix.feather")
 
-    # signal = data.get_signal(0)
-    # fig = ca.ir.plot_signal(signal)
-    # fig.add_trace(go.Scatter(x=signal.x_raw, y=signal.y_raw))
-    # fig.write_html("temp.html", auto_open=True)
+    signal = data.get_signal(300)
+    fig = ca.ir.plot_signal(signal)
+    fig.add_trace(go.Scatter(x=signal.x_raw, y=signal.y_raw))
+    fig.write_html("temp.html", auto_open=True)
 
-    data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.01))
+    # data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.01))
     # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
     # data.processor.add(ca.processing.smoothing.GaussianTime(sigma=1))
     # data.processor.add(ca.processing.smoothing.ExponentialTime(a=0.7))
@@ -178,9 +179,9 @@ def main():
     # data.processor.add(ca.processing.smoothing.Gaussian(sigma=2))
     # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
 
-    mca_result_1 = mca_2_mask(data)
-    for i in range(mca_result_1.shape[0]):
-        print(mca_result_1[i, 0], mca_result_1[i, 1])
+    # mca_result_1 = mca_2_mask(data)
+    # for i in range(mca_result_1.shape[0]):
+    #     print(mca_result_1[i, 0], mca_result_1[i, 1])
 
 
 if __name__ == "__main__":

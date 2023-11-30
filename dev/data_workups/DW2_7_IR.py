@@ -52,38 +52,8 @@ def plot_mca_results(mcrar, x, D, times, conv):
     merge_html_figs([fig1, fig2, fig3], auto_open=True)
 
 
-def mca_2(data: ca.base.SignalArray):
-    t_slice = slice(0, -1)
-    x_slice = ca.utils.general_math.get_slice(data.x, start=1500, end=2000)
-
-    mca_times = data.time_zeroed[t_slice]
-    mca_x = data.x[x_slice]
-    mca_data = data.data[t_slice, x_slice]
-
-    # baseline = ca.processing.baselines.AsymmetricLeastSquared()
-    # baseline.run(x=mca_x, y=mca_data[-1,:])
-    # mca_data -= baseline.y
-
-    D = mca_data
-    C = np.ones((D.shape[0], 2)) * .5
-    C[-1, :] = np.array([1, 0], dtype="float64")
-
-    print("working")
-    mca = ca.analysis.mca.MultiComponentAnalysis(
-        max_iters=200,
-        c_constraints=[ca.analysis.mca.ConstraintNonneg(), ca.analysis.mca.ConstraintConv()],
-        st_constraints=[ca.analysis.mca.ConstraintNonneg()],
-        tolerance_increase=100
-    )
-    mca_result = mca.fit(D, C=C, verbose=True)
-
-    conv = conversion(mca_result)
-    plot_mca_results(mca_result, mca_x, D, mca_times, conv)
-    return np.column_stack((mca_times, conv)), mca_result.C
-
-
 def mca_2_mask(data: ca.base.SignalArray):
-    t_slice = slice(0, -1)
+    t_slice = slice(243, 3082)
     x_slice = ca.utils.general_math.get_slice(data.x, start=760, end=1900)
 
     mca_times = data.time_zeroed[t_slice]
@@ -95,7 +65,6 @@ def mca_2_mask(data: ca.base.SignalArray):
             ca.utils.general_math.get_slice(mca_x, start=875, end=1100),
             ca.utils.general_math.get_slice(mca_x, start=1350, end=1500),
         ],
-        invert=True
     )
     mask = mask.get_mask(mca_x, mca_data[0, :])
     mca_x = mca_x[mask]
@@ -107,41 +76,8 @@ def mca_2_mask(data: ca.base.SignalArray):
 
     D = mca_data
     C = np.ones((D.shape[0], 2)) * .5
-    C[-1, :] = np.array([.9999, 0.0001], dtype="float64")
-
-    print("working")
-    mca = ca.analysis.mca.MultiComponentAnalysis(
-        max_iters=200,
-        c_constraints=[ca.analysis.mca.ConstraintNonneg(), ca.analysis.mca.ConstraintConv()],
-        st_constraints=[],
-        tolerance_increase=100
-    )
-    mca_result = mca.fit(D, C=C, verbose=True)
-
-    conv = conversion(mca_result)
-    plot_mca_results(mca_result, mca_x, D, mca_times, conv)
-    return np.column_stack((mca_times, conv))
-
-
-def mca_3(data: ca.base.SignalArray):
-    t_slice = slice(0, -1)
-    x_slice = ca.utils.general_math.get_slice(data.x, start=800, end=2000)
-
-    mca_times = data.time_zeroed[t_slice]
-    mca_x = data.x[x_slice]
-    mca_data = data.data[t_slice, x_slice]
-
-    # baseline = ca.processing.baselines.AsymmetricLeastSquared()
-    # baseline.run(x=mca_x, y=mca_data[-1,:])
-    # mca_data -= baseline.y
-
-    D = mca_data
-
-    _, C_old = mca_2(data)
-    oil = np.ones(C_old.shape[0]) * 0.01
-    C = np.column_stack((C_old,oil))
-    # C = np.ones((D.shape[0], 3)) * .5
-    # C[-1, :] = np.array([0.2, 0, 0.1], dtype="float64")
+    C[0, :] = np.array([.9, 0.01], dtype="float64")
+    C[-1, :] = np.array([.01, 0.9], dtype="float64")
 
     print("working")
     mca = ca.analysis.mca.MultiComponentAnalysis(
@@ -154,7 +90,7 @@ def mca_3(data: ca.base.SignalArray):
 
     conv = conversion(mca_result)
     plot_mca_results(mca_result, mca_x, D, mca_times, conv)
-    return np.column_stack((mca_times, conv))
+    return np.column_stack((data.time[t_slice], conv))
 
 
 def main():
@@ -162,21 +98,14 @@ def main():
         r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_ATIR.feather"
     )
     # data.raw_data = np.flip(data.raw_data, axis=1)
+    # data.to_feather(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_ATIR_fix.feather")
 
-    # signal = data.get_signal(0)
-    # baseline_method = ca.processing.baselines.Polynomial(
-    #     degree=9,
-    #         weights=ca.processing.weigths.AdaptiveDistanceMedian(threshold=0.03)
-    #     )
-    # signal.processor.add(
-    #     baseline_method
-    # )
+    # signal = data.get_signal(500)
     # fig = ca.ir.plot_signal(signal)
     # fig.add_trace(go.Scatter(x=signal.x_raw, y=signal.y_raw))
-    # fig.add_trace(go.Scatter(x=baseline_method.x, y=baseline_method.y))
     # fig.write_html("temp.html", auto_open=True)
 
-    # data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.01))
+    data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.01))
     # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
     # data.processor.add(ca.processing.smoothing.GaussianTime(sigma=1))
     # data.processor.add(ca.processing.smoothing.ExponentialTime(a=0.7))
