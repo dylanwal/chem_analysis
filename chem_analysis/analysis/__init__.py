@@ -1,8 +1,4 @@
-from chem_analysis.analysis.logger import logger_analysis
-from chem_analysis.analysis.base_obj.calibration import Cal
-from chem_analysis.analysis.base_obj.chromatogram import Chromatogram
-from chem_analysis.analysis.base_obj.signal_ import Signal
-
-from chem_analysis.analysis.sec.sec_chrom import SECChrom
-from chem_analysis.analysis.sec.sec_signal import SECSignal
-
+import chem_analysis.analysis.peak_picking as peak_picking
+import chem_analysis.analysis.boundary_detection as boundary_detection
+import chem_analysis.analysis.multi_component_analysis as mca
+import chem_analysis.analysis.integrate as integrate
