@@ -10,6 +10,8 @@ from chem_analysis.analysis.peak import Peak
 
 
 class PeakModel(abc.ABC):
+    _args = None
+
     def __init__(self):
         ...
 
@@ -22,27 +24,33 @@ class PeakModel(abc.ABC):
         return len(self.__slots__)
 
     def get_args(self) -> tuple:
-        return tuple(getattr(self, arg) for arg in self.__slots__)
+        return tuple(getattr(self, arg) for arg in self._args)
 
     def get_kwargs(self) -> dict:
-        return {arg: getattr(self, arg) for arg in self.__slots__}
+        return {arg: getattr(self, arg) for arg in self._args}
 
     def set_args(self, args: Sequence):
         for i, arg in enumerate(args):
-            setattr(self, self.__slots__[i], arg)
+            setattr(self, self._args[i], arg)
 
     def set_kwargs(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def get_bounds(self) -> list[tuple[float, float]]:
+        bounds = []
+        for k in self._args:
+            bounds.append(getattr(self, k + "_bounds"))
+        return bounds
+
 
 class DistributionNormal(PeakModel):
-    __slots__ = ("scale", "mean", "sigma")
+    _args = ("scale", "mean", "sigma")
 
     def __init__(self,
                  scale: int | float = 1,
                  mean: int | float = 0,
-                 sigma: int | float = 1
+                 sigma: int | float = 1,
                  ):
         super().__init__()
         self.scale = scale
@@ -62,11 +70,17 @@ class DistributionNormalPeak(DistributionNormal, Peak):
                  scale: int | float = 1,
                  mean: int | float = 0,
                  sigma: int | float = 1,
+                 scale_bounds: tuple[float, float] = (0, np.inf),
+                 mean_bounds: tuple[float, float] = (np.inf, np.inf),
+                 sigma_bounds: tuple[float, float] = (0, np.inf),
                  id_: int = None
                  ):
         DistributionNormal.__init__(self, scale, mean, sigma)
         Peak.__init__(self, id_)
         self._x = x
+        self.scale_bounds = scale_bounds
+        self.mean_bounds = mean_bounds
+        self.sigma_bounds = sigma_bounds
 
     @property
     def y(self) -> np.ndarray:
@@ -77,12 +91,15 @@ class DistributionNormalPeak(DistributionNormal, Peak):
         return self._x
 
 
+
 # from scipy.stats import cauchy
 class DistributionCauchy(PeakModel):
+    _args = ("scale", "mean", "gamma")
+
     def __init__(self,
                  scale: int | float = 1,
                  mean: int | float = 0,
-                 gamma: int | float = 1
+                 gamma: int | float = 1,
                  ):
         super().__init__()
         self.scale = scale
@@ -99,11 +116,17 @@ class DistributionCauchyPeak(DistributionCauchy, Peak):
                  scale: int | float = 1,
                  mean: int | float = 0,
                  gamma: int | float = 1,
+                 scale_bounds: tuple[float, float] = (0, np.inf),
+                 mean_bounds: tuple[float, float] = (np.inf, np.inf),
+                 gamma_bounds: tuple[float, float] = (0, np.inf),
                  id_: int = None
                  ):
         DistributionCauchy.__init__(self, scale, mean, gamma)
         Peak.__init__(self, id_)
         self._x = x
+        self.scale_bounds = scale_bounds
+        self.mean_bounds = mean_bounds
+        self.gamma_bounds = gamma_bounds
 
     @property
     def y(self) -> np.ndarray:
@@ -136,17 +159,27 @@ class DistributionVoigt(PeakModel):
 
 
 class DistributionVoigtPeak(DistributionVoigt, Peak):
+    _args = ("scale", "mean", "sigma", "gamma")
+
     def __init__(self,
                  x: np.ndarray,
                  scale: int | float = 1,
                  mean: int | float = 0,
                  sigma: int | float = 1,
                  gamma: int | float = 1,
+                 scale_bounds: tuple[float, float] = (0, np.inf),
+                 mean_bounds: tuple[float, float] = (np.inf, np.inf),
+                 sigma_bounds: tuple[float, float] = (0, np.inf),
+                 gamma_bounds: tuple[float, float] = (0, np.inf),
                  id_: int = None
                  ):
         DistributionVoigt.__init__(self, scale, mean, sigma, gamma)
         Peak.__init__(self, id_)
         self._x = x
+        self.scale_bounds = scale_bounds
+        self.mean_bounds = mean_bounds
+        self.gamma_bounds = gamma_bounds
+        self.sigma_bounds = sigma_bounds
 
     @property
     def y(self) -> np.ndarray:

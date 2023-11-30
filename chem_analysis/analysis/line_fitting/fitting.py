@@ -35,6 +35,13 @@ class PeaksMultiple:
         if len(args) != 0:
             raise IndexError("not all args used")
 
+    def get_bounds(self) -> list[tuple[float, float]]:
+        bounds = []
+        for peak in self.peaks:
+            bounds += peak.get_bounds()
+
+        return bounds
+
 
 class ResultPeakFitting:
     def __init__(self):
@@ -44,48 +51,6 @@ class ResultPeakFitting:
     @property
     def peaks(self) -> Sequence:
         return self.multipeak.peaks
-
-
-# class ResultPeakStats:
-#     def __init__(self, parent: list[PeakStats]):
-#         self.parent = parent
-#
-#     @property
-#     def tallest_peak(self) -> None | PeakModel:
-#         if len(self.peaks) == 0:
-#             return None
-#
-#         return max(self.peaks, key=lambda x: x.max_value)
-#
-#     def stats(self) -> list[OrderedDict]:
-#         out = []
-#         for peak in self.peaks:
-#             out.append(peak.stats())
-#
-#         return out
-#
-#     def print_stats(self, sig_figs: int = 3, output_str: bool = False, **kwargs):
-#         """ Prints stats out for peak. """
-#         from tabulate import tabulate
-#
-#         if "tablefmt" not in kwargs:
-#             kwargs["tablefmt"] = "simple_grid"
-#
-#         stats_list = self.stats()
-#         rows = []
-#         for stats in stats_list:
-#             cols = []
-#             for value in stats.values():
-#                 if isinstance(value, float) or isinstance(value, int):
-#                     value = apply_sig_figs(value, sig_figs)
-#                 cols.append(value)
-#             rows.append(cols)
-#
-#         text = tabulate(rows, stats_list[0].keys(), **kwargs)
-#         if output_str:
-#             return text
-#
-#         print(text)
 
 
 def peak_deconvolution(
@@ -102,6 +67,7 @@ def peak_deconvolution(
         xdata=xdata,
         ydata=ydata,
         p0=multipeak.get_args(),
+        bounds=multipeak.get_bounds(),
         **kwargs
     )
     args, covariance = output
@@ -131,6 +97,7 @@ def peak_deconvolution_with_n_peaks(
         xdata=xdata,
         ydata=ydata,
         p0=multipeak.get_args(),
+        bounds=multipeak.get_bounds(),
         **kwargs
     )
     args, covariance = output
@@ -159,6 +126,7 @@ def peak_deconvolution_auto(
         xdata=xdata,
         ydata=ydata,
         p0=multipeak.get_args(),
+        bounds=multipeak.get_bounds(),
         **kwargs
     )
     args, covariance = output
