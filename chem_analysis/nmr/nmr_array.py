@@ -3,12 +3,10 @@ import numpy as np
 
 from chem_analysis.base_obj.signal_array import SignalArray
 from chem_analysis.nmr.nmr_signal import NMRSignal
-from chem_analysis.analysis.peak import PeakBoundedStats
 
 
 class NMRSignalArray(SignalArray):
     _signal = NMRSignal
-    _peak_type = PeakBoundedStats
 
     def __init__(self,
                  x_raw: np.ndarray,

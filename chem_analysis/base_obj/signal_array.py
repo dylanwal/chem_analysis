@@ -5,7 +5,6 @@ import numpy as np
 
 from chem_analysis.processing.base import Processor
 from chem_analysis.base_obj.signal_ import Signal
-from chem_analysis.analysis.peak import PeakBoundedStats
 
 
 class SignalArray:
@@ -13,7 +12,7 @@ class SignalArray:
     A grouping of Signals where each Signal occurred at a different time interval.
     """
     _signal = Signal
-    _peak_type = PeakBoundedStats
+    _peak_type = _signal._peak_type
 
     def __init__(self,
                  x_raw: np.ndarray,

@@ -1,9 +1,10 @@
-from abc import (ABC as _ABC, abstractmethod as _abstractmethod)
+import abc
+from typing import Iterable
 
 import numpy as np
 
 
-class Constraint(_ABC):
+class Constraint(abc.ABC):
     """ Abstract class for constraints
 
     Parameters
@@ -15,7 +16,7 @@ class Constraint(_ABC):
     def __init__(self, copy=True):
         self.copy = copy
 
-    @_abstractmethod
+    @abc.abstractmethod
     def transform(self, A):
         """ Transform A input based on constraint """
 
@@ -23,11 +24,6 @@ class Constraint(_ABC):
 class ConstraintNonneg(Constraint):
     """
     Non-negativity constraint. All negative entries made 0.
-
-    Parameters
-    ----------
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
     """
 
     def __init__(self, index=None, copy=False):
@@ -56,10 +52,6 @@ class ConstraintCumsumNonneg(Constraint):
     Cumulative-Summation non-negativity constraint. All negative
      entries made 0.
 
-    Parameters
-    ----------
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
     """
 
     def __init__(self, axis=-1, copy=False):
@@ -81,20 +73,20 @@ class ConstraintZeroEndPoints(Constraint):
     """
     Enforce the endpoints (or the mean over a range) is zero
 
-    Parameters
-    ----------
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-
-    axis : int
-        Axis to operate on
-
-    span : int
-        Number of pixels along the ends to average.
     """
 
     def __init__(self, axis=-1, span=1, copy=False):
-        """ A must be non-negative"""
+        """
+
+        Parameters
+        ----------
+        axis : int
+            Axis to operate on
+
+        span : int
+            Number of pixels along the ends to average.
+        copy
+        """
         super().__init__(copy)
         if [0, 1, -1].count(axis) != 1:
             raise TypeError('Axis must be 0, 1, or -1')
@@ -152,21 +144,24 @@ class ConstraintZeroCumSumEndPoints(Constraint):
     Enforce the endpoints of the cumsum (or the mean over a range) is
     near-zero. Note: this is an approximation.
 
-    Parameters
-    ----------
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-    nodes : list of int
-        In addition to end-points, other points to ensure are approximately 0
-    axis : int
-        Axis to operate on
 
-    span : int
-        Number of pixels along the ends to average.
     """
 
     def __init__(self, nodes=None, axis=-1, copy=False):
-        """ A must be non-negative"""
+        """
+
+        Parameters
+        ----------
+        copy : bool
+            Make copy of input data, A; otherwise, overwrite (if mutable)
+        nodes : list of int
+            In addition to end-points, other points to ensure are approximately 0
+        axis : int
+            Axis to operate on
+
+        span : int
+            Number of pixels along the ends to average.
+        """
         super().__init__(copy)
 
         self.nodes = nodes
@@ -233,34 +228,35 @@ class ConstraintNorm(Constraint):
     """
     Normalization constraint.
 
-    Parameters
-    ----------
-    axis : int
-        Which axis of input matrix A to apply normalization acorss.
-    fix : list
-        Keep fix-axes as-is and normalize the remaining axes based on the
-        residual of the fixed axes.
-    set_zeros_to_feature : int
-        Set all samples which sum-to-zero across axis to 1 for a particular
-         feature (See Notes)
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-
-    Notes
-    -----
-
-    -   For set_zeros_to_feature, assuming the data represents concentration
-         with a matrix [n_samples, n_features] and the axis is across the
-         features, for every sample that sums to 0 across axis, would be
-         replaced with a vector [n_features] of zeros except at
-         set_zeros_to_feature, which would equal 1. I.e., this pixel is
-         now pure substance of index value set_zeros_to_feature.
-
-
     """
 
     def __init__(self, axis=-1, fix=None, copy=False):
-        """Normalize along axis"""
+        """
+
+        Parameters
+        ----------
+        axis : int
+            Which axis of input matrix A to apply normalization acorss.
+        fix : list
+            Keep fix-axes as-is and normalize the remaining axes based on the
+            residual of the fixed axes.
+        set_zeros_to_feature : int
+            Set all samples which sum-to-zero across axis to 1 for a particular
+             feature (See Notes)
+        copy : bool
+            Make copy of input data, A; otherwise, overwrite (if mutable)
+
+        Notes
+        -----
+
+        -   For set_zeros_to_feature, assuming the data represents concentration
+             with a matrix [n_samples, n_features] and the axis is across the
+             features, for every sample that sums to 0 across axis, would be
+             replaced with a vector [n_features] of zeros except at
+             set_zeros_to_feature, which would equal 1. I.e., this pixel is
+             now pure substance of index value set_zeros_to_feature.
+
+        """
         super().__init__(copy)
         if fix is None:
             self.fix = fix
@@ -353,22 +349,25 @@ class ConstraintReplaceZeros(Constraint):
     no concentration are replaced with 100% concentration of a set feature. If multiple
     features given, equal amounts of each feature (summing to 1) are used.
 
-    Parameters
-    ----------
-    axis : int
-        Which axis of input matrix A to apply normalization acorss.
-    feature : int, list, tuple
-        Set all samples which sum-to-zero across axis to fval for a particular
-         feature (or fractional) for multiple features.
-    fval : float
-        Value of summation across axis of replacement vector.
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
+
 
     """
 
     def __init__(self, axis=-1, feature=None, fval=1, copy=False):
-        """Replace sum-to-zero samples with new feature vector along axis"""
+        """
+            Parameters
+        ----------
+        axis : int
+            Which axis of input matrix A to apply normalization acorss.
+        feature : int, list, tuple
+            Set all samples which sum-to-zero across axis to fval for a particular
+             feature (or fractional) for multiple features.
+        fval : float
+            Value of summation across axis of replacement vector.
+        copy : bool
+            Make copy of input data, A; otherwise, overwrite (if mutable)
+
+        """
         super().__init__(copy)
         self.fval = fval
         if feature is None:
@@ -415,239 +414,48 @@ class ConstraintReplaceZeros(Constraint):
             return A
 
 
-class _CutExclude(Constraint):
-    """
-    Parent class for methods that cut and can exclude
-
-    Parameters
-    ----------
-
-    value : float
-        Cutoff value
-    axis_sumnz : int
-        If not None, cut below value only applied where sum across specified
-        axis does not go to 0, i.e. all values cut.
-    exclude : int, list , tuple, ndarray
-        Exclude targets
-    exclude_axis : int
-        Along which axis to enumerate targets
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-    """
-
-    def __init__(self, value=0, axis_sumnz=None, exclude=None,
-                 exclude_axis=-1, copy=False):
-        """ """
-        super().__init__(copy)
-        self.value = value
-        self.axis = axis_sumnz
-        self.exclude = exclude
-        self.exclude_axis = exclude_axis
-
-        self._excl_mat = None
-
-    def _make_excl_mat(self, A_shape):
-        X, Y = np.meshgrid(np.arange(A_shape[1]), np.arange(A_shape[0]))
-        if self.exclude is None:
-            self._excl_mat = np.zeros(X.shape, dtype=bool)
-        else:
-            if self.exclude_axis == 0:
-                self._excl_mat = np.in1d(Y.ravel(), self.exclude).reshape(Y.shape)
-            else:
-                self._excl_mat = np.in1d(X.ravel(), self.exclude).reshape(X.shape)
-
-
-class ConstraintCutBelow(_CutExclude):
-    """
-    Cut values below (and not-equal to) a certain threshold.
-
-    Parameters
-    ----------
-
-    value : float
-        Cutoff value
-    axis_sumnz : int
-        If not None, cut below value only applied where sum across specified
-        axis does not go to 0, i.e. all values cut.
-    exclude : int, list , tuple, ndarray
-        Exclude targets
-    exclude_axis : int
-        Along which axis to enumerate targets
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-    """
-
-    def __init__(self, value=0, axis_sumnz=None, exclude=None, exclude_axis=-1, copy=False):
-        """ Initialize """
-        super().__init__(value=value, axis_sumnz=axis_sumnz, exclude=exclude,
-                         exclude_axis=exclude_axis, copy=copy)
-
-    def transform(self, A):
-        """ Apply cut-below value constraint"""
-        if self._excl_mat is None:
-            self._make_excl_mat(A.shape)
-
-        if self.axis is None:
-            if self.copy:
-                return A * ((A >= self.value) | self._excl_mat)
-            else:
-                A *= ((A >= self.value) | self._excl_mat)
-                return A
-        else:
-            if self.copy:
-                return A * (np.alltrue(A < self.value, axis=self.axis, keepdims=True) +
-                            (A >= self.value) + self._excl_mat)
-            else:
-                A *= (np.alltrue(A < self.value, axis=self.axis, keepdims=True) +
-                      (A >= self.value) + self._excl_mat)
-                return A
-
-
-class ConstraintCompressBelow(Constraint):
-    """
-    Compress values below (and not-equal to) a certain threshold (set to value)
-
-    Parameters
-    ----------
-
-    value : float
-        Cutoff value
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-    """
-
-    def __init__(self, value=0, copy=False):
-        """  """
-        super().__init__(copy)
-        self.value = value
-
-    def transform(self, A):
-        """ Apply compress-below value constraint"""
-
-        if self.copy:
-            return A * (A >= self.value) + self.value * (A < self.value)
-        else:
-            temp = self.value * (A < self.value)
-            A *= (A >= self.value)
-            A += temp
-            return A
-
-
-class ConstraintCutAbove(_CutExclude):
-    """
-    Cut values above (and not-equal to) a certain threshold
-
-    Parameters
-    ----------
-
-    value : float
-        Cutoff value
-    axis_sumnz : int
-        If not None, cut above value only applied where sum across specified
-        axis does not go to 0, i.e. all values cut.
-    exclude : int, list , tuple, ndarray
-        Exclude targets
-    exclude_axis : int
-        Along which axis to enumerate targets
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-    """
-
-    def __init__(self, value=0, axis_sumnz=None, exclude=None, exclude_axis=-1, copy=False):
-        """ """
-        super().__init__(value=value, axis_sumnz=axis_sumnz, exclude=exclude,
-                         exclude_axis=exclude_axis, copy=copy)
-
-    def transform(self, A):
-        """ Apply cut-above value constraint"""
-
-        if self._excl_mat is None:
-            self._make_excl_mat(A.shape)
-        if self.axis is None:
-            if self.copy:
-                return A * ((A <= self.value) | self._excl_mat)
-            else:
-                A *= ((A <= self.value) | self._excl_mat)
-                return A
-        else:
-            if self.copy:
-                return A * (np.alltrue(A > self.value, axis=self.axis, keepdims=True) +
-                            (A <= self.value) + self._excl_mat)
-            else:
-                A *= (np.alltrue(A > self.value, axis=self.axis, keepdims=True) +
-                      (A <= self.value) + self._excl_mat)
-                return A
-
-
-class ConstraintCompressAbove(Constraint):
-    """
-    Compress values above (and not-equal to) a certain threshold (set to value)
-
-    Parameters
-    ----------
-
-    value : float
-        Cutoff value
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-    """
-
-    def __init__(self, value=0, copy=False):
-        """  """
-        super().__init__(copy)
-        self.value = value
-
-    def transform(self, A):
-        """ Apply compress-above value constraint"""
-
-        if self.copy:
-            return A * (A <= self.value) + self.value * (A > self.value)
-        else:
-            temp = self.value * (A > self.value)
-            A *= (A <= self.value)
-            A += temp
-            return A
-
-
 class ConstraintPlanarize(Constraint):
     """
     Set a particular target to a plane
 
-    Parameters
-    ----------
-
-    target : int, list, tuple
-        Target numbers to set to a fitted plane
-    shape : tuple, list
-        Shape of array (M,N) which is (Y,X)
-    use_vals_above : float
-        Only calculate based on values above (not including)
-    use_vals_below : float
-        Only calculate based on values below (not including)
-    lims_to_plane : bool
-        The returned plane will be limited to the range of the optionally supplied
-        use_vals_below, use_vals above.
-    scaler : float
-        A large value that is much bigger than any values in the input array.
-        Needed to ensure SVD properly creates plane. If None, auto-calculates.
-    recalc_scaler : bool
-        Auto-calculate for every new input (does not use previously provided or
-        calculated value)
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
-
-    Notes
-    -----
-
-    -   This uses an SVD to calculate the vector normal to the plane that fits the input data. It
-        assumes that the 3rd singular vector is the normal; thus, the x and y vectors for the data need
-        be larger than the variance of the input data. Scaler enables this by scaling the auto-generated
-        x and y vectors to be much larger than the max-min of the input data
 
     """
 
     def __init__(self, target, shape, use_vals_above=None, use_vals_below=None,
                  lims_to_plane=True, scaler=None, recalc_scaler=False, copy=False):
+        """
+
+        Parameters
+        ----------
+
+        target : int, list, tuple
+            Target numbers to set to a fitted plane
+        shape : tuple, list
+            Shape of array (M,N) which is (Y,X)
+        use_vals_above : float
+            Only calculate based on values above (not including)
+        use_vals_below : float
+            Only calculate based on values below (not including)
+        lims_to_plane : bool
+            The returned plane will be limited to the range of the optionally supplied
+            use_vals_below, use_vals above.
+        scaler : float
+            A large value that is much bigger than any values in the input array.
+            Needed to ensure SVD properly creates plane. If None, auto-calculates.
+        recalc_scaler : bool
+            Auto-calculate for every new input (does not use previously provided or
+            calculated value)
+        copy : bool
+            Make copy of input data, A; otherwise, overwrite (if mutable)
+
+        Notes
+        -----
+
+        -   This uses an SVD to calculate the vector normal to the plane that fits the input data. It
+            assumes that the 3rd singular vector is the normal; thus, the x and y vectors for the data need
+            be larger than the variance of the input data. Scaler enables this by scaling the auto-generated
+            x and y vectors to be much larger than the max-min of the input data
+        """
         super().__init__(copy)
         if isinstance(target, int):
             self.target = [target]
@@ -737,15 +545,9 @@ class ConstraintPlanarize(Constraint):
 class ConstraintConv(Constraint):
     """
     Conversion constraint. sum(C) = 1
-
-    Parameters
-    ----------
-    copy : bool
-        Make copy of input data, A; otherwise, overwrite (if mutable)
     """
 
     def __init__(self, index=None, copy=False):
-        """ A must be non-negative"""
         super().__init__(copy)
         self.index = index
 
@@ -766,3 +568,44 @@ class ConstraintConv(Constraint):
         else:
             A /= row_sums[:, np.newaxis]
             return A
+
+
+class ConstraintRange(Constraint):
+    """
+    values must stay within range
+    """
+
+    def __init__(self, range_: Iterable[tuple[float | None, float | None] | None] = None, copy=False):
+        """
+
+        Parameters
+        ----------
+        range_:
+            None are skipped
+            example: [
+                None,
+                None,
+                [0, 1]
+                [None, 1]
+                [1, None]
+            ]
+        copy
+        """
+        super().__init__(copy)
+        self.range_ = range_
+
+    def transform(self, A):
+        """ Apply nonnegative constraint"""
+        if self.copy:
+            A = np.copy(A)
+
+        for i, r in enumerate(self.range_):
+            if r is not None:
+                if r[0] is not None:
+                    mask = A[:, i] < r[0]
+                    A[mask, i] = r[0]
+                if r[1] is not None:
+                    mask = A[:, i] > r[1]
+                    A[mask, i] = r[1]
+
+        return A

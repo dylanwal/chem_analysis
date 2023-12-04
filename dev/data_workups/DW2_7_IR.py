@@ -2,7 +2,7 @@ import plotly.graph_objs as go
 import numpy as np
 import chem_analysis as ca
 from chem_analysis.utils.general_math import normalize_by_max
-from chem_analysis.utils.plotly_helpers import merge_html_figs
+from chem_analysis.plotting.plotly_helpers import merge_html_figs
 
 
 def conversion(mca_result) -> np.ndarray:
@@ -53,7 +53,7 @@ def plot_mca_results(mcrar, x, D, times, conv):
 
 
 def mca_2_mask(data: ca.base.SignalArray):
-    t_slice = slice(243, 3082)
+    t_slice = ca.utils.general_math.get_slice(data.time_zeroed, start=1000, end=31731)
     x_slice = ca.utils.general_math.get_slice(data.x, start=760, end=1900)
 
     mca_times = data.time_zeroed[t_slice]
@@ -76,8 +76,8 @@ def mca_2_mask(data: ca.base.SignalArray):
 
     D = mca_data
     C = np.ones((D.shape[0], 2)) * .5
-    C[0, :] = np.array([.9, 0.01], dtype="float64")
-    C[-1, :] = np.array([.01, 0.9], dtype="float64")
+    C[-1, :] = np.array([.2, 0.8], dtype="float64")
+    C[0, :] = np.array([.2, 0.8], dtype="float64")
 
     print("working")
     mca = ca.analysis.mca.MultiComponentAnalysis(

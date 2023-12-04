@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from typing import Callable, Iterable
 
 import numpy as np
 
@@ -134,8 +134,8 @@ class MultiComponentAnalysis:
             D: np.ndarray,
             C: np.ndarray = None,
             ST: np.ndarray = None,
-            st_fix: np.ndarray = None,
-            c_fix: np.ndarray = None,
+            st_fix: Iterable[int] = None,
+            c_fix: Iterable[int] = None,
             c_first: bool = True,
             verbose: bool = False,
             callback: CallbackType = None,
@@ -222,7 +222,7 @@ class MultiComponentAnalysis:
 
                 # Apply ST-constraints
                 for constraint in self.st_constraints:
-                    ST_temp = constraint.transform(ST_temp)
+                    ST_temp = constraint.transform(ST_temp.T).T
 
                 # Apply fixed ST's
                 if st_fix:

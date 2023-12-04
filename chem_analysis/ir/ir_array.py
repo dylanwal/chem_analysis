@@ -3,11 +3,10 @@ import numpy as np
 
 from chem_analysis.base_obj.signal_array import SignalArray
 from chem_analysis.ir.ir_signal import IRSignal
-from chem_analysis.analysis.peak_IR import PeakIR
 
 
 class IRSignalArray(SignalArray):
-    _peak_type = PeakIR
+    _signal = IRSignal
 
     def __init__(self,
                  x_raw: np.ndarray,

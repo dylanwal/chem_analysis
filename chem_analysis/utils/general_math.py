@@ -64,7 +64,10 @@ def map_argmax_to_original(index: int | np.ndarray, mask) -> int | np.ndarray:
 
 
 def normalize_by_max(y: np.ndarray) -> np.ndarray:
-    return y / np.max(y)
+    max_ = np.max(y)
+    # if max_ == 0:
+    #     return np.zeros_like(y)
+    return y / max_
 
 
 def normalize_by_area(x: np.ndarray, y: np.ndarray) -> np.ndarray:
