@@ -23,18 +23,25 @@ def signal(
         config: PlotConfig = None,
 ):
     config = config or PlotConfig()
-    if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
-        if isinstance(signal, SECSignal):
-            from chem_analysis.plotting.SEC_plotly import plotly_signal
+    for option in global_config.get_plotting_options():
+        if option == global_config.plotting_libraries.PLOTLY:
+            if isinstance(signal, SECSignal):
+                from chem_analysis.plotting.SEC_plotly import plotly_signal
+                return plotly_signal(fig, signal_, config)
+            if isinstance(signal, IRSignal):
+                pass
+            if isinstance(signal, NMRSignal):
+                pass
+
+            # default plotting
+            from chem_analysis.plotting.plotting_plotly import plotly_signal
             return plotly_signal(fig, signal_, config)
-        if isinstance(signal, IRSignal):
-            pass
-        if isinstance(signal, NMRSignal):
+
+        if option == global_config.plotting_libraries.MATPLOTLIB:
             pass
 
-        # default plotting
-        from chem_analysis.plotting.plotting_plotly import plotly_signal
-        return plotly_signal(fig, signal_, config)
+        if option == global_config.plotting_libraries.PYGRAPHQT:
+            pass
 
     raise NotImplementedError()
 
@@ -46,18 +53,25 @@ def signal_raw(
         config: PlotConfig = None,
 ):
     config = config or PlotConfig()
-    if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
-        if isinstance(signal, SECSignal):
-            from chem_analysis.plotting.SEC_plotly import plotly_signal_raw
+    for option in global_config.get_plotting_options():
+        if option == global_config.plotting_libraries.PLOTLY:
+            if isinstance(signal, SECSignal):
+                from chem_analysis.plotting.SEC_plotly import plotly_signal_raw
+                return plotly_signal_raw(fig, signal_, config)
+            if isinstance(signal, IRSignal):
+                pass
+            if isinstance(signal, NMRSignal):
+                pass
+
+                # default plotting
+            from chem_analysis.plotting.plotting_plotly import plotly_signal_raw
             return plotly_signal_raw(fig, signal_, config)
-        if isinstance(signal, IRSignal):
-            pass
-        if isinstance(signal, NMRSignal):
+
+        if option == global_config.plotting_libraries.MATPLOTLIB:
             pass
 
-        # default plotting
-        from chem_analysis.plotting.plotting_plotly import plotly_signal_raw
-        return plotly_signal_raw(fig, signal_, config)
+        if option == global_config.plotting_libraries.PYGRAPHQT:
+            pass
 
     raise NotImplementedError()
 
@@ -69,9 +83,16 @@ def peaks(
         config: PlotConfig = None,
 ):
     config = config or PlotConfig()
-    if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
-        from chem_analysis.plotting.plotting_plotly import plotly_peaks
-        return plotly_peaks(fig, peaks_, config)
+    for option in global_config.get_plotting_options():
+        if option == global_config.plotting_libraries.PLOTLY:
+            from chem_analysis.plotting.plotting_plotly import plotly_peaks
+            return plotly_peaks(fig, peaks_, config)
+
+        if option == global_config.plotting_libraries.MATPLOTLIB:
+            pass
+
+        if option == global_config.plotting_libraries.PYGRAPHQT:
+            pass
 
     raise NotImplementedError()
 
@@ -83,10 +104,16 @@ def calibration(
         config=PlotConfig()
 ):
     config = config or PlotConfig()
-    if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
+    for option in global_config.get_plotting_options():
         if isinstance(calibration, SECCalibration):
             from chem_analysis.plotting.SEC_plotly import plotly_sec_calibration
             return plotly_sec_calibration(calibration_, fig=fig, config=config)
+
+        if option == global_config.plotting_libraries.MATPLOTLIB:
+            pass
+
+        if option == global_config.plotting_libraries.PYGRAPHQT:
+            pass
 
     raise NotImplementedError()
 
@@ -113,9 +140,39 @@ def baseline(
         else:
             raise RuntimeError(error_text)
 
-    if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
-        from chem_analysis.plotting.plotting_plotly import plotly_baseline
-        return plotly_baseline(fig, baseline_, config)
+    config = config or PlotConfig()
+    for option in global_config.get_plotting_options():
+        if isinstance(calibration, SECCalibration):
+            from chem_analysis.plotting.plotting_plotly import plotly_baseline
+            return plotly_baseline(fig, baseline_, config)
+
+        if option == global_config.plotting_libraries.MATPLOTLIB:
+            pass
+
+        if option == global_config.plotting_libraries.PYGRAPHQT:
+            pass
+
+    raise NotImplementedError()
+
+
+def array_dynamic(
+        array_: SignalArray,
+        *,
+        config=PlotConfig()
+                  ):
+    config = config or PlotConfig()
+    for option in global_config.get_plotting_options():
+        if isinstance(calibration, SECCalibration):
+            pass
+
+        if option == global_config.plotting_libraries.MATPLOTLIB:
+            pass
+
+        if option == global_config.plotting_libraries.PYGRAPHQT:
+            from chem_analysis.plotting.qt_array import qt_array
+            return qt_array(array_)
+
+    raise NotImplementedError()
 
 
 # def plot_signal_array_overlap(

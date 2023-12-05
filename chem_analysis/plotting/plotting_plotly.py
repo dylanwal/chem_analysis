@@ -2,7 +2,6 @@
 import numpy as np
 import plotly.graph_objs as go
 
-from chem_analysis.config import global_config
 from chem_analysis.plotting.plot_format import bold_in_html
 from chem_analysis.base_obj.signal_ import Signal
 # from chem_analysis.base_obj.chromatogram import Chromatogram
@@ -15,46 +14,45 @@ from chem_analysis.analysis.boundary_detection.boundary_detection import ResultP
 
 def plotly_layout(fig: go.Figure, config: PlotConfig):
     if config.default_formatting:
-        if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
-            layout = {
-                # "autosize": False,
-                # "width": 1200,
-                # "height": 600,
-                "font": dict(family="Arial", size=18, color="black"),
-                "plot_bgcolor": "white",
-                # "legend": {"x": 0.05, "y": 0.95}
-            }
+        layout = {
+            # "autosize": False,
+            # "width": 1200,
+            # "height": 600,
+            "font": dict(family="Arial", size=18, color="black"),
+            "plot_bgcolor": "white",
+            # "legend": {"x": 0.05, "y": 0.95}
+        }
 
-            layout_xaxis = {
-                "tickprefix": "<b>",
-                "ticksuffix": "</b>",
-                "showline": True,
-                "linewidth": 5,
-                # "mirror": True,
-                "linecolor": 'black',
-                "ticks": "outside",
-                "tickwidth": 4,
-                "showgrid": False,
-                "gridwidth": 1,
-                "gridcolor": 'lightgray'
-            }
+        layout_xaxis = {
+            "tickprefix": "<b>",
+            "ticksuffix": "</b>",
+            "showline": True,
+            "linewidth": 5,
+            # "mirror": True,
+            "linecolor": 'black',
+            "ticks": "outside",
+            "tickwidth": 4,
+            "showgrid": False,
+            "gridwidth": 1,
+            "gridcolor": 'lightgray'
+        }
 
-            layout_yaxis = {
-                "tickprefix": "<b>",
-                "ticksuffix": "</b>",
-                "showline": True,
-                "linewidth": 5,
-                "mirror": True,
-                "linecolor": 'black',
-                "ticks": "outside",
-                "tickwidth": 4,
-                "showgrid": False,
-                "gridwidth": 1,
-                "gridcolor": 'lightgray'
-            }
-            fig.update_layout(**layout)
-            fig.update_xaxes(**layout_xaxis)
-            fig.update_yaxes(**layout_yaxis)
+        layout_yaxis = {
+            "tickprefix": "<b>",
+            "ticksuffix": "</b>",
+            "showline": True,
+            "linewidth": 5,
+            "mirror": True,
+            "linecolor": 'black',
+            "ticks": "outside",
+            "tickwidth": 4,
+            "showgrid": False,
+            "gridwidth": 1,
+            "gridcolor": 'lightgray'
+        }
+        fig.update_layout(**layout)
+        fig.update_xaxes(**layout_xaxis)
+        fig.update_yaxes(**layout_yaxis)
 
 
 def plotly_signal(fig: go.Figure | None, signal: Signal, config: PlotConfig) -> go.Figure:

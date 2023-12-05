@@ -61,27 +61,32 @@ def plot_fit(x, y, peaks):
 
 
 def integrate_array(nmr_array: ca.nmr.NMRSignalArray):
-    I_bond = ca.analysis.integrate.integrate(nmr_array, x_range=(6.11, 6.4))
-    mask = I_bond < 0.05
-    I_benzene = ca.analysis.integrate.integrate(nmr_array, x_range=(7.2, 7.5))
-    I_ratio = I_bond / I_benzene
-    I_ratio[mask] = np.max(I_ratio)
+    I_bond = ca.analysis.integrate.integrate(nmr_array, x_range=(5.6, 6.4))
+    I_benzene = ca.analysis.integrate.integrate(nmr_array, x_range=(7.1, 7.5))
+    I_poly = ca.analysis.integrate.integrate(nmr_array, x_range=(3, 3.8)) # 3.46
+    I_DMSO = ca.analysis.integrate.integrate(nmr_array, x_range=(2.05, 2.8))
+    I_poly = I_poly - I_DMSO * 0.01
+    slice_ = ca.utils.math.get_slice(nmr_array.x, 7.1, 7.5)
+    mask = np.max(nmr_array.data[:, slice_], axis=1) > 0.3
 
-    I_poly = ca.analysis.integrate.integrate(nmr_array, x_range=(3.52, 3.72))
-    mask = I_poly < 0.05
-    I_poly[mask] = 0
-    I_mon = ca.analysis.integrate.integrate(nmr_array, x_range=(3.72, 3.83))
-    # mask = I_mon < 0.05
-    # I_mon[mask] = 0
+    area_per_h = np.zeros_like(I_bond)
+    area_per_h[mask] = I_poly[mask]/I_benzene[mask]
+    mean_ = np.mean(area_per_h[mask])
+    std_ = np.std(area_per_h[mask])
+    mask2 = np.logical_and(area_per_h < mean_+std_, area_per_h > mean_-std_)
+    mask = np.logical_and(mask, mask2)
+
+    conv = np.zeros_like(I_bond)
+    conv[mask] = 1 - I_bond[mask]/I_benzene[mask]/area_per_h[mask]
 
     # print
-    conv = I_poly / (I_mon + I_poly)
-    for i in range(len(nmr_array.time_zeroed)):
-        print(nmr_array.time_zeroed[i], conv[i])
+    c = conv[mask]
+    t = nmr_array.time[mask]
+    for i in range(len(t)):
+        print(t[i], c[i])
 
     mask = np.logical_not(conv == 0)
-    fig = go.Figure(go.Scatter(x=nmr_array.time_zeroed, y=1 - I_ratio / np.max(I_ratio)))
-    fig.add_trace(go.Scatter(x=nmr_array.time_zeroed[mask], y=conv[mask],
+    fig = go.Figure(go.Scatter(x=nmr_array.time_zeroed, y=conv,
                              text=[f'X: {x}, Index: {i}' for i, x in enumerate(nmr_array.time_zeroed)],
                              hoverinfo='text',
                              ))
@@ -89,16 +94,20 @@ def integrate_array(nmr_array: ca.nmr.NMRSignalArray):
 
 
 def main():
-    path = pathlib.Path(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-8\DW2_8_NMR2.feather")
+    path = pathlib.Path(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-9\DW2_9_NMR.feather")
     nmr_array = ca.nmr.NMRSignalArray.from_file(path)
     nmr_array.processor.add(ca.processing.translations.AlignMax(range_=(2.2, 2.7)))
-    nmr_array.processor.add(ca.processing.smoothing.Gaussian(sigma=15))
+    nmr_array.processor.add(ca.processing.smoothing.Gaussian(sigma=35))
     # nmr_array.to_feather(r"G:\Other computers\My "
     #                      r"Laptop\post_doc_2022\Data\polymerizations\DW2-8\DW2_8_NMR2_proc.feather")
-    integrate_array(nmr_array)
-    conv_from_normal(nmr_array)
 
-    signal = nmr_array.get_signal(5)
+    # ca.plotting.array_dynamic(nmr_array)
+
+    integrate_array(nmr_array)
+    # conv_from_normal(nmr_array)
+
+    signal = nmr_array.get_signal(14)
+    # signal.to_csv(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-9\DW2_9_NMR_14.csv")
     fig = ca.plot.signal(signal)
     fig.write_html("temp.html", auto_open=True)
 

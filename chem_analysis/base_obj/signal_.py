@@ -187,4 +187,3 @@ def load_csv(path: pathlib):
     data_array = np.array(data)
 
     return data_array[:, 0], data_array[:, 1], x_label, y_label
-
