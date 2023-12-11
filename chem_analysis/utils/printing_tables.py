@@ -40,13 +40,17 @@ class StatsTable:
     def __repr__(self):
         return f"rows: {len(self.rows)}, cols: {len(self.headers)}"
 
-    def join(self, table: StatsTable):
+    def join(self, table: StatsTable, include_empty: bool = True):
         headers = self.headers + table.headers
         # remove duplicates while maintaining order
         seen = set()
         self.headers = [x for x in headers if x not in seen and not seen.add(x)]
 
-        self.rows += table.rows
+        if table.rows:
+            self.rows += table.rows
+        else:
+            if include_empty:
+                self.rows += [[None] * len(self.headers)]
 
     def to_str(self, sig_figs: int = global_config.sig_fig, **kwargs):
         if "tablefmt" not in kwargs:

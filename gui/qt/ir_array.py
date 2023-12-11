@@ -19,9 +19,10 @@ class IRArrayView(ArrayView):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
+        self.build_menubar()
 
     def build_menubar(self):
-        window = self.parent().window()
+        window = self.parent.window()
         menubar = window.menuBar()
 
         # main file

@@ -6,6 +6,11 @@ MIN_FLOAT = np.finfo(float).eps
 
 
 def pack_time_series(x: np.ndarray, time_: np.ndarray, z: np.array) -> np.ndarray:
+    if x.shape[0] != z.shape[1]:
+        raise ValueError(f"'x.shape[0]' must equal 'z.shape[1]'\n\tx shape:{x.shape}\n\tz shape:{z.shape}")
+    if time_.shape[0] != z.shape[0]:
+        raise ValueError(f"'time_.shape[0]' must equal 'z.shape[0]'\n\ttime shape:{time_.shape}\n\tz shape:{z.shape}")
+
     data = np.empty((len(time_) + 1, len(x) + 1), dtype=z.dtype)
     data[0, 0] = 0
     data[0, 1:] = x

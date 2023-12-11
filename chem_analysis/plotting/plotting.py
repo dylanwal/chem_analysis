@@ -105,9 +105,10 @@ def calibration(
 ):
     config = config or PlotConfig()
     for option in global_config.get_plotting_options():
-        if isinstance(calibration, SECCalibration):
-            from chem_analysis.plotting.SEC_plotly import plotly_sec_calibration
-            return plotly_sec_calibration(calibration_, fig=fig, config=config)
+        if option == global_config.plotting_libraries.PLOTLY:
+            if isinstance(calibration_, SECCalibration):
+                from chem_analysis.plotting.SEC_plotly import plotly_sec_calibration
+                return plotly_sec_calibration(calibration_, fig=fig, config=config)
 
         if option == global_config.plotting_libraries.MATPLOTLIB:
             pass
@@ -142,7 +143,7 @@ def baseline(
 
     config = config or PlotConfig()
     for option in global_config.get_plotting_options():
-        if isinstance(calibration, SECCalibration):
+        if option == global_config.plotting_libraries.PLOTLY:
             from chem_analysis.plotting.plotting_plotly import plotly_baseline
             return plotly_baseline(fig, baseline_, config)
 
