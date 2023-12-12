@@ -19,7 +19,7 @@ folders = outlook.Folders
 for i, folder in enumerate(folders):
     print(i, folder.Name)
 
-account = folders[0]  # << change index
+account = folders[2]  # << change index
 
 
 # get folder
@@ -31,7 +31,7 @@ nmr_data_folder = account.Folders[17]  # << change index
 # exit()  # << remove once you set correct index
 
 # get email
-emails = [email for email in nmr_data_folder.Items if "DW2-10" in email.Subject]  # << change filter word
+emails = [email for email in nmr_data_folder.Items if "DW2-11" in email.Subject]  # << change filter word
 # emails = [email for email in nmr_data_folder.Items if "DW2-3" in email.Subject]  # << change filter word
 
 
@@ -40,7 +40,7 @@ attachments = [email.Attachments[0] for email in emails]  # only takes first att
 
 
 # save attachments
-path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2_10")  # << change save location
+path = pathlib.Path(r"C:\Users\nicep\Desktop\DW2_11")  # << change save location
 
 if not os.path.exists(path):
     os.makedirs(path)

@@ -18,7 +18,7 @@ def process_one(sig: ca.sec.SECSignal, output: bool = False):
             ]
     ))
     peaks = ca.analysis.peak_picking.max_find_peaks(sig, weights=ca.processing.weigths.Spans((10, 12.2), invert=True))
-    peaks = ca.analysis.boundary_detection.rolling_ball(peaks, n=35, min_height=0.05, n_points_with_pos_slope=15)
+    peaks = ca.analysis.boundary_detection.rolling_ball(peaks, n=45, min_height=0.05, n_points_with_pos_slope=1)
 
     if output:
         print(peaks.stats_table())
@@ -39,13 +39,13 @@ def process_one(sig: ca.sec.SECSignal, output: bool = False):
 
         ca.plot.plotly_helpers.merge_html_figs([fig_base, fig])
 
-
-    fig = ca.plot.signal(sig)
-    fig = ca.plot.peaks(peaks, fig=fig)
-    fig = ca.plot.calibration(sig.calibration, fig=fig)
-    fig.layout.yaxis.range = (-1, 50)
-    # fig.write_html("temp.html", auto_open=True)
-    fig.write_image(f"img/signal{sig.id_}.png")
+    #
+    # fig = ca.plot.signal(sig)
+    # fig = ca.plot.peaks(peaks, fig=fig)
+    # fig = ca.plot.calibration(sig.calibration, fig=fig)
+    # fig.layout.yaxis.range = (-1, 50)
+    # # fig.write_html("temp.html", auto_open=True)
+    # fig.write_image(f"img/signal{sig.id_}.png")
 
     return peaks.stats_table()
 
@@ -65,8 +65,8 @@ def main():
     path = r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-10\DW2-10_RI.npy"
     array = ca.sec.SECSignalArray.from_file(path, calibration=cal_RI)
 
-    # process_one(array.get_signal(52), output=True)
-    process_many([array.get_signal(i) for i in range(len(array.time))])
+    process_one(array.get_signal(59), output=True)
+    # process_many([array.get_signal(i) for i in range(len(array.time))])
 
 
 if __name__ == "__main__":

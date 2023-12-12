@@ -94,7 +94,7 @@ def integrate_array(nmr_array: ca.nmr.NMRSignalArray):
 
 
 def main():
-    path = pathlib.Path(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-9\DW2_9_NMR.feather")
+    path = pathlib.Path(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-10\DW2_10_NMR.feather")
     nmr_array = ca.nmr.NMRSignalArray.from_file(path)
     nmr_array.processor.add(ca.processing.translations.AlignMax(range_=(2.2, 2.7)))
     nmr_array.processor.add(ca.processing.smoothing.Gaussian(sigma=35))

@@ -103,7 +103,7 @@ def main():
 
     # ca.plotting.array_dynamic(nmr_array)
 
-    integrate_array(nmr_array)
+    # integrate_array(nmr_array)
     # conv_from_normal(nmr_array)
 
     signal = nmr_array.get_signal(14)

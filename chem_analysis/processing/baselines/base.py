@@ -89,6 +89,31 @@ class Polynomial(BaselineCorrection):
         return baseline
 
 
+class Subtract(BaselineCorrection):
+    def __init__(self,
+                 y: np.ndarray,
+                 x: np.ndarray = None,
+                 multiplier: float = 1,
+                 ):
+        super().__init__(None)
+        self.y_sub = y
+        self.x_sub = x
+        self.multiplier = multiplier
+
+    def get_baseline(self, x: np.ndarray, y: np.ndarray, poly_weights: np.ndarray = None) -> np.ndarray:
+        if len(self.y_sub) == len(y):
+            return self.multiplier * self.y_sub
+
+        raise NotImplementedError()  # TODO: x-interpolation
+
+    def get_baseline_array(self, x: np.ndarray, _: np.ndarray, z: np.ndarray) -> np.ndarray:
+        baseline = np.empty_like(z)
+
+        for i in range(z.shape[0]):
+            baseline[i, :] = self.get_baseline(x, z[i, :], None)
+
+        return baseline
+
 # Bernstein polynomial (order = 3)
 # Splines
 # multipoint

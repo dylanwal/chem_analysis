@@ -26,7 +26,7 @@ class SignalArray:
         self.name = name
         self.x_raw = x_raw
         self.time_raw = time_raw
-        self.raw_data = data_raw
+        self.data_raw = data_raw
         self.x_label = x_label or "x_axis"
         self.y_label = y_label or "time"
         self.z_label = z_label or "z_axis"
@@ -37,7 +37,7 @@ class SignalArray:
         self._data = None
 
     def _process(self):
-        self._x, self._time, self._data = self.processor.run(self.x_raw, self.time_raw, self.raw_data)
+        self._x, self._time, self._data = self.processor.run(self.x_raw, self.time_raw, self.data_raw)
 
     @property
     def x(self) -> np.ndarray:
@@ -71,8 +71,15 @@ class SignalArray:
     def number_of_signals(self):
         return len(self.time_raw)
 
+    def pop(self, index: int) -> Signal:
+        sig = self.get_signal(index)
+        self.data_raw = np.delete(self.data_raw, index, axis=0)
+        self.time_raw = np.delete(self.time_raw, index)
+        self.processor.processed = False
+        return sig
+
     def get_signal(self, index: int) -> Signal:
-        sig = Signal(x_raw=self.x_raw, y_raw=self.raw_data[index, :], x_label=self.x_label,
+        sig = Signal(x_raw=self.x_raw, y_raw=self.data_raw[index, :], x_label=self.x_label,
                      y_label=self.y_label, name=f"time: {self.time[index]}", id_=index)
         sig.processor = self.processor.get_copy()
         sig.time_ = self.time[index]

@@ -39,7 +39,7 @@ class IRSignalArray(SignalArray):
         return np.exp(-self.data)
 
     def get_signal(self, index: int) -> IRSignal:
-        sig = IRSignal(x_raw=self.x_raw, y_raw=self.raw_data[index, :], x_label=self.x_label, y_label=self.y_label,
+        sig = IRSignal(x_raw=self.x_raw, y_raw=self.data_raw[index, :], x_label=self.x_label, y_label=self.y_label,
                        name=f"time: {self.time[index]}", id_=index)
         sig.time = self.time[index]
         sig.processor = self.processor.get_copy()
