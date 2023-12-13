@@ -2,6 +2,7 @@ import abc
 from typing import Iterable
 
 import numpy as np
+from scipy.optimize import minimize_scalar
 
 from chem_analysis.processing.base import ProcessingMethod
 from chem_analysis.processing.weigths.weights import DataWeight, DataWeightChain
@@ -63,9 +64,17 @@ class Polynomial(BaselineCorrection):
             else:
                 poly_weights = self.poly_weights
 
-        mask = self.weights.get_mask(x, y)
+        if self.weights is not None:
+            mask = self.weights.get_mask(x, y)
+            x_ = x[mask]
+            y_ = y[mask]
+            w_ = poly_weights[mask]
+        else:
+            x_ = x
+            y_ = y
+            w_ = poly_weights
 
-        params = np.polyfit(x[mask], y[mask], self.degree, w=poly_weights[mask])
+        params = np.polyfit(x_, y_, self.degree, w=w_)
         func_baseline = np.poly1d(params)
         return func_baseline(x)
 
@@ -100,7 +109,7 @@ class Subtract(BaselineCorrection):
         self.x_sub = x
         self.multiplier = multiplier
 
-    def get_baseline(self, x: np.ndarray, y: np.ndarray, poly_weights: np.ndarray = None) -> np.ndarray:
+    def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if len(self.y_sub) == len(y):
             return self.multiplier * self.y_sub
 
@@ -110,7 +119,52 @@ class Subtract(BaselineCorrection):
         baseline = np.empty_like(z)
 
         for i in range(z.shape[0]):
-            baseline[i, :] = self.get_baseline(x, z[i, :], None)
+            baseline[i, :] = self.get_baseline(x, z[i, :])
+
+        return baseline
+
+
+class SubtractOptimize(BaselineCorrection):
+    def __init__(self,
+                 y: np.ndarray,
+                 x: np.ndarray = None,
+                 weights: DataWeight | Iterable[DataWeight] = None,
+                 bounds: tuple[float, float] = (-2, 2)
+                 ):
+        super().__init__(weights)
+        self.y_sub = y
+        self.x_sub = x
+        self.bounds = bounds
+
+    def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        if self.weights is not None:
+            mask = self.weights.get_mask(x, y)
+            x_ = x[mask]
+            y_ = y[mask]
+            y_sub = self.y_sub[mask]
+            x_sub = self.x_sub[mask]
+        else:
+            x_ = x
+            y_ = y
+            y_sub = self.y_sub
+            x_sub = self.x_sub
+
+        if len(self.y_sub) == len(y):
+            def func(m) -> float:
+                return float(np.sum(np.abs(y_-m*y_sub)))
+
+            result = minimize_scalar(func, bounds=self.bounds)
+            if not result.success:
+                raise ValueError(f"'{type(self).__name__}' has not converged.")
+            return result.x * self.y_sub
+
+        raise NotImplementedError()  # TODO: x-interpolation
+
+    def get_baseline_array(self, x: np.ndarray, _: np.ndarray, z: np.ndarray) -> np.ndarray:
+        baseline = np.empty_like(z)
+
+        for i in range(z.shape[0]):
+            baseline[i, :] = self.get_baseline(x, z[i, :])
 
         return baseline
 
