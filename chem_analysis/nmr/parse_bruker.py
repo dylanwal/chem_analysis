@@ -1,7 +1,7 @@
 from typing import Iterable
 from dataclasses import dataclass
 import pathlib
-from datetime import datetime
+from datetime import timedelta, datetime
 import math
 
 import numpy as np
@@ -11,36 +11,31 @@ from chem_analysis.nmr.parameters import NMRParameters
 
 @dataclass(slots=True)
 class NMRParametersBruker(NMRParameters):
-    is2D: bool = None
     sizeTD1: int = None
     spectral_width: float = None
     sizeTD2: int = None
     carrier: float = None
-    date_start: datetime = None
-    number_scans: int = None
-    solvent: str = None
     temperature_coil: float = None  # Kelvin
     instrument: str = None
     pulse_sequence: str = None
     probe: str = None
     receiver_gain: float = None
     spectrometer_frequency: float = None
-    spectral_size: int = None
+    # spectral_size: int = None
     top_spin_version: str = None
     instrument_position: int = None
     shift_points: int = None
     nucleus: str = None
 
 
-
-
 parseDict = {3: "i4", 4: "f8"}
 
 
-def parse_bruker_folder(path: pathlib.Path) -> tuple[np.ndarray, NMRParametersBruker]:
+def parse_bruker_folder(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray, NMRParametersBruker]:
     parameters = parse_acqus_file(path / "acqus")
-    data = get_fid(path / "fid")
-    return parameters, data
+    y = get_fid(path / "fid")
+    x = parameters.compute_time() #np.linspace(0, (parameters.sizeTD2-1)*parameters.dwellTime, num=parameters.sizeTD2)
+    return x, y, parameters
 
 
 def get_fid(path: pathlib.Path, endianess: str = "<", dtype: np.dtype = np.dtype("f8")) -> np.ndarray:
@@ -76,16 +71,15 @@ def parse_acqus_file(path: pathlib.Path) -> NMRParameters:
     lines = text.split("\n")
     parameters = NMRParametersBruker()
 
+
+    # TD1 is number of FIDs, TD2 is number of datapoints in each FID
+    line = get_line(lines, "##$TD").strip("##$TD= ")
+    parameters.number_points = int(int(line)/2)
+
     line = get_line(lines, "##$SW_h=").strip("##$SW_h= ")
-    parameters.spectral_width = float(line)
+    parameters.acquisition_time = timedelta(seconds=parameters.number_points/float(line))
 
-    line = get_line(lines, "##$TD").strip("##$TD= ")
-    parameters.sizeTD2 = int(int(line) / 2)
-
-    line = get_line(lines, "##$TD").strip("##$TD= ")
-    parameters.carrier = float(line) * 1e6
-
-    line = get_line(lines, "##$DATE_START").strip("##$DATE_START= ")
+    line = get_line(lines, "##$DATE").strip("##$DATE= ")
     parameters.date_start = datetime.fromtimestamp(int(line))
 
     line = get_line(lines, "##$NS=").strip("##$NS= ")
@@ -94,8 +88,8 @@ def parse_acqus_file(path: pathlib.Path) -> NMRParameters:
     line = get_line(lines, "##$SOLVENT=").strip("##$SOLVENT= ").replace("<", "").replace(">", "")
     parameters.solvent = line
 
-    line = get_line(lines, "##$shimCoilTempK=").strip("##$shimCoilTempK= ")
-    parameters.temperature_coil = float(line)
+    # line = get_line(lines, "##$shimCoilTempK=").strip("##$shimCoilTempK= ")
+    # parameters.temperature_coil = float(line)
 
     line = get_line(lines, "##$INSTRUM=").strip("##$INSTRUM= ").replace("<", "").replace(">", "")
     parameters.instrument = line
@@ -112,8 +106,6 @@ def parse_acqus_file(path: pathlib.Path) -> NMRParameters:
     line = get_line(lines, "##$SFO1=").strip("##$SFO1= ")
     parameters.spectrometer_frequency = float(line)
 
-    line = get_line(lines, "##$TD=").strip("##$TD= ")
-    parameters.spectral_size = float(line)
 
     line = get_line(lines, "##TITLE").strip("##TITLE= Parameter file, TopSpin ")
     parameters.top_spin_version = line

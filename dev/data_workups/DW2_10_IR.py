@@ -286,9 +286,24 @@ def mca_4_ST(data: ca.base.SignalArray):
     return np.column_stack((mca_times, conv))
 
 
+def create_gif(data: ca.base_obj.SignalArray):
+    from plotly_gif import GIF, capture
+
+    gif = GIF()
+
+    for i in range(150, len(data.time)-10):
+        sig = data.get_signal(i, processed=True)
+        fig = ca.plot.signal(sig)
+        fig.layout.xaxis.title = "<b>wavenumber(cm-1)</b>"
+        fig.layout.yaxis.title = "<b>absorbtion</b>"
+        gif.create_image(fig)  # create_gif image for gif
+
+    gif.create_gif()  # generate gif
+
+
 def main():
     data = ca.ir.IRSignalArray.from_file(
-        r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-10\DW2_10_IR.feather"
+        r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-10\DW2_10_IR.feather"
     )
     data.processor.add(ca.processing.baselines.SubtractOptimize(data.data[-2, :]))
     data.pop(-2)
@@ -311,10 +326,29 @@ def main():
     # data.processor.add(ca.processing.smoothing.Gaussian(sigma=2))
     # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
 
-    mca_result_1 = mca_2_ST(data)
-    for i in range(mca_result_1.shape[0]):
-        print(mca_result_1[i, 0], mca_result_1[i, 1])
+    # create_gif(data)
 
+    # mca_result_1 = mca_2_ST(data)
+    # for i in range(mca_result_1.shape[0]):
+    #     print(mca_result_1[i, 0], mca_result_1[i, 1])
+
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Surface(
+            x=data.x,
+            y=data.time_zeroed[:-50],
+            z=data.data[:-50],
+            legendgroup="surface",
+            showlegend=True,
+            showscale=False
+        )
+    )
+    from plotly_gif import three_d_scatter_rotate, GIF
+    gif = GIF()
+    three_d_scatter_rotate(gif, fig, auto_create=False)
+    gif.create_gif(length=10_000)
+    fig.show()
 
 if __name__ == "__main__":
     main()

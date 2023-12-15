@@ -79,7 +79,8 @@ class CutSlices(ReSampling):
         else:
             mask_y = np.ones_like(y, dtype=np.bool)
 
-        return x[mask_x], y[mask_y], z[mask_y, mask_x]
+        z = z[mask_y]
+        return x[mask_x], y[mask_y], z[:, mask_x]
 
 
 class CutSpans(ReSampling):

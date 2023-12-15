@@ -78,10 +78,14 @@ class SignalArray:
         self.processor.processed = False
         return sig
 
-    def get_signal(self, index: int) -> Signal:
-        sig = Signal(x_raw=self.x_raw, y_raw=self.data_raw[index, :], x_label=self.x_label,
+    def get_signal(self, index: int, processed: bool = False) -> Signal:
+        if processed:
+            sig = Signal(x_raw=self.x, y_raw=self.data[index, :], x_label=self.x_label,
                      y_label=self.y_label, name=f"time: {self.time[index]}", id_=index)
-        sig.processor = self.processor.get_copy()
+        else:
+            sig = Signal(x_raw=self.x_raw, y_raw=self.data_raw[index, :], x_label=self.x_label,
+                         y_label=self.y_label, name=f"time: {self.time[index]}", id_=index)
+            sig.processor = self.processor.get_copy()
         sig.time_ = self.time[index]
         return sig
 

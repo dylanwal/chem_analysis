@@ -61,11 +61,29 @@ def process_many(signals: list[ca.sec.SECSignal]):
     print(table.to_csv_str())
 
 
-def main():
-    path = r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-10\DW2-10_RI.npy"
-    array = ca.sec.SECSignalArray.from_file(path, calibration=cal_RI)
+def create_gif(data: ca.base_obj.SignalArray):
+    from plotly_gif import GIF, capture
 
-    process_one(array.get_signal(59), output=True)
+    gif = GIF()
+
+    for i in range(len(data.time)):
+        sig = data.get_signal(i, processed=True)
+        fig = ca.plot.signal(sig)
+        fig.layout.xaxis.title = "<b>retention time (min)</b>"
+        fig.layout.yaxis.title = "<b>signal</b>"
+        fig.layout.yaxis.range = (-1, 50)
+        fig.layout.xaxis.range = (8, 15)
+        gif.create_image(fig)  # create_gif image for gif
+
+    gif.create_gif(length=30000)  # generate gif
+
+
+def main():
+    path = r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-10\DW2-10_RI.npy"
+    array = ca.sec.SECSignalArray.from_file(path, calibration=cal_RI)
+    create_gif(array)
+
+    process_one(array.get_signal(10), output=True)
     # process_many([array.get_signal(i) for i in range(len(array.time))])
 
 

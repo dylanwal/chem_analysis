@@ -95,7 +95,7 @@ def mca_2_mask(data: ca.base.SignalArray):
 
 def main():
     data = ca.ir.IRSignalArray.from_file(
-        r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_ATIR.feather"
+        r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_ATIR.feather"
     )
     # data.raw_data = np.flip(data.raw_data, axis=1)
     # data.to_feather(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-7\DW2_7_ATIR_fix.feather")
@@ -115,9 +115,9 @@ def main():
     # ))
     # data.processor.add(ca.processing.smoothing.Gaussian(sigma=2))
     # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
-    mca_result_1 = mca_2_mask(data)
-    for i in range(mca_result_1.shape[0]):
-        print(mca_result_1[i, 0], mca_result_1[i, 1])
+    # mca_result_1 = mca_2_mask(data)
+    # for i in range(mca_result_1.shape[0]):
+    #     print(mca_result_1[i, 0], mca_result_1[i, 1])
 
 
 if __name__ == "__main__":

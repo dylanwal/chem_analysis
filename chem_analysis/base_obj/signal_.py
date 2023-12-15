@@ -134,7 +134,7 @@ class Signal:
             x, y = np.load(str(path))
             x_label = y_label = None
         else:
-            raise NotImplemented("File type currently not supported.")
+            raise NotImplementedError("File type currently not supported.")
 
         return cls(x, y, x_label=x_label, y_label=y_label)
 

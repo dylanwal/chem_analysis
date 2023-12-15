@@ -31,11 +31,17 @@ class SECSignalArray(SignalArray):
         self.calibration = calibration
         self.type_ = type_
 
-    def get_signal(self, index: int) -> SECSignal:
-        sig = SECSignal(x_raw=self.x, y_raw=self.data[index, :], calibration=self.calibration, type_=self.type_,
-                        x_label=self.x_label, y_label=self.y_label, name=f"time: {self.time[index]}", id_=index)
+    def get_signal(self, index: int, processed: bool = False) -> SECSignal:
+        if processed:
+            sig = SECSignal(x_raw=self.x, y_raw=self.data[index, :], calibration=self.calibration, type_=self.type_,
+                            x_label=self.x_label, y_label=self.y_label, name=f"time: {self.time[index]}", id_=index)
+        else:
+            sig = SECSignal(x_raw=self.x_raw, y_raw=self.data_raw[index, :], calibration=self.calibration,
+                            type_=self.type_,
+                            x_label=self.x_label, y_label=self.y_label, name=f"time: {self.time[index]}", id_=index)
+            sig.processor = self.processor.get_copy()
+
         sig.time = self.time[index]
-        sig.processor = self.processor.get_copy()
         return sig
 
     @classmethod

@@ -93,10 +93,26 @@ def integrate_array(nmr_array: ca.nmr.NMRSignalArray):
     fig.write_html("conv.html", auto_open=True)
 
 
+def create_gif(data: ca.base_obj.SignalArray):
+    from plotly_gif import GIF, capture
+
+    gif = GIF()
+
+    for i in range(len(data.time)):
+        sig = data.get_signal(i, processed=True)
+        fig = ca.plot.signal(sig)
+        fig.layout.xaxis.title = "<b>ppm(cm-1)</b>"
+        fig.layout.yaxis.title = "<b>signal</b>"
+        gif.create_image(fig)  # create_gif image for gif
+
+    gif.create_gif(length=30000)  # generate gif
+
+
 def main():
-    path = pathlib.Path(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-10\DW2_10_NMR.feather")
+    path = pathlib.Path(r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-10\DW2_10_NMR.feather")
     nmr_array = ca.nmr.NMRSignalArray.from_file(path)
     nmr_array.processor.add(ca.processing.translations.AlignMax(range_=(2.2, 2.7)))
+    create_gif(nmr_array)
     nmr_array.processor.add(ca.processing.smoothing.Gaussian(sigma=35))
     # nmr_array.to_feather(r"G:\Other computers\My "
     #                      r"Laptop\post_doc_2022\Data\polymerizations\DW2-8\DW2_8_NMR2_proc.feather")
