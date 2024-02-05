@@ -102,7 +102,11 @@ class MainMenu(QtWidgets.QWidget):
         self.parent().layout().removeWidget(self)
 
 
-if __name__ == '__main__':
+def main():
     app = QtWidgets.QApplication(sys.argv)
     main_window = MainWindow()
     sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    main()

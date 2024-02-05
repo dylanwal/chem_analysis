@@ -4,7 +4,7 @@ from typing import Iterable, Callable, Sequence
 
 import numpy as np
 
-from chem_analysis.utils.general_math import get_slice
+from chem_analysis.utils.math import get_slice
 from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 import chem_analysis.processing.weigths.penalty_functions as penalty_functions
 
@@ -145,15 +145,35 @@ class Slices(DataWeight):
                  normalized: bool = True,
                  invert: bool = False
                  ):
+        """
+
+        Parameters
+        ----------
+        slices:
+            slices will be set to 1
+        threshold:
+            below threshold --> 0
+            above threshold --> 1
+        normalized:
+
+        invert:
+            flips 0 --> 1 and 1 --> 0
+        """
         super().__init__(threshold, normalized)
         self.slices = slices
         self.invert = invert
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if not isinstance(self.slices, Iterable):
-            slices = [self.slices]
+            if self.slices is None:
+                slices = []
+            else:
+                slices = [self.slices]
         else:
             slices = self.slices
+
+        if len(slices) == 0:  # TODO: implement on other weights
+            return np.ones_like(x, dtype=bool)
 
         weights = np.zeros_like(x, dtype=bool)
 

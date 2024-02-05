@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 import plotly.graph_objs as go
 
-from chem_analysis.utils.general_math import get_slice
+from chem_analysis.utils.math import get_slice
 
 
 def normal_distribution(x, amp=1, mean=1, sigma=1):

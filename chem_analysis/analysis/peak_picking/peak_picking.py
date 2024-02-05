@@ -3,7 +3,7 @@ from functools import wraps
 import numpy as np
 from scipy.signal import find_peaks
 
-from chem_analysis.utils.general_math import map_argmax_to_original
+from chem_analysis.utils.math import map_argmax_to_original
 from chem_analysis.utils.printing_tables import StatsTable
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_array import SignalArray

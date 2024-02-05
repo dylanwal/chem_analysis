@@ -1,5 +1,5 @@
 import pathlib
-from typing import Sequence
+from typing import Sequence, Iterable
 
 import numpy as np
 
@@ -73,10 +73,17 @@ class SignalArray:
 
     def pop(self, index: int) -> Signal:
         sig = self.get_signal(index)
-        self.data_raw = np.delete(self.data_raw, index, axis=0)
-        self.time_raw = np.delete(self.time_raw, index)
-        self.processor.processed = False
+        self.delete(index)
         return sig
+
+    def delete(self, index: int | Iterable):
+        if isinstance(index, int):
+            index = [index]
+        index.sort(reverse=True)  # delete largest to smallest to avoid issue of changing index
+        for i in index:
+            self.data_raw = np.delete(self.data_raw, i, axis=0)
+            self.time_raw = np.delete(self.time_raw, i)
+            self.processor.processed = False
 
     def get_signal(self, index: int, processed: bool = False) -> Signal:
         if processed:
@@ -112,7 +119,7 @@ class SignalArray:
     @classmethod
     def from_file(cls, path: str | pathlib.Path):
         from chem_analysis.utils.feather_format import feather_to_numpy
-        from chem_analysis.utils.general_math import unpack_time_series
+        from chem_analysis.utils.math import unpack_time_series
 
         if isinstance(path, str):
             path = pathlib.Path(path)
@@ -143,7 +150,7 @@ class SignalArray:
 
     def to_feather(self, path: str | pathlib.Path):
         from chem_analysis.utils.feather_format import numpy_to_feather
-        from chem_analysis.utils.general_math import pack_time_series
+        from chem_analysis.utils.math import pack_time_series
 
         headers = list(str(0) for i in range(len(self.time)+1))
         headers[0] = self.x_label
@@ -153,7 +160,7 @@ class SignalArray:
         numpy_to_feather(pack_time_series(self.x, self.time, self.data), path, headers=headers)
 
     def to_csv(self, path: str | pathlib.Path, **kwargs):
-        from chem_analysis.utils.general_math import pack_time_series
+        from chem_analysis.utils.math import pack_time_series
 
         if "encodings" not in kwargs:
             kwargs["encoding"] = "utf-8"
@@ -163,6 +170,6 @@ class SignalArray:
         np.savetxt(path, pack_time_series(self.x, self.time, self.data), **kwargs)  # noqa
 
     def to_npy(self, path: str | pathlib.Path, **kwargs):
-        from chem_analysis.utils.general_math import pack_time_series
+        from chem_analysis.utils.math import pack_time_series
 
         np.save(path, pack_time_series(self.x, self.time, self.data), **kwargs)

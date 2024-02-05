@@ -7,6 +7,36 @@ from chem_analysis.utils.math import normalize_by_max
 from chem_analysis.plotting.plotly_helpers import merge_html_figs
 
 
+class Pure:
+    def __init__(self):
+        path = r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations"
+        path = pathlib.Path(path)
+        self.MA = ca.ir.IRSignal.from_file(path / "ATIR_MA.csv")
+        self.PMA = ca.ir.IRSignal.from_file(path / "ATIR_PMA.csv")
+        self.DMSO = ca.ir.IRSignal.from_file(path / "ATIR_DMSO.csv")
+        self.FL = ca.ir.IRSignal.from_file(path / "ATIR_perflourohexane.csv")
+        self.mask = None
+
+    def apply_mask(self, mask: np.ndarray):
+        self.mask = mask
+
+    @property
+    def MA_y(self) -> np.ndarray:
+        return self.MA.y[self.mask]
+
+    @property
+    def PMA_y(self) -> np.ndarray:
+        return self.PMA.y[self.mask]
+
+    @property
+    def DMSO_y(self) -> np.ndarray:
+        return self.DMSO.y[self.mask]
+
+    @property
+    def FL_y(self) -> np.ndarray:
+        return self.FL.y[self.mask]
+
+
 def conversion(mca_result) -> np.ndarray:
     return mca_result.C[:, 1] / (mca_result.C[:, 0] + mca_result.C[:, 1])
 
@@ -25,6 +55,21 @@ def plot_mca_results(mcrar, x, D, times, conv):
                       linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                       gridwidth=1, gridcolor="lightgray", autorange="reversed")
     fig1.update_yaxes(title="<b>normalized absorbance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
+                      gridwidth=1, gridcolor="lightgray")
+    
+    fig5 = go.Figure()
+    pure = Pure()
+    for i in range(mcrar.ST.shape[0]):
+        fig5.add_trace(go.Scatter(y=normalize_by_max(mcrar.ST[i, :]), x=x, name=f"mca_{i}"))
+    fig5.add_trace(go.Scatter(y=normalize_by_max(pure.MA.y_normalized_by_max()), x=pure.MA.x, name="MA"))
+    fig5.add_trace(go.Scatter(y=normalize_by_max(pure.PMA.y_normalized_by_max()), x=pure.PMA.x, name="PMA"))
+    fig5.update_layout(autosize=False, width=1200, height=600, font=dict(family="Arial", size=18, color="black"),
+                       plot_bgcolor="white", showlegend=True)
+    fig5.update_xaxes(title="<b>wavenumber (cm-1) (min)</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
+                      linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
+                      gridwidth=1, gridcolor="lightgray", autorange="reversed")
+    fig5.update_yaxes(title="<b>normalized absorbance</b>", tickprefix="<b>", ticksuffix="</b>", showline=True,
                       linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                       gridwidth=1, gridcolor="lightgray")
 
@@ -51,39 +96,10 @@ def plot_mca_results(mcrar, x, D, times, conv):
                       linewidth=5, mirror=True, linecolor='black', ticks="outside", tickwidth=4, showgrid=False,
                       gridwidth=1, gridcolor="lightgray", range=[0, 1])
 
-    merge_html_figs([fig1, fig2, fig3], auto_open=True)
+    merge_html_figs([fig1, fig2, fig3, fig5], auto_open=True)
 
 
-def load_pure():
-    path = r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations"
-    path = pathlib.Path(path)
-    MA = ca.ir.IRSignal.from_file(path / "ATIR_MA.csv")
-    PMA = ca.ir.IRSignal.from_file(path / "ATIR_PMA.csv")
-    DMSO = ca.ir.IRSignal.from_file(path / "ATIR_DMSO.csv")
-    FL = ca.ir.IRSignal.from_file(path / "ATIR_perflourohexane.csv")
-
-    return MA, PMA, DMSO, FL
-
-
-def mca_2(data: ca.base.SignalArray):
-    t_slice = slice(60, -3)  # ca.utils.general_math.get_slice(data.time_zeroed, start=800)  # slice(0, -1)
-    x_slice = ca.utils.general_math.get_slice(data.x, start=760, end=1900)
-
-    mca_times = data.time[t_slice]
-    mca_x = data.x[x_slice]
-    mca_data = data.data[t_slice, x_slice]
-
-    mask = ca.processing.weigths.Slices(
-        [
-            ca.utils.general_math.get_slice(mca_x, start=875, end=1100),
-            ca.utils.general_math.get_slice(mca_x, start=1350, end=1600),
-        ],
-    )
-    mask = mask.get_mask(mca_x, mca_data[0, :])
-    mca_x = mca_x[mask]
-    mca_data = mca_data[:, mask]
-
-    D = mca_data
+def mca_2(x: np.ndarray, t: np.ndarray, D: np.ndarray, pure: Pure):
     C = np.ones((D.shape[0], 2)) * .5
     C[0, :] = np.array([.7, 0.3])
 
@@ -97,31 +113,21 @@ def mca_2(data: ca.base.SignalArray):
     mca_result = mca.fit(D, C=C, verbose=True)
 
     conv = conversion(mca_result)
-    plot_mca_results(mca_result, mca_x, D, mca_times, conv)
-    return np.column_stack((mca_times, conv))
+    plot_mca_results(mca_result, x, D, t, conv)
+    return np.column_stack((t, conv))
 
 
-def mca_4(data: ca.base.SignalArray):
-    t_slice = slice(60, -3)  # ca.utils.general_math.get_slice(data.time_zeroed, start=800)  # slice(0, -1)
-    x_slice = ca.utils.general_math.get_slice(data.x, start=760, end=1900)
+def mca_4(x: np.ndarray, t: np.ndarray, D: np.ndarray, pure: Pure):
+    # C = mca_4_ST(x, t, D, pure)
+    # C = C[t]
 
-    mca_times = data.time[t_slice]
-    mca_x = data.x[x_slice]
-    mca_data = data.data[t_slice, x_slice]
-
-    # mask = ca.processing.weigths.Slices(
-    #     [
-    #         ca.utils.general_math.get_slice(mca_x, start=875, end=1100),
-    #         ca.utils.general_math.get_slice(mca_x, start=1350, end=1600),
-    #     ],
-    # )
-    # mask = mask.get_mask(mca_x, mca_data[0, :])
-    # mca_x = mca_x[mask]
-    # mca_data = mca_data[:, mask]
-
-    D = mca_data
-    C = mca_4_ST(data)
-    C = C[t_slice]
+    C = np.ones((D.shape[0], 4))
+    C[:, 0] = 0.5
+    C[:, 1] = 0.5
+    C[:, 2] = 0.02
+    C[:, 3] = 0.02
+    C[0, :] = np.array([1, 0.01, 0.01, 0.01])
+    C[40, :] = np.array([0.6, 0.4, 0.01, 0.01])
 
     print("working")
     mca = ca.analysis.mca.MultiComponentAnalysis(
@@ -143,35 +149,14 @@ def mca_4(data: ca.base.SignalArray):
     mca_result = mca.fit(D, C=C, verbose=True)
 
     conv = conversion(mca_result)
-    plot_mca_results(mca_result, mca_x, D, mca_times, conv)
-    return np.column_stack((mca_times, conv))
+    plot_mca_results(mca_result, x, D, t, conv)
+    return np.column_stack((t, conv))
 
 
-def mca_2_ST(data: ca.base.SignalArray):
-    t_slice = slice(80, -4)  # ca.utils.general_math.get_slice(data.time_zeroed, start=800)  # slice(0, -1)
-    x_slice = ca.utils.general_math.get_slice(data.x, start=760, end=1900)
-
-    mca_times = data.time[t_slice]
-    mca_x = data.x[x_slice]
-    mca_data = data.data[t_slice, x_slice]
-
-    mask = ca.processing.weigths.Slices(
-        [
-            ca.utils.general_math.get_slice(mca_x, start=875, end=1350),
-            ca.utils.general_math.get_slice(mca_x, start=1350, end=1600),
-        ],
-    )
-    mask = mask.get_mask(mca_x, mca_data[0, :])
-    mca_x = mca_x[mask]
-    mca_data = mca_data[:, mask]
-
-    MA, PMA, DMSO, FL = load_pure()
-
-    D = mca_data
-
+def mca_2_ST(x: np.ndarray, t: np.ndarray, D: np.ndarray, pure: Pure):
     ST = np.ones((2, D.shape[1]))
-    ST[0, :] = MA.y[x_slice][mask]
-    ST[1, :] = PMA.y[x_slice][mask]
+    ST[0, :] = pure.MA
+    ST[1, :] = pure.PMA
 
     print("working")
     mca = ca.analysis.mca.MultiComponentAnalysis(
@@ -183,27 +168,17 @@ def mca_2_ST(data: ca.base.SignalArray):
     mca_result = mca.fit(D, ST=ST, st_fix=[0,1], verbose=True)
 
     conv = conversion(mca_result)
-    plot_mca_results(mca_result, mca_x, D, mca_times, conv)
-    return np.column_stack((mca_times, conv))
+    plot_mca_results(mca_result, x, D, t, conv)
+    return np.column_stack((t, conv))
 
 
-def mca_5_ST(data: ca.base.SignalArray):
-    t_slice = slice(60, -3)  # ca.utils.general_math.get_slice(data.time_zeroed, start=800)  # slice(0, -1)
-    x_slice = ca.utils.general_math.get_slice(data.x, start=760, end=1900)
-
-    mca_times = data.time[t_slice]
-    mca_x = data.x[x_slice]
-    mca_data = data.data[t_slice, x_slice]
-
-    D = mca_data
-
-    MA, PMA, DMSO, FL = load_pure()
+def mca_5_ST(x: np.ndarray, t: np.ndarray, D: np.ndarray, pure: Pure):
     ST = np.ones((5, D.shape[1]))
-    ST[0, :] = MA.y[x_slice]
-    ST[1, :] = PMA.y[x_slice]
-    ST[2, :] = DMSO.y[x_slice] * 0.2
-    ST[3, :] = FL.y[x_slice]
-    noise = mca_data[-1]
+    ST[0, :] = pure.MA_y
+    ST[1, :] = pure.PMA_y
+    ST[2, :] = pure.DMSO_y * 0.2
+    ST[3, :] = pure.FL_y
+    noise = D[-1]
     noise = noise / np.max(noise)
     mask = noise > 0.2
     noise[mask] = .2
@@ -232,35 +207,17 @@ def mca_5_ST(data: ca.base.SignalArray):
     mca_result = mca.fit(D, ST=ST, st_fix=[0, 1, 2, 3, 4], verbose=True)
 
     conv = conversion(mca_result)
-    plot_mca_results(mca_result, mca_x, D, mca_times, conv)
-    return np.column_stack((mca_times, conv))
+    plot_mca_results(mca_result, x, D, t, conv)
+    return np.column_stack((t, conv))
 
 
-def mca_4_ST(data: ca.base.SignalArray):
-    t_slice = slice(80, -4)  # ca.utils.general_math.get_slice(data.time_zeroed, start=800)
-    x_slice = ca.utils.general_math.get_slice(data.x, start=760, end=1900)
+def mca_4_ST(x: np.ndarray, t: np.ndarray, D: np.ndarray, pure: Pure):
 
-    mca_times = data.time[t_slice]
-    mca_x = data.x[x_slice]
-    mca_data = data.data[t_slice, x_slice]
-
-    # mask = ca.processing.weigths.Slices(
-    #     [
-    #         ca.utils.general_math.get_slice(mca_x, start=875, end=1100),
-    #         ca.utils.general_math.get_slice(mca_x, start=1350, end=1500),
-    #     ],
-    # )
-    # mask = mask.get_mask(mca_x, mca_data[0, :])
-    # mca_x = mca_x[mask]
-    # mca_data = mca_data[:, mask]
-
-    D = mca_data
-    MA, PMA, DMSO, FL = load_pure()
     ST = np.ones((4, D.shape[1]))
-    ST[0, :] = MA.y[x_slice]
-    ST[1, :] = PMA.y[x_slice]
-    ST[2, :] = DMSO.y[x_slice]
-    ST[3, :] = FL.y[x_slice]
+    ST[0, :] = pure.MA_y
+    ST[1, :] = pure.PMA_y
+    ST[2, :] = pure.DMSO_y * 0.2
+    ST[3, :] = pure.FL_y
 
     print("working")
     mca = ca.analysis.mca.MultiComponentAnalysis(
@@ -282,8 +239,8 @@ def mca_4_ST(data: ca.base.SignalArray):
     mca_result = mca.fit(D, ST=ST, st_fix=[0, 1, 2, 3], verbose=True)
 
     conv = conversion(mca_result)
-    plot_mca_results(mca_result, mca_x, D, mca_times, conv)
-    return np.column_stack((mca_times, conv))
+    plot_mca_results(mca_result, x, D, t, conv)
+    return np.column_stack((t, conv))
 
 
 def create_gif(data: ca.base_obj.SignalArray):
@@ -301,38 +258,7 @@ def create_gif(data: ca.base_obj.SignalArray):
     gif.create_gif()  # generate gif
 
 
-def main():
-    data = ca.ir.IRSignalArray.from_file(
-        r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-10\DW2_10_IR.feather"
-    )
-    data.processor.add(ca.processing.baselines.SubtractOptimize(data.data[-2, :]))
-    data.pop(-2)
-    # data.pop(-1)
-    # data.to_feather(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-10\DW2_10_IR_fix.feather")
-
-    # signal = data.get_signal(300)
-    # fig = ca.plot.signal(signal)
-    # fig.add_trace(go.Scatter(x=signal.x_raw, y=signal.y_raw))
-    # fig.write_html("temp.html", auto_open=True)
-
-    data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.015))
-    # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
-    # data.processor.add(ca.processing.smoothing.GaussianTime(sigma=3))
-    # data.processor.add(ca.processing.smoothing.ExponentialTime(a=0.7))
-    # data.processor.add(ca.processing.baselines.Polynomial(
-    #         degree=1,
-    #         weights=ca.processing.weigths.AdaptiveDistanceMedian(threshold=0.2)
-    # ))
-    # data.processor.add(ca.processing.smoothing.Gaussian(sigma=2))
-    # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
-
-    # create_gif(data)
-
-    # mca_result_1 = mca_2_ST(data)
-    # for i in range(mca_result_1.shape[0]):
-    #     print(mca_result_1[i, 0], mca_result_1[i, 1])
-
-
+def create_gif_surface(data: ca.base_obj.SignalArray):
     fig = go.Figure()
     fig.add_trace(
         go.Surface(
@@ -349,6 +275,63 @@ def main():
     three_d_scatter_rotate(gif, fig, auto_create=False)
     gif.create_gif(length=10_000)
     fig.show()
+
+
+def main():
+    data = ca.ir.IRSignalArray.from_file(
+        r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-14\DW2_14_IR.feather"
+    )
+    # data.processor.add(ca.processing.baselines.SubtractOptimize(data.data[-2, :]))
+    # data.to_feather(r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-14\DW2_14_IR_proc.feather")
+
+    # signal = data.get_signal(300)
+    # fig = ca.plot.signal(signal)
+    # fig.add_trace(go.Scatter(x=signal.x_raw, y=signal.y_raw))
+    # fig.write_html("temp.html", auto_open=True)
+
+    # data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.015))
+    # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
+    # data.processor.add(ca.processing.smoothing.GaussianTime(sigma=3))
+    # data.processor.add(ca.processing.smoothing.ExponentialTime(a=0.7))
+    # data.processor.add(ca.processing.baselines.Polynomial(
+    #         degree=1,
+    #         weights=ca.processing.weigths.AdaptiveDistanceMedian(threshold=0.2)
+    # ))
+    # data.processor.add(
+    #     ca.processing.baselines.Polynomial(
+    #         degree=1,
+    #         weights=ca.processing.weigths.Spans(x_spans=(1900, 2000), invert=True)
+    #     )
+    # )
+    # data.processor.add(ca.processing.smoothing.Gaussian(sigma=2))
+    # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
+
+    ## get conversion
+    mca_result_1 = mca_2(*mca_pre(data))
+    for i in range(mca_result_1.shape[0]):
+        print(mca_result_1[i, 0], mca_result_1[i, 1])
+
+    ## making gifs
+    # create_gif(data)
+    # create_gif_surface(data)
+
+
+def mca_pre(data: ca.ir.IRSignalArray):
+    pure = Pure()
+    t_slice = slice(60, None)
+    mask = ca.processing.weigths.Slices(
+        [
+            ca.utils.math.get_slice(data.x, start=None, end=760),
+            ca.utils.math.get_slice(data.x, start=875, end=1100),
+            ca.utils.math.get_slice(data.x, start=1350, end=1600),
+            ca.utils.math.get_slice(data.x, start=1900, end=None),
+        ],
+    )
+    mask = mask.get_mask(data.x, data.data[0, :])
+    pure.apply_mask(mask)
+
+    return data.x[mask], data.time[t_slice], data.data[t_slice, mask], pure
+
 
 if __name__ == "__main__":
     main()

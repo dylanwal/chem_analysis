@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-import chem_analysis.utils.general_math as general_math
+import chem_analysis.utils.math as general_math
 from chem_analysis.sec.sec_math_functions import calculate_Mn_D_from_wi
 from chem_analysis.analysis.peak import PeakBounded, PeakStats, PeakParent
 from chem_analysis.base_obj.calibration import Calibration

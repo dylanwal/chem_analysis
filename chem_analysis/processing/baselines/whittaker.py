@@ -3,7 +3,7 @@ from typing import Iterable
 import numpy as np
 from scipy import sparse
 
-from chem_analysis.utils.general_math import MIN_FLOAT
+from chem_analysis.utils.math import MIN_FLOAT
 from chem_analysis.processing.weigths.weights import DataWeight
 import chem_analysis.utils.validation as validation
 from chem_analysis.processing.baselines.base import BaselineCorrection
@@ -23,7 +23,7 @@ def asymmetric_least_squared(
         max_iter: int = 50,
         tol: float = 1e-3,
         weights: np.ndarray = None
-):
+) -> tuple[np.ndarray, dict]:
     """
    Asymmetric least squared (AsLS) fitting.
 
@@ -112,16 +112,23 @@ class AsymmetricLeastSquared(BaselineCorrection):
         self.tol = tol
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        mask = self.weights.get_mask(x, y)
+        if self.weights is not None:
+            mask = self.weights.get_mask(x, y)
+            x_ = x[mask]
+            y_ = y[mask]
+        else:
+            x_ = x
+            y_ = y
+
         y_baseline, params = asymmetric_least_squared(
-            y[mask],
+            y_,
             self.lambda_,
             self.p,
             self.diff_order,
             self.max_iter,
             self.tol,
         )
-        return np.interp(x, x[mask], y_baseline)
+        return np.interp(x, x_, y_baseline)
 
 
 def improved_asymmetric_least_squared(
@@ -231,9 +238,16 @@ class ImprovedAsymmetricLeastSquared(BaselineCorrection):
         self._weights = weights
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        mask = self.weights.get_mask(x, y)
+        if self.weights is not None:
+            mask = self.weights.get_mask(x, y)
+            x_ = x[mask]
+            y_ = y[mask]
+        else:
+            x_ = x
+            y_ = y
+
         y_baseline, params = improved_asymmetric_least_squared(
-            y[mask],
+            y_,
             self.lambda_,
             self.lambda_1,
             self.p,
@@ -241,7 +255,7 @@ class ImprovedAsymmetricLeastSquared(BaselineCorrection):
             self.max_iter,
             self.tol
         )
-        return np.interp(x, x[mask], y_baseline)
+        return np.interp(x, x_, y_baseline)
 
 
 def reweighted_improved_asymmetric_least_squared(
@@ -341,15 +355,22 @@ class ReweightedImprovedAsymmetricLeastSquared(BaselineCorrection):
         self._weights = weights
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        mask = self.weights.get_mask(x, y)
+        if self.weights is not None:
+            mask = self.weights.get_mask(x, y)
+            x_ = x[mask]
+            y_ = y[mask]
+        else:
+            x_ = x
+            y_ = y
+
         y_baseline, params = reweighted_improved_asymmetric_least_squared(
-            y[mask],
+            y_,
             self.lambda_,
             self.diff_order,
             self.max_iter,
             self.tol
         )
-        return np.interp(x, x[mask], y_baseline)
+        return np.interp(x, x_, y_baseline)
 
 
 def adaptive_asymmetric_least_squared(
@@ -359,7 +380,7 @@ def adaptive_asymmetric_least_squared(
         max_iter: int = 50,
         tol: float = 1e-3,
         weights: np.ndarray = None
-):
+) -> tuple[np.ndarray, dict]:
     """
    adaptive iteratively reweighted penalized least squares
 
@@ -448,15 +469,21 @@ class AdaptiveAsymmetricLeastSquared(BaselineCorrection):
         self.diff_order = diff_order
         self.max_iter = max_iter
         self.tol = tol
-        self._weights = weights
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        mask = self.weights.get_mask(x, y)
+        if self.weights is not None:
+            mask = self.weights.get_mask(x, y)
+            x_ = x[mask]
+            y_ = y[mask]
+        else:
+            x_ = x
+            y_ = y
+
         y_baseline, params = adaptive_asymmetric_least_squared(
-            y[mask],
+            y_,
             self.lambda_,
             self.diff_order,
             self.max_iter,
             self.tol
         )
-        return np.interp(x, x[mask], y_baseline)
+        return np.interp(x, x_, y_baseline)

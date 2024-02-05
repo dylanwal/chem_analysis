@@ -3,7 +3,7 @@ import pathlib
 import plotly.graph_objs as go
 import numpy as np
 import chem_analysis as ca
-from chem_analysis.utils.general_math import normalize_by_max
+from chem_analysis.utils.math import normalize_by_max
 from chem_analysis.plotting.plotly_helpers import merge_html_figs
 
 

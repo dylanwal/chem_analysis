@@ -2,7 +2,7 @@
 import numpy as np
 import plotly.graph_objs as go
 
-from chem_analysis.utils.general_math import get_slice
+from chem_analysis.utils.math import get_slice
 import chem_analysis.plotting.plotting_plotly as plotly_base
 from chem_analysis.sec.sec_signal import SECSignal
 from chem_analysis.sec.sec_calibration import SECCalibration

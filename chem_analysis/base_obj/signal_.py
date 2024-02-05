@@ -3,7 +3,7 @@ import pathlib
 
 import numpy as np
 
-import chem_analysis.utils.general_math as general_math
+import chem_analysis.utils.math as general_math
 from chem_analysis.processing.base import Processor
 from chem_analysis.analysis.peak import PeakBounded
 

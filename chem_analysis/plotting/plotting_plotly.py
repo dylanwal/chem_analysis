@@ -99,7 +99,7 @@ def plotly_signal_raw(fig: go.Figure | None, signal: Signal, config: PlotConfig)
             x=x,
             y=y,
             mode="lines",
-            name=signal.name,
+            name=signal.name + "_raw",
             connectgaps=config.signal_connect_gaps,
             line={"color": config.get_signal_color(signal), "width": config.signal_line_width}
         )

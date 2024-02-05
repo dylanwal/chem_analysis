@@ -61,44 +61,60 @@ def plot_fit(x, y, peaks):
 
 
 def integrate_array(nmr_array: ca.nmr.NMRSignalArray):
-    I_bond = ca.analysis.integrate.integrate(nmr_array, x_range=(6.11, 6.4))
-    mask = I_bond < 0.05
-    I_benzene = ca.analysis.integrate.integrate(nmr_array, x_range=(7.2, 7.5))
-    I_ratio = I_bond / I_benzene
-    I_ratio[mask] = np.max(I_ratio)
+    I_benzene = ca.analysis.integrate.integrate(nmr_array, x_range=(7.1, 7.45))
+    I_bond = ca.analysis.integrate.integrate(nmr_array, x_range=(5.6, 6.6))
+    I_mono = ca.analysis.integrate.integrate(nmr_array, x_range=(3.4, 3.75))
 
-    I_poly = ca.analysis.integrate.integrate(nmr_array, x_range=(3.52, 3.72))
-    mask = I_poly < 0.05
-    I_poly[mask] = 0
-    I_mon = ca.analysis.integrate.integrate(nmr_array, x_range=(3.72, 3.83))
-    # mask = I_mon < 0.05
-    # I_mon[mask] = 0
+    mask = I_benzene > 0.01
+
+    conv = np.zeros_like(I_bond)
+    conv[mask] = 1 - (I_bond[mask]/I_benzene[mask])/(I_bond[-1]/I_benzene[-1])
 
     # print
-    conv = I_poly / (I_mon + I_poly)
-    for i in range(len(nmr_array.time_zeroed)):
-        print(nmr_array.time_zeroed[i], conv[i])
+    c = conv[mask]
+    t = nmr_array.time[mask]
+    for i in range(len(t)):
+        print(t[i], c[i])
 
     mask = np.logical_not(conv == 0)
-    fig = go.Figure(go.Scatter(x=nmr_array.time_zeroed, y=1 - I_ratio / np.max(I_ratio)))
-    fig.add_trace(go.Scatter(x=nmr_array.time_zeroed[mask], y=conv[mask],
+    fig = go.Figure(go.Scatter(x=nmr_array.time_zeroed, y=conv,
                              text=[f'X: {x}, Index: {i}' for i, x in enumerate(nmr_array.time_zeroed)],
                              hoverinfo='text',
                              ))
     fig.write_html("conv.html", auto_open=True)
 
 
-def main():
-    path = pathlib.Path(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-8\DW2_8_NMR2.feather")
-    nmr_array = ca.nmr.NMRSignalArray.from_file(path)
-    nmr_array.processor.add(ca.processing.translations.AlignMax(range_=(2.2, 2.7)))
-    nmr_array.processor.add(ca.processing.smoothing.Gaussian(sigma=15))
-    # nmr_array.to_feather(r"G:\Other computers\My "
-    #                      r"Laptop\post_doc_2022\Data\polymerizations\DW2-8\DW2_8_NMR2_proc.feather")
-    integrate_array(nmr_array)
-    conv_from_normal(nmr_array)
+def create_gif(data: ca.base_obj.SignalArray):
+    from plotly_gif import GIF, capture
 
-    signal = nmr_array.get_signal(5)
+    gif = GIF()
+
+    for i in range(len(data.time)):
+        sig = data.get_signal(i, processed=True)
+        fig = ca.plot.signal(sig)
+        fig.layout.xaxis.title = "<b>ppm(cm-1)</b>"
+        fig.layout.yaxis.title = "<b>signal</b>"
+        gif.create_image(fig)  # create_gif image for gif
+
+    gif.create_gif(length=30000)  # generate gif
+
+
+def main():
+    path = pathlib.Path(r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-14\DW2_14_NMR.feather")
+    nmr_array = ca.nmr.NMRSignalArray.from_file(path)
+
+    ## process data
+    nmr_array.processor.add(ca.processing.translations.AlignMax(range_=(7.2, 7.4), x_value=7.3))
+    nmr_array.processor.add(ca.processing.smoothing.Gaussian(sigma=20))
+    nmr_array.delete([123, 99, 72, 67, 1, 0])
+    # nmr_array.to_feather(r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-14\DW2_14_NMR_proc.feather")
+
+    integrate_array(nmr_array)
+    # conv_from_normal(nmr_array)
+
+    ## single analysis
+    signal = nmr_array.get_signal(14)
+    # signal.to_csv(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-9\DW2_9_NMR_14.csv")
     fig = ca.plot.signal(signal)
     fig.write_html("temp.html", auto_open=True)
 

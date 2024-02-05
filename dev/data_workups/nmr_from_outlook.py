@@ -24,10 +24,10 @@ import pathlib
 import win32com.client  # `pip install pywin32`
 
 # parameters
-account_index = 0
+account_index = 3
 folder_index = 5
-search_key = "DW2-11-p2"  # key word in subject line of ONLY NMR files
-save_location = r"C:\Users\nicep\Desktop\DW2_11_p2"
+search_key = "DW2-14"  # key word in subject line of ONLY NMR files
+save_location = r"C:\Users\nicep\Desktop\DW2_14"
 remove_extra_folder_layers = True
 
 
@@ -40,7 +40,7 @@ def main():
     for i, folder in enumerate(folders):
         print(i, folder.Name)
 
-    account = folders[0]  # << change index
+    account = folders[account_index]  # << change index
 
     # get folder
     print("\nemail account folders")

@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 import chem_analysis as ca
-from chem_analysis.utils.general_math import get_slice
+from chem_analysis.utils.math import get_slice
 from chem_analysis.analysis.line_fitting import DistributionNormalPeak, peak_deconvolution
 
 

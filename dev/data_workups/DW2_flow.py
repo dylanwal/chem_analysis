@@ -3,7 +3,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 from chem_analysis.utils.feather_format import feather_to_numpy, unpack_time_series
-from chem_analysis.utils.general_math import get_slice
+from chem_analysis.utils.math import get_slice
 from chem_analysis.analysis.line_fitting import DistributionNormalPeak, peak_deconvolution
 
 

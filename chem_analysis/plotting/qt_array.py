@@ -143,26 +143,23 @@ class ArrayView(QtWidgets.QWidget):
         if self.data is None:
             return
 
+        self.create_time_plot()
+        self.update_main_plot()
+
+    def create_time_plot(self):
         x = self.data.time_zeroed
         y = np.trapz(y=self.data.data, axis=1)
-        # y, x = np.histogram(self.data.time, bins=30)
         self.time_plot.plot(x, y, pen=(255, 0, 255, 200))
         self._time_line = pg.InfiniteLine(201, movable=True, bounds=(0, np.max(x)), label='x={value:0.2f}',
                                           labelOpts={
                                               'position': 0.1, 'color': (200, 200, 100), 'fill': (200, 200, 200, 50),
                                               'movable': True
                                           }, name="line")
+
         self.time_plot.addItem(self._time_line)
         self.time_plot.setLimits(xMin=np.min(x), xMax=np.max(x))
 
-        # # add histogram
-        # y, x = np.histogram(self.data.time, bins=30)
-        # self.time_plot.addItem(
-        #     pg.BarGraphItem(x0=x[:-1], x1=x[1:], height=y, pen='w', brush=(0,0,255,150))
-        # )
-
         self._time_line.sigPositionChanged.connect(self.update_main_plot)
-        self.update_main_plot()
 
     def update(self) -> None:
         self.update_time_plot()

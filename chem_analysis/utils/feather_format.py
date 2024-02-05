@@ -5,7 +5,7 @@ from typing import Sequence
 import numpy as np
 import pyarrow as pa
 
-from chem_analysis.utils.general_math import unpack_time_series
+from chem_analysis.utils.math import unpack_time_series
 
 
 def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path, headers: Sequence[str] = None):

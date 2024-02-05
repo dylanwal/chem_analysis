@@ -6,7 +6,7 @@ import numpy as np
 
 from chem_analysis.processing.base import ProcessingMethod
 from chem_analysis.processing.weigths.weights import Slices, Spans
-from chem_analysis.utils.general_math import get_slice
+from chem_analysis.utils.math import get_slice
 
 
 class ReSampling(ProcessingMethod, abc.ABC):
