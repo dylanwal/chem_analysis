@@ -116,8 +116,50 @@ def main():
     signal = nmr_array.get_signal(14)
     # signal.to_csv(r"G:\Other computers\My Laptop\post_doc_2022\Data\polymerizations\DW2-9\DW2_9_NMR_14.csv")
     fig = ca.plot.signal(signal)
+
     fig.write_html("temp.html", auto_open=True)
 
 
+def make_gif():
+    import matplotlib
+    matplotlib.use('TkAgg')
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+
+    data = ca.ir.IRSignalArray.from_file(
+        r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-14\DW2_14_NMR.feather"
+    )
+    # data.processor.add(ca.processing.re_sampling.CutSpans([2.2,2.7]))
+    data.processor.add(ca.processing.smoothing.GaussianTime(sigma=5))
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    x, y = np.meshgrid(data.x, data.time)
+
+    # Scatter plot
+    sc = ax.plot_surface(x, y, data.data, cmap='viridis', vmin=0, vmax=0.2)
+    ax.set_xlabel(data.x_label)
+    ax.set_ylabel(data.y_label)
+    ax.set_zlabel(data.z_label)
+    ax.set_zlim(0, 3)
+
+    # Add color bar
+    # cbar = fig.colorbar(sc)
+    # cbar.set_label('Absorption')
+
+    # Function to rotate the plot
+    def update(num, ax, fig):
+        ax.view_init(elev=10., azim=num)
+
+    # Generate animation
+    rotation_animation = FuncAnimation(fig, update, frames=np.arange(0, 360, 1), fargs=(ax, fig))
+
+    # Save animation as gif
+    rotation_animation.save("nmr_data.gif", writer='imagemagick', fps=30, dpi=200, savefig_kwargs={'transparent': True})
+
+    plt.show()
+
+
 if __name__ == "__main__":
-    main()
+    # main()
+    make_gif()

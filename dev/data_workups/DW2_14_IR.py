@@ -9,12 +9,12 @@ from chem_analysis.plotting.plotly_helpers import merge_html_figs
 
 class Pure:
     def __init__(self):
-        path = r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations"
+        path = r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\IR_standards"
         path = pathlib.Path(path)
-        self.MA = ca.ir.IRSignal.from_file(path / "ATIR_MA.csv")
-        self.PMA = ca.ir.IRSignal.from_file(path / "ATIR_PMA.csv")
-        self.DMSO = ca.ir.IRSignal.from_file(path / "ATIR_DMSO.csv")
-        self.FL = ca.ir.IRSignal.from_file(path / "ATIR_perflourohexane.csv")
+        self.MA = ca.ir.IRSignal.from_file(path / "MA_DMSO_20_percent.csv")
+        self.PMA = ca.ir.IRSignal.from_file(path / "PMA_DMSO_20_percent.csv")
+        self.DMSO = ca.ir.IRSignal.from_file(path / "DMSO.csv")
+        self.FL = ca.ir.IRSignal.from_file(path / "FL.csv")
         self.mask = None
 
     def apply_mask(self, mask: np.ndarray):
@@ -316,6 +316,43 @@ def main():
     # create_gif_surface(data)
 
 
+def make_gif():
+    import matplotlib
+    matplotlib.use('TkAgg')
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+
+    data = ca.ir.IRSignalArray.from_file(
+        r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-14\DW2_14_IR.feather"
+    )
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    x, y = np.meshgrid(data.x, data.time)
+
+    # Scatter plot
+    sc = ax.plot_surface(x, y, data.data, cmap='viridis')
+    ax.set_xlabel(data.x_label)
+    ax.set_ylabel(data.y_label)
+    ax.set_zlabel(data.z_label)
+
+    # Add color bar
+    # cbar = fig.colorbar(sc)
+    # cbar.set_label('Absorption')
+
+    # Function to rotate the plot
+    def update(num, ax, fig):
+        ax.view_init(elev=10., azim=num)
+
+    # Generate animation
+    rotation_animation = FuncAnimation(fig, update, frames=np.arange(0, 360, 1), fargs=(ax, fig))
+
+    # Save animation as gif
+    rotation_animation.save("ir_data.gif", writer='imagemagick', fps=30, dpi=200, savefig_kwargs={'transparent': True})
+
+    plt.show()
+
+
 def mca_pre(data: ca.ir.IRSignalArray):
     pure = Pure()
     t_slice = slice(60, None)
@@ -335,3 +372,4 @@ def mca_pre(data: ca.ir.IRSignalArray):
 
 if __name__ == "__main__":
     main()
+    # make_gif()

@@ -101,7 +101,7 @@ def get_slice(
         return slice(None, None)
 
     if checks:
-        if start > end:
+        if start is not None and end is not None and start > end:
             raise ValueError("'start' value is larger than 'end'. \nFix: Flip bounds.")
         if not quick_check_for_sorted_array(x):
             raise ValueError("Array is not sorted. \nFix: sort 'x'")
