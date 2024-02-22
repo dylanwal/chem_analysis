@@ -1,20 +1,17 @@
 from functools import wraps
-from typing import Protocol
 
 import numpy as np
 from scipy.signal import find_peaks
 
-from chem_analysis.utils.general_math import map_argmax_to_original
+from chem_analysis.utils.math import map_argmax_to_original
+from chem_analysis.utils.printing_tables import StatsTable
+from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.base_obj.signal_array import SignalArray
 from chem_analysis.processing.weigths.weights import DataWeight
 
 
-class SignalProtocol(Protocol):
-    x: np.ndarray
-    y: np.ndarray
-
-
 class ResultPeakPicking:
-    def __init__(self, signal: SignalProtocol):
+    def __init__(self, signal: Signal):
         self.signal = signal
         self.indexes = None
 
@@ -33,8 +30,27 @@ class ResultPeakPicking:
     def values(self):
         return self.signal.x[self.indexes]
 
+    def stats(self) -> StatsTable:
+        headers = ["peak #", "index", "x", "y"]
+        rows = []
+        for i, index_ in enumerate(self.indexes):
+            rows.append([i, index_, self.signal.x[i], self.signal.y[i]])
+        return StatsTable(rows, headers)
+
+
+class ResultPeakPickingArray:
+    def __init__(self, array: SignalArray):
+        self.array = array
+        self.results: list[ResultPeakPicking] = []
+
     def stats(self):
-        pass
+        table = None
+        for result in self.results:
+            if table is None:
+                table = result.stats()
+            else:
+                table.join(result.stats())
+        return
 
 
 def apply_limits(signal, result: ResultPeakPicking):
@@ -48,8 +64,8 @@ def apply_limits(signal, result: ResultPeakPicking):
         result.indexes = np.delete(result.indexes, remove_index)
 
 
-@wraps(find_peaks)
-def scipy_find_peaks(signal: SignalProtocol, ignore_limits: bool = False, weights: DataWeight = None, **kwargs) \
+@wraps(find_peaks)  # TODO: add support for signal array
+def scipy_find_peaks(signal: Signal, ignore_limits: bool = False, weights: DataWeight = None, **kwargs) \
         -> ResultPeakPicking:
     if weights is not None:
         mask = weights.get_mask(signal.x, signal.y)
@@ -69,7 +85,7 @@ def scipy_find_peaks(signal: SignalProtocol, ignore_limits: bool = False, weight
 
 
 @wraps(find_peaks)
-def max_find_peaks(signal: SignalProtocol, ignore_limits: bool = False, weights: DataWeight = None, **kwargs) \
+def max_find_peaks(signal: Signal, ignore_limits: bool = False, weights: DataWeight = None, **kwargs) \
         -> ResultPeakPicking:
     if weights is not None:
         mask = weights.get_mask(signal.x, signal.y)

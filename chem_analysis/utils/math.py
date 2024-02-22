@@ -6,6 +6,11 @@ MIN_FLOAT = np.finfo(float).eps
 
 
 def pack_time_series(x: np.ndarray, time_: np.ndarray, z: np.array) -> np.ndarray:
+    if x.shape[0] != z.shape[1]:
+        raise ValueError(f"'x.shape[0]' must equal 'z.shape[1]'\n\tx shape:{x.shape}\n\tz shape:{z.shape}")
+    if time_.shape[0] != z.shape[0]:
+        raise ValueError(f"'time_.shape[0]' must equal 'z.shape[0]'\n\ttime shape:{time_.shape}\n\tz shape:{z.shape}")
+
     data = np.empty((len(time_) + 1, len(x) + 1), dtype=z.dtype)
     data[0, 0] = 0
     data[0, 1:] = x
@@ -29,21 +34,115 @@ def check_for_flip(x: np.ndarray, y: np.ndarray):
     return x, y
 
 
-def get_slice(x: np.ndarray, start=None, end=None, flip: bool = True) \
-        -> slice:
-    if start is None and end is None:
-        return slice(0, len(x))
-    elif start is None and end is not None:
-        end_ = np.argmin(np.abs(x - end))
-        return slice(0, end_)
-    elif start is not None and end is None:
-        start_ = np.argmin(np.abs(x - start))
-        return slice(start_, len(x))
+def quick_check_for_sorted_array(x: np.ndarray, min_check: int = 5000) -> bool:
+    """
+    ** Not a strict check ** but it is quick to compute for any size array
+    Parameters
+    ----------
+    x
+    min_check
 
-    if flip and start > end:
-        start, end = end, start
-    start_ = np.argmin(np.abs(x - start))
-    end_ = np.argmin(np.abs(x - end))
+    Returns
+    -------
+
+    """
+    if len(x) < 2:
+        return True
+    if x[0] > x[-1]:
+        return False
+
+    if len(x) < min_check:
+        return np.all(np.all(x[:-1] <= x[1:]))
+
+    i = np.random.randint(1, len(x)-1, min_check-2)
+    i.sort()
+    return np.all(x[i[:-1]] <= x[i[1:]])
+
+
+def get_slice(
+        x: np.ndarray,
+        start=None,
+        end=None,
+        *,
+        checks: bool = True,
+        strict_bounds: bool = True,
+        start_bound: bool | None = None,
+        end_bound: bool | None = None,
+) -> slice:
+    """
+    gets slice from the nearest values
+
+    Parameters
+    ----------
+    x
+        sorted list small -> big
+    start:
+        value to start slice
+    end:
+        value to end slice
+    checks:
+        checks for issues with inputs
+    strict_bounds:
+        True: raises ValueError if bounds can't be satisfied
+        False: puts None in slice
+    start_bound:
+        None: closest
+        False: lowest
+        True: highest
+    end_bound:
+        None: closest
+        False: lowest
+        True: highest
+    Returns
+    -------
+
+    """
+    if start is None and end is None:
+        return slice(None, None)
+
+    if checks:
+        if start is not None and end is not None and start > end:
+            raise ValueError("'start' value is larger than 'end'. \nFix: Flip bounds.")
+        if not quick_check_for_sorted_array(x):
+            raise ValueError("Array is not sorted. \nFix: sort 'x'")
+
+    if start is None:
+        start_ = None
+    elif start_bound is None:
+        start_ = np.argmin(np.abs(x - start))
+    else:
+        if start_bound:
+            if end is None:
+                mask = (x >= start)
+            else:
+                mask = (end >= x) & (x >= start)
+        else:
+            mask = (x <= start)
+        if np.all(mask == 0):
+            if strict_bounds:
+                raise ValueError("slice can't find value for start.")
+            else:
+                start_ = None
+        else:
+            start_ = np.argmin(np.abs(x[mask] - start)) + np.argmax(mask)
+
+    if end is None:
+        end_ = None
+    elif end_bound is None:
+        end_ = np.argmin(np.abs(x - end))
+    else:
+        if end_bound:
+            mask = (x >= end)
+        else:
+            mask = (x <= end) & (x >= start)
+        if np.all(mask == 0):
+            if strict_bounds:
+                raise ValueError("slice can't find value for start.")
+            else:
+                end_ = None
+        else:
+            end_ = np.argmin(np.abs(x[mask] - end)) + np.argmax(mask) + 1
+
     return slice(start_, end_)
 
 
@@ -64,7 +163,10 @@ def map_argmax_to_original(index: int | np.ndarray, mask) -> int | np.ndarray:
 
 
 def normalize_by_max(y: np.ndarray) -> np.ndarray:
-    return y / np.max(y)
+    max_ = np.max(y)
+    # if max_ == 0:
+    #     return np.zeros_like(y)
+    return y / max_
 
 
 def normalize_by_area(x: np.ndarray, y: np.ndarray) -> np.ndarray:

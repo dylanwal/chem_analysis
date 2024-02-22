@@ -3,9 +3,9 @@ import pathlib
 
 import numpy as np
 
-import chem_analysis.utils.general_math as general_math
+import chem_analysis.utils.math as general_math
 from chem_analysis.processing.base import Processor
-from chem_analysis.analysis.peak import PeakBoundedStats
+from chem_analysis.analysis.peak import PeakBounded
 
 
 class Signal:
@@ -23,7 +23,7 @@ class Signal:
         y-axis label
     """
     __count = 0
-    _peak_type = PeakBoundedStats
+    _peak_type = PeakBounded
 
     def __init__(self,
                  x_raw: np.ndarray,
@@ -57,6 +57,13 @@ class Signal:
         if x_raw[1] > x_raw[-1]:
             x_raw = np.flip(x_raw)
             y_raw = np.flip(y_raw)
+        if len(x_raw.shape) != 1:
+            raise ValueError(f"'x_raw' must shape 1. \n\treceived: {x_raw.shape}")
+        if len(y_raw.shape) != 1:
+            raise ValueError(f"'y_raw' must shape 1. \n\treceived: {y_raw.shape}")
+        if x_raw.shape != y_raw.shape:
+            raise ValueError(f"'x_raw' and 'y_raw' must have same shape. \n\treceived: x_raw:{x_raw.shape} || y_raw: "
+                             f"{y_raw.shape}")
 
         self.x_raw = x_raw
         self.y_raw = y_raw
@@ -127,7 +134,7 @@ class Signal:
             x, y = np.load(str(path))
             x_label = y_label = None
         else:
-            raise NotImplemented("File type currently not supported.")
+            raise NotImplementedError("File type currently not supported.")
 
         return cls(x, y, x_label=x_label, y_label=y_label)
 
@@ -180,4 +187,3 @@ def load_csv(path: pathlib):
     data_array = np.array(data)
 
     return data_array[:, 0], data_array[:, 1], x_label, y_label
-

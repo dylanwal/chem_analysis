@@ -3,7 +3,7 @@ from collections import OrderedDict
 import dataclasses
 import numpy as np
 
-import chem_analysis.utils.general_math as general_math
+import chem_analysis.utils.math as general_math
 from chem_analysis.utils.printing_tables import StatsTable, apply_sig_figs
 
 
@@ -62,33 +62,11 @@ class PeakBounded(Peak):
     def high_bound_location(self) -> float:
         return self.parent.x[self.bounds.stop]
 
-    @property
-    def max_index(self) -> int:
-        return int(np.argmax(self.parent.y)) + self.bounds.start
-
-    @property
-    def max_loc(self) -> float:
-        return self.parent.x[self.max_index - self.bounds.start]
-
     def get_stats(self) -> OrderedDict:
         dict_ = OrderedDict()
         dict_['slice'] = f"[{self.bounds.start}-{self.bounds.stop}]"
         dict_['slice_loc'] = f"[{apply_sig_figs(self.low_bound_location)}-{apply_sig_figs(self.high_bound_location)}]"
 
-        return dict_
-
-    def stats_table(self) -> StatsTable:
-        return StatsTable.from_dict(self.get_stats())
-
-
-class PeakBoundedStats(PeakBounded):
-    def __init__(self, parent: PeakParent, bounds: slice, id_: int = None):
-        super().__init__(parent, bounds, id_)
-        # self.stats = PeakStats(self)
-
-    def get_stats(self) -> OrderedDict:
-        dict_ = super().get_stats()
-        dict_.update(self.stats.get_stats())
         return dict_
 
     def stats_table(self) -> StatsTable:
@@ -138,6 +116,10 @@ class PeakStats:
     # @property
     # def min_location(self) -> float:
     #     return self.parent.x[self.min_index]
+
+    @property
+    def max_loc(self) -> float:
+        return self.parent.x[int(np.argmax(self.parent.y))]
 
     @property
     def max_value(self) -> float:

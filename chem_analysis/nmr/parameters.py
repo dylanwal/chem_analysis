@@ -94,7 +94,7 @@ class NMRParameters:
     # shift_points: int = None
     # pulse_length: float = None
 
-    def compute_time(self):
+    def compute_time(self) -> np.ndarray:
         return np.linspace(0, (self.number_points - 1) * self.repetition_delay.total_seconds(), self.number_points)
 
     @property

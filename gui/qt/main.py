@@ -4,9 +4,6 @@ from PyQt6 import QtWidgets
 from PyQt6 import QtCore
 from PyQt6 import QtGui
 
-from gui.qt.nmr import NMRView
-from gui.qt.ir_array import IRArrayView
-
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -85,6 +82,7 @@ class MainMenu(QtWidgets.QWidget):
     def open_ir_timeseries(self):
         print("Opening IR timeseries analysis")
         self.delete()
+        from gui.qt.ir_array import IRArrayView
         ir = IRArrayView(self.parent())
         ir.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         self.parent().setWidget(ir)
@@ -92,6 +90,7 @@ class MainMenu(QtWidgets.QWidget):
     def open_nmr_timeseries(self):
         print("Opening NMR timeseries analysis")
         self.delete()
+        from gui.qt.ir_array import IRArrayView
         nmr = IRArrayView(self.parent())
         nmr.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         self.parent().setWidget(nmr)
@@ -103,7 +102,11 @@ class MainMenu(QtWidgets.QWidget):
         self.parent().layout().removeWidget(self)
 
 
-if __name__ == '__main__':
+def main():
     app = QtWidgets.QApplication(sys.argv)
     main_window = MainWindow()
     sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    main()

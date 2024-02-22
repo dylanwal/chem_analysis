@@ -1,6 +1,6 @@
 import numpy as np
 
-from chem_analysis.utils.general_math import check_for_flip
+from chem_analysis.utils.math import check_for_flip
 
 
 def calculate_Mn_D_from_wi(mw_i: np.ndarray, wi: np.ndarray) -> tuple[float, float]:

@@ -40,13 +40,25 @@ class StatsTable:
     def __repr__(self):
         return f"rows: {len(self.rows)}, cols: {len(self.headers)}"
 
+    def join(self, table: StatsTable, include_empty: bool = True):
+        headers = self.headers + table.headers
+        # remove duplicates while maintaining order
+        seen = set()
+        self.headers = [x for x in headers if x not in seen and not seen.add(x)]
+
+        if table.rows:
+            self.rows += table.rows
+        else:
+            if include_empty:
+                self.rows += [[None] * len(self.headers)]
+
     def to_str(self, sig_figs: int = global_config.sig_fig, **kwargs):
         if "tablefmt" not in kwargs:
             kwargs["tablefmt"] = global_config.table_format
         rows = process_rows_to_str(self.rows, sig_figs)
         return tabulate(rows, self.headers, **kwargs)
 
-    def to_csv(self, with_headers: bool = True, sig_figs: int = global_config.sig_fig) -> str:
+    def to_csv_str(self, with_headers: bool = True, sig_figs: int = global_config.sig_fig) -> str:
         rows = process_rows_to_str(self.rows, sig_figs)
         if with_headers:
             inner_strings = [",".join(self.headers)]

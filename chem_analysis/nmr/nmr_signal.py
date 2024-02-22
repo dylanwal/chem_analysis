@@ -11,6 +11,7 @@ class NMRFID(Signal):
     """
     Free Induction Decay (FID)
     """
+
     def __init__(self,
                  x: np.ndarray,
                  y: np.ndarray,
@@ -56,7 +57,7 @@ class NMRSignal(Signal):
                  y_label: str = None,
                  name: str = None,
                  id_: int = None
-    ):
+                 ):
         x_label = x_label or "ppm"
         y_label = y_label or "signal"
         super().__init__(x_raw, y_raw, x_label, y_label, name, id_)
@@ -98,18 +99,16 @@ class NMRSignal(Signal):
     #     self.processor.add(Phase0D(-90))
     #     self.processor.add(Phase1D(self.parameters.shift_points, unit="time"))
 
-    # @classmethod
-    # def from_bruker(cls, path: pathlib.Path) -> NMRSignal:
-    #     if isinstance(path, str):
-    #         path = pathlib.Path(path)
-    #     from chem_analysis.nmr.parse_bruker import parse_bruker_folder
-    #     # load data from file
-    #     fid_data, parameters = parse_brucker_folder
-    #
-    #     # construct NMR object
-    #     nmr = NMRSignal(parameters=parameters)
-    #     nmr.load_from_raw_FID_data(data)
-    #     return nmr
+    @classmethod
+    def from_bruker(cls, path: pathlib.Path) -> NMRSignal:
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        from chem_analysis.nmr.parse_bruker import parse_bruker_folder
+        x, y, parameters = parse_bruker_folder(path)
+
+        fid = NMRFID(x, y, parameters=parameters)
+        return fid.generate_nmr()
 
     @classmethod
     def from_spinsolve(cls, path: pathlib.Path | str) -> NMRSignal:

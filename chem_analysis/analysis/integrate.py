@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.integrate import simpson
 
-from chem_analysis.utils.general_math import get_slice
+from chem_analysis.utils.math import get_slice
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_array import SignalArray
 

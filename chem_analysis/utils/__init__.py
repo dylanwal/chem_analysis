@@ -1,2 +1,2 @@
-import chem_analysis.utils.general_math as math
-import chem_analysis.utils.feather_format
+import chem_analysis.utils.math as math
+import chem_analysis.utils.feather_format as feather
