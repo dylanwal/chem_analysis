@@ -7,6 +7,23 @@ import chem_analysis.utils.math as general_math
 from chem_analysis.utils.printing_tables import StatsTable, apply_sig_figs
 
 
+@dataclasses.dataclass
+class PeakParent:
+    x: np.ndarray
+    y: np.ndarray
+
+
+class PeakDiscrete:
+    def __init__(self, parent: PeakParent, index: int, id_: int = None):
+        self.parent = parent
+        self.id_ = id_
+        self.index = index
+
+    @property
+    def value(self) -> float | int:
+        return self.parent.y[self.index]
+
+
 class Peak(abc.ABC):
     def __init__(self, id_: int = None):
         self.id_ = id_
@@ -21,12 +38,6 @@ class Peak(abc.ABC):
     @abc.abstractmethod
     def y(self) -> np.ndarray:
         ...
-
-
-@dataclasses.dataclass
-class PeakParent:
-    x: np.ndarray
-    y: np.ndarray
 
 
 class PeakBounded(Peak):

@@ -1,4 +1,6 @@
 import logging
+import copy
+from typing import Sequence
 
 import numpy as np
 
@@ -19,7 +21,7 @@ def pack_time_series(x: np.ndarray, time_: np.ndarray, z: np.array) -> np.ndarra
     return data
 
 
-def unpack_time_series(data: np.array) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def unpack_signal2D(data: np.array) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     x = data[0, 1:]
     time_ = data[1:, 0]
     z = data[1:, 1:]
@@ -163,15 +165,31 @@ def map_argmax_to_original(index: int | np.ndarray, mask) -> int | np.ndarray:
 
 
 def normalize_by_max(y: np.ndarray) -> np.ndarray:
-    max_ = np.max(y)
-    # if max_ == 0:
-    #     return np.zeros_like(y)
-    return y / max_
+    return y/np.max(y)
+
+
+def normalize_by_max_with_x_range(y: np.ndarray, x: np.ndarray, x_range: Sequence[int | float] = None) -> np.ndarray:
+    if x_range[0] > x_range[1]:
+        x_range = copy.copy(x_range)
+        x_range = x_range[1], x_range[0]
+
+    slice_ = get_slice(x, *x_range)
+    return y / np.max(y[slice_])
 
 
 def normalize_by_area(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     x, y = check_for_flip(x, y)
     return y / np.trapz(x=x, y=y)
+
+
+def y_normalized_by_area_with_x_range(x: np.ndarray, y: np.ndarray, x_range: Sequence[int | float] = None) \
+        -> np.ndarray:
+    if x_range[0] > x_range[1]:
+        x_range = copy.copy(x_range)
+        x_range = x_range[1], x_range[0]
+
+    slice_ = get_slice(x, *x_range)
+    return y / np.trapz(x=x[slice_], y=y[slice_])
 
 
 # pdf = probability distribution function

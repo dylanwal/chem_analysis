@@ -8,26 +8,28 @@ from chem_analysis.processing.base import Processor
 from chem_analysis.analysis.peak import PeakBounded
 
 
+def validate_input(x_raw: np.ndarray, data_raw: np.ndarray):
+    if len(x_raw.shape) != 1:
+        raise ValueError(f"'x_raw' must shape 1. \n\treceived: {x_raw.shape}")
+    if len(data_raw.shape) != 1:
+        raise ValueError(f"'data_raw' must shape 1. \n\treceived: {data_raw.shape}")
+    if x_raw.shape != data_raw.shape:
+        raise ValueError(f"'x_raw' and 'data_raw' must have same shape. \n\treceived: x_raw:{x_raw.shape} || data_raw: "
+                         f"{data_raw.shape}")
+
+
 class Signal:
     """ signal
 
     A signal is any x-y data.
 
-    Attributes
-    ----------
-    name: str
-        Any name the user wants to add.
-    x_label: str
-        x-axis label
-    y_label: str
-        y-axis label
     """
     __count = 0
     _peak_type = PeakBounded
 
     def __init__(self,
                  x_raw: np.ndarray,
-                 y_raw: np.ndarray,
+                 data_raw: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  name: str = None,
@@ -37,45 +39,30 @@ class Signal:
 
         Parameters
         ----------
-        x_raw: np.ndarray
-            raw x data
-        y_raw: np.ndarray
-            raw y data
+        x_raw: np.ndarray[i]
+            raw x data, i length
+        data_raw: np.ndarray[i]
+            raw y data, i length
         x_label: str
             x-axis label
         y_label: str
             y-axis label
         name: str
             user defined name
-
-        Notes
-        -----
-        * Either 'ser' or 'x' and 'y' are required but not both.
-
         """
-        # flip data if giving backwards; it should be low to high
-        if x_raw[1] > x_raw[-1]:
-            x_raw = np.flip(x_raw)
-            y_raw = np.flip(y_raw)
-        if len(x_raw.shape) != 1:
-            raise ValueError(f"'x_raw' must shape 1. \n\treceived: {x_raw.shape}")
-        if len(y_raw.shape) != 1:
-            raise ValueError(f"'y_raw' must shape 1. \n\treceived: {y_raw.shape}")
-        if x_raw.shape != y_raw.shape:
-            raise ValueError(f"'x_raw' and 'y_raw' must have same shape. \n\treceived: x_raw:{x_raw.shape} || y_raw: "
-                             f"{y_raw.shape}")
+        validate_input(x_raw, data_raw)
 
         self.x_raw = x_raw
-        self.y_raw = y_raw
-        self.id_ = id_ if id_ is not None else Signal.__count
+        self.data_raw = data_raw
+        self.id_ = id_ or Signal.__count
         Signal.__count += 1
-        self.name = name if name is not None else f"signal_{self.id_}"
-        self.x_label = x_label if x_label is not None else "x_axis"
-        self.y_label = y_label if y_label is not None else "y_axis"
+        self.name = name or f"signal_{self.id_}"
+        self.x_label = x_label or "x_axis"
+        self.y_label = y_label or "y_axis"
 
         self.processor = Processor()
         self._x = None
-        self._y = None
+        self._data = None
 
     def __repr__(self):
         text = f"{self.name}: "
@@ -86,33 +73,40 @@ class Signal:
     def __len__(self) -> int:
         return len(self.x)
 
+    def _process(self):
+        self._x, self._data = self.processor.run(self.x_raw, self.data_raw)
+
     @property
     def x(self) -> np.ndarray:
         if not self.processor.processed:
-            self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
+            self._process()
 
         return self._x
 
     @property
-    def y(self) -> np.ndarray:
+    def data(self) -> np.ndarray:
         if not self.processor.processed:
-            self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
+            self._process()
 
-        return self._y
+        return self._data
+
+    @property
+    def y(self) -> np.ndarray:
+        return self.data
 
     def y_normalized_by_max(self, x_range: Sequence[int | float] = None) -> np.ndarray:
         if x_range is None:
             return self.y/np.max(self.y)
-
-        slice_ = general_math.get_slice(self.x, *x_range)
-        return general_math.normalize_by_max(self.y[slice_])
+        return general_math.normalize_by_max_with_x_range(x=self.x, y=self.y, x_range=x_range)
 
     def y_normalized_by_area(self, x_range: Sequence[int | float] = None) -> np.ndarray:
         if x_range is None:
-            return general_math.normalize_by_area(self.x, self.y)
+            return general_math.normalize_by_area(x=self.x, y=self.y)
+        return general_math.y_normalized_by_area_with_x_range(x=self.x, y=self.y, x_range=x_range)
 
-        slice_ = general_math.get_slice(self.x, *x_range)
-        return general_math.normalize_by_area(self.x[slice_], self.y[slice_])
+    ####################################################################################################################
+    ## Save/Load from file #############################################################################################
+    ####################################################################################################################
 
     @classmethod
     def from_file(cls, path: str | pathlib.Path):
@@ -154,15 +148,13 @@ class Signal:
         np.save(path, np.column_stack((self.x, self.y)), **kwargs)
 
 
-def load_csv(path: pathlib):
+def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | None]:
     import csv
 
-    # Initialize variables to store data
     data = []
     x_label = None
     y_label = None
 
-    # Read CSV file
     with open(path, 'r') as file:
         csv_reader = csv.reader(file)
 

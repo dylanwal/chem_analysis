@@ -5,7 +5,6 @@ from scipy import sparse
 
 from chem_analysis.utils.math import MIN_FLOAT
 from chem_analysis.processing.weigths.weights import DataWeight
-import chem_analysis.utils.validation as validation
 from chem_analysis.processing.baselines.base import BaselineCorrection
 
 diagonals = [
@@ -63,8 +62,8 @@ def asymmetric_least_squared(
     if weights is None:
         weight_array = np.ones(y.shape[0])
     else:
-        validation.check_array_size(weights, y.shape, "asymmetric_least_squared.weights")
-        validation.check_array_inf_nan(weights, "asymmetric_least_squared.weights")
+        check_array_size(weights, y.shape, "asymmetric_least_squared.weights")
+        check_array_inf_nan(weights, "asymmetric_least_squared.weights")
         weight_array = np.asarray(weights).copy()
 
     # setup
@@ -180,8 +179,8 @@ def improved_asymmetric_least_squared(
     if weights is None:
         weight_array = np.ones(y.shape[0])
     else:
-        validation.check_array_size(weights, y.shape, "asymmetric_least_squared.weights")
-        validation.check_array_inf_nan(weights, "asymmetric_least_squared.weights")
+        check_array_size(weights, y.shape, "asymmetric_least_squared.weights")
+        check_array_inf_nan(weights, "asymmetric_least_squared.weights")
         weight_array = np.asarray(weights).copy()
 
     # setup
@@ -300,8 +299,8 @@ def reweighted_improved_asymmetric_least_squared(
     if weights is None:
         weight_array = np.ones(y.shape[0])
     else:
-        validation.check_array_size(weights, y.shape, "reweighted_improved_asymmetric_least_squared.weights")
-        validation.check_array_inf_nan(weights, "reweighted_improved_asymmetric_least_squared.weights")
+        check_array_size(weights, y.shape, "reweighted_improved_asymmetric_least_squared.weights")
+        check_array_inf_nan(weights, "reweighted_improved_asymmetric_least_squared.weights")
         weight_array = np.asarray(weights).copy()
 
     # setup
@@ -424,8 +423,8 @@ def adaptive_asymmetric_least_squared(
     if weights is None:
         weight_array = np.ones(y.shape[0])
     else:
-        validation.check_array_size(weights, y.shape, "adaptive_asymmetric_least_squared.weights")
-        validation.check_array_inf_nan(weights, "adaptive_asymmetric_least_squared.weights")
+        check_array_size(weights, y.shape, "adaptive_asymmetric_least_squared.weights")
+        check_array_inf_nan(weights, "adaptive_asymmetric_least_squared.weights")
         weight_array = np.asarray(weights).copy()
 
     # setup
@@ -487,3 +486,16 @@ class AdaptiveAsymmetricLeastSquared(BaselineCorrection):
             self.tol
         )
         return np.interp(x, x_, y_baseline)
+
+
+def check_array_size(x: np.ndarray, shape: tuple[int], name: str):
+    if len(x.shape) != len(shape) or x.shape != shape:
+        raise ValueError(f"Invalid array shape for: {name}. \n\texpected: {shape}; \n\t received: {x.shape}")
+
+
+def check_array_inf_nan(x: np.ndarray, name: str):
+    if np.any(np.isinf(x)):
+        raise ValueError(f"The array '{name}' contains 'inf' values.")
+
+    if np.any(np.isnan(x)):
+        raise ValueError(f"The array '{name}' contains 'nan' values.")

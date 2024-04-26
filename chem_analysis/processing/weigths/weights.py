@@ -125,7 +125,7 @@ class DataWeightChain(DataWeight):
         if weights is None:
             weights = []
         if not isinstance(weights, Iterable):
-            weights = list(weights)
+            weights = [weights]
         self.weights = weights
 
     def get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:

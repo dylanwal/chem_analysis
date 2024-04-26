@@ -5,7 +5,7 @@ from typing import Sequence
 import numpy as np
 import pyarrow as pa
 
-from chem_analysis.utils.math import unpack_time_series
+from chem_analysis.utils.math import unpack_signal2D
 
 
 def numpy_to_feather(array_: np.ndarray, file_path: str | pathlib.Path, headers: Sequence[str] = None):
@@ -70,7 +70,7 @@ def unpack_and_merge_time_series_feather_files(paths: Sequence[str | pathlib.Pat
     z_data = []
     time_data = []
     for path in paths:
-        x, time_, z = unpack_time_series(feather_to_numpy(path))
+        x, time_, z = unpack_signal2D(feather_to_numpy(path))
         z_data.append(z)
         time_data.append(time_)
 

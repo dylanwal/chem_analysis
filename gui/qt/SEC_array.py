@@ -14,7 +14,7 @@ from pyqtgraph.Qt import QtCore
 
 
 from chem_analysis.utils.feather_format import unpack_and_merge_time_series_feather_files, feather_to_numpy, \
-    unpack_time_series
+    unpack_signal2D
 
 
 pg.setConfigOption('background', 'w')
@@ -216,7 +216,7 @@ class IRArrayView(QtWidgets.QWidget):
                                                      initialFilter="feather"
                                                      )
         print(path)
-        self.data = IRData(*unpack_time_series(feather_to_numpy(path[0])))
+        self.data = IRData(*unpack_signal2D(feather_to_numpy(path[0])))
         self.update()
 
     def save(self):

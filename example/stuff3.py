@@ -1,32 +1,59 @@
-from functools import wraps
-from typing import Protocol
-
 import numpy as np
-from scipy.signal import find_peaks
+from time import time
+
+n = 300
+x = np.ones((n, n, n),  dtype="float64")
 
 
-class SignalProtocol(Protocol):
-    x: np.ndarray
-    y: np.ndarray
+def row(mat):
+    out = 0
+    for i in range(n):
+        sub = mat[i, :, :]
+        for i in range(n):
+            out += sub[i, :]
+        for i in range(n):
+            out += sub[:, i]
+    return out
 
 
-def stuff(a: SignalProtocol):
-    return a.x
+def col(mat):
+    out = 0
+    for i in range(n):
+        sub = mat[:, i, :]
+        for i in range(n):
+            out += sub[i, :]
+        for i in range(n):
+            out += sub[:, i]
+
+    return out
 
 
-class A:
-    def __init__(self):
-        self._x = np.ones(10)
-        self._y = np.ones(12)
+def col2(mat):
+    out = 0
+    for i in range(n):
+        sub = mat[:, :, i]
+        for i in range(n):
+            out += sub[i, :]
+        for i in range(n):
+            out += sub[:, i]
 
-    @property
-    def x(self):
-        return np.ones(10)
+    return out
 
-    @property
-    def y(self):
-        return np.ones(10)
 
-aa = A()
-b = stuff(aa)
+p = 10
+t = time()
+for i in range(p):
+    s = row(x)
+print(time()-t)
 
+
+t = time()
+for i in range(p):
+    s = col(x)
+print(time()-t)
+
+
+t = time()
+for i in range(p):
+    s = col2(x)
+print(time()-t)

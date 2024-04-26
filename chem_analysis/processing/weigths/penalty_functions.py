@@ -17,10 +17,10 @@ def penalty_function_linear(x: np.ndarray, prefactor: int = 1) -> np.ndarray:
 
 
 def penalty_function_quadratic(x: np.ndarray, prefactor: int = 1) -> np.ndarray:
-    return prefactor * (x)**2
+    return prefactor * x**2
 
 
-def penalty_function_polynomial(x: np.ndarray,  prefactor: int = 1, power: int| float = 3) \
+def penalty_function_polynomial(x: np.ndarray,  prefactor: int = 1, power: int | float = 3) \
         -> np.ndarray:
     return prefactor * np.abs(x**power)
 

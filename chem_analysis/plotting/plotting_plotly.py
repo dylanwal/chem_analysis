@@ -5,7 +5,7 @@ import plotly.graph_objs as go
 from chem_analysis.plotting.plot_format import bold_in_html
 from chem_analysis.base_obj.signal_ import Signal
 # from chem_analysis.base_obj.chromatogram import Chromatogram
-# from chem_analysis.base_obj.signal_array import SignalArray
+# from chem_analysis.base_obj.signal_array import SignalTimeSeries
 from chem_analysis.plotting.config import PlotConfig, NormalizationOptions
 from chem_analysis.processing.baselines.base import BaselineCorrection
 from chem_analysis.analysis.peak import PeakBounded
@@ -222,7 +222,7 @@ def plotly_baseline(fig: go.Figure, baseline: BaselineCorrection, config: PlotCo
 #     )
 #
 #
-# def plotly_signal_array_3D(array: SignalArray, config: PlotConfig) -> go.Figure:
+# def plotly_signal_array_3D(array: SignalTimeSeries, config: PlotConfig) -> go.Figure:
 #     fig = go.Figure()
 #
 #     for i, t in enumerate(times):
@@ -241,7 +241,7 @@ def plotly_baseline(fig: go.Figure, baseline: BaselineCorrection, config: PlotCo
 #     return fig
 #
 #
-# def plotly_signal_array_surface(array: SignalArray, config: PlotConfig) -> go.Figure:
+# def plotly_signal_array_surface(array: SignalTimeSeries, config: PlotConfig) -> go.Figure:
 #     fig = go.Figure()
 #
 #     fig.add_trace(
@@ -257,7 +257,7 @@ def plotly_baseline(fig: go.Figure, baseline: BaselineCorrection, config: PlotCo
 #
 #     return fig
 #
-# def plotly_signal_array(fig: go.Figure, array: SignalArray, config: PlotConfig):
+# def plotly_signal_array(fig: go.Figure, array: SignalTimeSeries, config: PlotConfig):
 #     if fig is None:
 #         fig = go.Figure()
 #

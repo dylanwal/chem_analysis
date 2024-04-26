@@ -44,6 +44,10 @@ class ResultPeakBound:
     def stats_table(self) -> StatsTable:
         return StatsTable.from_list_dicts(self.get_stats())
 
+    @property
+    def max_height(self) -> float:
+        return np.max(list(np.max(peak.y) for peak in self.peaks))
+
 
 def rolling_ball_n_points(
         peak_index: int,

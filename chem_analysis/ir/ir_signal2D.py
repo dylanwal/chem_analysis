@@ -1,11 +1,11 @@
 
 import numpy as np
 
-from chem_analysis.base_obj.signal_array import SignalArray
+from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.ir.ir_signal import IRSignal
 
 
-class IRSignalArray(SignalArray):
+class IRSignal2D(Signal2D):
     _signal = IRSignal
 
     def __init__(self,
@@ -39,13 +39,4 @@ class IRSignalArray(SignalArray):
         return np.exp(-self.data)
 
     def get_signal(self, index: int, processed: bool = False) -> IRSignal:
-        if processed:
-            sig = IRSignal(x_raw=self.x, y_raw=self.data[index, :], x_label=self.x_label, y_label=self.y_label,
-                       name=f"time: {self.time[index]}", id_=index)
-        else:
-            sig = IRSignal(x_raw=self.x_raw, y_raw=self.data_raw[index, :], x_label=self.x_label, y_label=self.y_label,
-                       name=f"time: {self.time[index]}", id_=index)
-            sig.processor = self.processor.get_copy()
-
-        sig.time = self.time[index]
-        return sig
+        return super().get_signal(index, processed)

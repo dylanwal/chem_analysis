@@ -4,14 +4,7 @@ import numpy as np
 from scipy.fft import fft
 from scipy.fftpack import fftshift
 
-from chem_analysis.processing.base import ProcessingMethod
-
-
-class FourierTransform(ProcessingMethod, abc.ABC):
-
-    @abc.abstractmethod
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        ...
+from chem_analysis.processing.processing_method import FourierTransform
 
 
 class FastFourierTransform(FourierTransform):

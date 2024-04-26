@@ -9,7 +9,7 @@ from chem_analysis.base_obj.signal_array import SignalArray
 from chem_analysis.sec import SECSignal, SECSignalArray
 from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.nmr import NMRSignal, NMRSignalArray
-from chem_analysis.ir import IRSignal, IRSignalArray
+from chem_analysis.ir import IRSignal, IRSignal2D
 from chem_analysis.processing.baselines.base import BaselineCorrection
 from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
 

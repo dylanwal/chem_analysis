@@ -1,12 +1,12 @@
 import numpy as np
 
-from chem_analysis.utils.math import check_for_flip
-
 
 def calculate_Mn_D_from_wi(mw_i: np.ndarray, wi: np.ndarray) -> tuple[float, float]:
     """ calculate Mn and D from wi vs MW data (MW goes low to high) """
     # flip data if giving backwards; it should be MW low to MW high
-    mw_i, wi = check_for_flip(mw_i, wi)
+    if mw_i[0] > mw_i[-1]:
+        mw_i = np.flip(mw_i)
+        wi = np.flip(wi)
 
     data_points = len(mw_i)
     wi_d_mi = np.zeros(data_points)

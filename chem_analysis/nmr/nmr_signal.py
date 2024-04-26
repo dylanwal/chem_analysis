@@ -39,7 +39,7 @@ class NMRFID(Signal):
 
     def generate_nmr(self) -> NMRSignal:
         self.default_processing()
-        return NMRSignal(x_raw=self.x, y_raw=self.y, parameters=self.parameters)
+        return NMRSignal(x_raw=self.x, data_raw=self.y, parameters=self.parameters)
 
 
 def load_from_raw_FID_data(data: np.ndarray, parameters: NMRParameters):
@@ -51,7 +51,7 @@ def load_from_raw_FID_data(data: np.ndarray, parameters: NMRParameters):
 class NMRSignal(Signal):
     def __init__(self,
                  x_raw: np.ndarray,
-                 y_raw: np.ndarray,
+                 data_raw: np.ndarray,
                  parameters: NMRParameters = None,
                  x_label: str = None,
                  y_label: str = None,
@@ -60,7 +60,7 @@ class NMRSignal(Signal):
                  ):
         x_label = x_label or "ppm"
         y_label = y_label or "signal"
-        super().__init__(x_raw, y_raw, x_label, y_label, name, id_)
+        super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
 
         self.fid: NMRFID | None = None
         self.parameters = parameters
@@ -125,7 +125,7 @@ class NMRSignal(Signal):
             fid = NMRFID(x, y, parameters=parameters)
             return fid.generate_nmr()
 
-        return NMRSignal(x_raw=x, y_raw=y, parameters=parameters)
+        return NMRSignal(x_raw=x, data_raw=y, parameters=parameters)
 
     @classmethod
     def from_spinsolve_csv(cls, path: pathlib.Path | str) -> NMRSignal:
@@ -138,4 +138,4 @@ class NMRSignal(Signal):
         parameters = parse_spinsolve_parameters(path)
         x, y = get_spinsolve_data_csv(path)
 
-        return NMRSignal(x_raw=x, y_raw=y, parameters=parameters)
+        return NMRSignal(x_raw=x, data_raw=y, parameters=parameters)

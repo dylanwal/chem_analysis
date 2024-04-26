@@ -1,15 +1,6 @@
-import abc
-
 import numpy as np
 
-from chem_analysis.processing.base import ProcessingMethod
-
-
-class PhaseCorrection(ProcessingMethod, abc.ABC):
-
-    @abc.abstractmethod
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        ...
+from chem_analysis.processing.processing_method import PhaseCorrection
 
 
 class Phase0D(PhaseCorrection):

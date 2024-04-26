@@ -20,11 +20,11 @@ Design Philosophy:
 **Support data types**:
 * IR
 * NMR (Bruker, Spinsolve) - 1D only
-* HPLC
 * SEC (GPC)
-* GC
-* UV-Vis
-* Mass Spec.
+* HPLC (coming soon)
+* GC (coming soon)
+* UV-Vis (coming soon)
+* Mass Spec. (coming soon)
 
 ## Installation
 [pypi page](https://pypi.org/project/chem-analysis/)
@@ -45,7 +45,9 @@ Design Philosophy:
 * Multi-component analysis (MCA)
 
 ## Plotting / GUI
-
+* Matplotlib
+* Plotly
+* PyQt
 
 
 ## Examples

@@ -3,9 +3,9 @@ from typing import Sequence
 
 import numpy as np
 
-from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.base_obj.signal_ import Signal
-from chem_analysis.analysis.peak_SEC import PeakSEC
+from chem_analysis.sec.sec_calibration import SECCalibration
+from chem_analysis.sec.sec_peak import PeakSEC
 
 
 class SECTypes(Enum):
@@ -25,7 +25,7 @@ class SECSignal(Signal):
 
     def __init__(self,
                  x_raw: np.ndarray,
-                 y_raw: np.ndarray,
+                 data_raw: np.ndarray,
                  calibration: SECCalibration = None,
                  type_: SECTypes = SECTypes.UNKNOWN,
                  x_label: str = "retention time",
@@ -33,7 +33,7 @@ class SECSignal(Signal):
                  name: str = None,
                  id_: int = None
                  ):
-        super().__init__(x_raw, y_raw, x_label, y_label, name, id_)
+        super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
         self.calibration = calibration
         self.type_ = type_
 
