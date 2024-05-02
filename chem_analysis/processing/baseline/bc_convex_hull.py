@@ -1,9 +1,9 @@
 from typing import Iterable
 
 import numpy as np
-from scipy.spatial import ConvexHull
+from scipy.spatial import ConvexHull as scipy_ConvexHull
 
-from chem_analysis.processing.baselines.base import BaselineCorrection
+from chem_analysis.processing.processing_method import Baseline
 from chem_analysis.processing.weigths.weights import DataWeight
 
 
@@ -41,7 +41,7 @@ def convex_hull_removal(U, wavelengths):
     for s in range(q):
         rifl = U[s, :]
         points = np.vstack((wavelengths, rifl)).T
-        hull = ConvexHull(points)
+        hull = scipy_ConvexHull(points)
         c = points[hull.vertices]
         d = c[c[:, 1].argsort()]
 
@@ -61,18 +61,18 @@ def convex_hull_removal(U, wavelengths):
     return normalizedU.T
 
 
-class ConvexHull(BaselineCorrection):
-    def __init__(self, degree: int = 1, weights: DataWeight | Iterable[DataWeight] = None):
-        super().__init__(weights)
-        self.degree = degree
+# class ConvexHull(Baseline):
+#     def __init__(self,
+#                  degree: int = 1,
+#                  mask: DataWeight | Iterable[DataWeight] = None,
+#                  non_temporal_processing: bool = False,
+#                  save_result: bool = False
+#                  ):
+#         super().__init__(mask, non_temporal_processing, save_result)
+#         self.degree = degree
+#
+#     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+#         params = convex_hull_removal(x, y, self.degree)
+#         func_baseline = np.poly1d(params)
+#         return func_baseline(x)
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        weights = self.get_weights(x, y)
-        params = np.polyfit(x, y, self.degree, w=weights)
-        func_baseline = np.poly1d(params)
-        y_baseline = func_baseline(x)
-        y = y - y_baseline
-
-        self._y = y_baseline
-        self._x = x
-        return x, y

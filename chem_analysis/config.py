@@ -13,8 +13,9 @@ class Configuration:
     def __init__(self):
         self.preferred_plot = PlottingLibraries.PLOTLY
         self._plotting_libraries = []
-        self.sig_fig = 3
-        self.table_format = "rounded_grid"
+        self.sig_fig: int = 3
+        self.table_format: str = "rounded_grid"
+        self.processing_save_intermediates: bool = False
 
         self._find_available_plotting_libraries()
 

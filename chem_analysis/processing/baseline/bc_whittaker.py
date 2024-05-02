@@ -4,8 +4,8 @@ import numpy as np
 from scipy import sparse
 
 from chem_analysis.utils.math import MIN_FLOAT
-from chem_analysis.processing.weigths.weights import DataWeight
-from chem_analysis.processing.baselines.base import BaselineCorrection
+from chem_analysis.processing.weigths.weights import DataWeight, DataWeightChain
+from chem_analysis.processing.processing_method import Baseline
 
 diagonals = [
         [-1, 1],
@@ -94,16 +94,18 @@ def asymmetric_least_squared(
     return baseline, params
 
 
-class AsymmetricLeastSquared(BaselineCorrection):
+class AsymmetricLeastSquared(Baseline):
     def __init__(self,
-                 lambda_=1e6,
-                 p=1e-2,
-                 diff_order=2,
-                 max_iter=50,
-                 tol=1e-3,
-                 weights: DataWeight | Iterable[DataWeight] = None
+                 lambda_: float = 1e6,
+                 p: float = 1e-2,
+                 diff_order: int = 2,
+                 max_iter: int = 50,
+                 tol: float = 1e-3,
+                 mask: DataWeight | Iterable[DataWeight] = None,
+                 non_temporal_processing: bool = False,
+                 save_result: bool = False
                  ):
-        super().__init__(weights)
+        super().__init__(mask, non_temporal_processing, save_result)
         self.lambda_ = lambda_
         self.p = p
         self.diff_order = diff_order
@@ -111,23 +113,15 @@ class AsymmetricLeastSquared(BaselineCorrection):
         self.tol = tol
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.weights is not None:
-            mask = self.weights.get_mask(x, y)
-            x_ = x[mask]
-            y_ = y[mask]
-        else:
-            x_ = x
-            y_ = y
-
         y_baseline, params = asymmetric_least_squared(
-            y_,
+            y,
             self.lambda_,
             self.p,
             self.diff_order,
             self.max_iter,
             self.tol,
         )
-        return np.interp(x, x_, y_baseline)
+        return y_baseline
 
 
 def improved_asymmetric_least_squared(
@@ -217,7 +211,7 @@ def improved_asymmetric_least_squared(
     return baseline, params
 
 
-class ImprovedAsymmetricLeastSquared(BaselineCorrection):
+class ImprovedAsymmetricLeastSquared(Baseline):
     def __init__(self,
                  lambda_: float = 1e6,
                  lambda_1: float = 1e-4,
@@ -225,28 +219,21 @@ class ImprovedAsymmetricLeastSquared(BaselineCorrection):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 weights: DataWeight | Iterable[DataWeight] = None
+                 mask: DataWeight | Iterable[DataWeight] = None,
+                 non_temporal_processing: bool = False,
+                 save_result: bool = False
                  ):
-        super().__init__(weights)
+        super().__init__(mask, non_temporal_processing, save_result)
         self.lambda_ = lambda_
         self.lambda_1 = lambda_1
         self.p = p
         self.diff_order = diff_order
         self.max_iter = max_iter
         self.tol = tol
-        self._weights = weights
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.weights is not None:
-            mask = self.weights.get_mask(x, y)
-            x_ = x[mask]
-            y_ = y[mask]
-        else:
-            x_ = x
-            y_ = y
-
         y_baseline, params = improved_asymmetric_least_squared(
-            y_,
+            y,
             self.lambda_,
             self.lambda_1,
             self.p,
@@ -254,7 +241,8 @@ class ImprovedAsymmetricLeastSquared(BaselineCorrection):
             self.max_iter,
             self.tol
         )
-        return np.interp(x, x_, y_baseline)
+
+        return y_baseline
 
 
 def reweighted_improved_asymmetric_least_squared(
@@ -338,38 +326,31 @@ def reweighted_improved_asymmetric_least_squared(
     return baseline, params
 
 
-class ReweightedImprovedAsymmetricLeastSquared(BaselineCorrection):
+class ReweightedImprovedAsymmetricLeastSquared(Baseline):
     def __init__(self,
-                 lambda_=1e6,
-                 diff_order=2,
-                 max_iter=50,
-                 tol=1e-3,
-                 weights: DataWeight | Iterable[DataWeight] = None
+                 lambda_: float = 1e6,
+                 diff_order: int = 2,
+                 max_iter: int = 50,
+                 tol: float = 1e-3,
+                 mask: DataWeight | Iterable[DataWeight] = None,
+                 non_temporal_processing: bool = False,
+                 save_result: bool = False
                  ):
-        super().__init__(weights)
+        super().__init__(mask, non_temporal_processing, save_result)
         self.lambda_ = lambda_
         self.diff_order = diff_order
         self.max_iter = max_iter
         self.tol = tol
-        self._weights = weights
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.weights is not None:
-            mask = self.weights.get_mask(x, y)
-            x_ = x[mask]
-            y_ = y[mask]
-        else:
-            x_ = x
-            y_ = y
-
         y_baseline, params = reweighted_improved_asymmetric_least_squared(
-            y_,
+            y,
             self.lambda_,
             self.diff_order,
             self.max_iter,
             self.tol
         )
-        return np.interp(x, x_, y_baseline)
+        return y_baseline
 
 
 def adaptive_asymmetric_least_squared(
@@ -455,37 +436,31 @@ def adaptive_asymmetric_least_squared(
     return baseline, params
 
 
-class AdaptiveAsymmetricLeastSquared(BaselineCorrection):
+class AdaptiveAsymmetricLeastSquared(Baseline):
     def __init__(self,
-                 lambda_=1e6,
-                 diff_order=2,
-                 max_iter=50,
-                 tol=1e-3,
-                 weights: DataWeight | Iterable[DataWeight] = None
+                 lambda_: float = 1e6,
+                 diff_order: int = 2,
+                 max_iter: int = 50,
+                 tol: float = 1e-3,
+                 mask: DataWeight | Iterable[DataWeight] = None,
+                 non_temporal_processing: bool = False,
+                 save_result: bool = False
                  ):
-        super().__init__(weights)
+        super().__init__(mask, non_temporal_processing, save_result)
         self.lambda_ = lambda_
         self.diff_order = diff_order
         self.max_iter = max_iter
         self.tol = tol
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.weights is not None:
-            mask = self.weights.get_mask(x, y)
-            x_ = x[mask]
-            y_ = y[mask]
-        else:
-            x_ = x
-            y_ = y
-
         y_baseline, params = adaptive_asymmetric_least_squared(
-            y_,
+            y,
             self.lambda_,
             self.diff_order,
             self.max_iter,
             self.tol
         )
-        return np.interp(x, x_, y_baseline)
+        return y_baseline
 
 
 def check_array_size(x: np.ndarray, shape: tuple[int], name: str):

@@ -2,7 +2,7 @@ from typing import Sequence, Iterable
 
 import numpy as np
 
-from chem_analysis.processing.base import Processor
+from chem_analysis.processing.processor import Processor
 from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.base_obj.signal_2d import Signal2D
 

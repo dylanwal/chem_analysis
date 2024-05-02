@@ -2,6 +2,7 @@
 import numpy as np
 
 from chem_analysis.processing.processing_method import Translation
+from chem_analysis.utils.math import get_slice
 
 
 class ScaleMax(Translation):
@@ -12,6 +13,7 @@ class ScaleMax(Translation):
                  wrap: bool = True,
                  non_temporal_processing: bool = False
                  ):
+        super().__init__(non_temporal_processing)
         self.range_ = range_
         self.range_index = range_index
         self.new_max_value = new_max_value
