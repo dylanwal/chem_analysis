@@ -1,6 +1,7 @@
 import numpy as np
 
 from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.mass_spec.ms_parameters import MSParameters
 from chem_analysis.analysis.peak import PeakDiscrete
 
 
@@ -15,9 +16,11 @@ class MSSignal(Signal):
                  data_raw: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
+                 parameters: MSParameters = None,
                  name: str = None,
                  id_: int = None
                  ):
         x_label = x_label or "mass-to-charge"
         y_label = y_label or "counts"
         super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
+        self.parameters = parameters

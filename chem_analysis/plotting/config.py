@@ -4,14 +4,8 @@ import logging
 from chem_analysis.config import global_config
 from chem_analysis.plotting.plot_format import get_plot_color
 from chem_analysis.base_obj.signal_ import Signal
-from chem_analysis.base_obj.calibration import Calibration
-from chem_analysis.base_obj.signal_array import SignalArray
-from chem_analysis.sec import SECSignal, SECSignalArray
-from chem_analysis.sec.sec_calibration import SECCalibration
-from chem_analysis.nmr import NMRSignal, NMRSignalArray
-from chem_analysis.ir import IRSignal, IRSignal2D
-from chem_analysis.processing.baselines.base import BaselineCorrection
-from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
+from chem_analysis.base_obj.signal_2d import Signal2D
+
 
 logger = logging.getLogger("plotting")
 
@@ -78,7 +72,7 @@ class PlotConfig:
             return self.y_label
         return signal.y_label
 
-    def get_z_label(self, signal: SignalArray) -> str:
+    def get_z_label(self, signal: Signal2D) -> str:
         if self.z_label is not None:
             return self.z_label
         return signal.z_label

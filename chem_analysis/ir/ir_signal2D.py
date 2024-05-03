@@ -5,7 +5,7 @@ from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.ir.ir_signal import IRSignal
 
 
-class IRSignal2D(Signal2D):
+class IRSignalArray(Signal2D):
     _signal = IRSignal
 
     def __init__(self,

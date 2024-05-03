@@ -3,13 +3,13 @@ import logging
 from chem_analysis.config import global_config
 from chem_analysis.plotting.config import PlotConfig
 from chem_analysis.base_obj.signal_ import Signal
-from chem_analysis.base_obj.calibration import Calibration
-from chem_analysis.base_obj.signal_array import SignalArray
+from chem_analysis.sec.sec_calibration import SECCalibration
+from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.sec import SECSignal, SECSignalArray
 from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.nmr import NMRSignal, NMRSignalArray
-from chem_analysis.ir import IRSignal, IRSignal2D
-from chem_analysis.processing.baselines.base import BaselineCorrection
+from chem_analysis.ir import IRSignal, IRSignalArray
+from chem_analysis.processing.processing_method import Baseline
 from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
 
 
@@ -98,7 +98,7 @@ def peaks(
 
 
 def calibration(
-        calibration_: Calibration,
+        calibration_: SECCalibration,
         *,
         fig=None,
         config=PlotConfig()
@@ -130,7 +130,7 @@ def baseline(
         _ = signal_.x  # triggers processing
 
     for method in signal_.processor.methods:
-        if isinstance(method, BaselineCorrection):
+        if isinstance(method, Baseline):
             baseline_ = method
             break
     else:
@@ -157,7 +157,7 @@ def baseline(
 
 
 def array_dynamic(
-        array_: SignalArray,
+        array_: Signal2D,
         *,
         config=PlotConfig()
                   ):

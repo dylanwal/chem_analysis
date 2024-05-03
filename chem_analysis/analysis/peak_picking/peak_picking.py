@@ -6,7 +6,7 @@ from scipy.signal import find_peaks
 from chem_analysis.utils.math import map_argmax_to_original
 from chem_analysis.utils.printing_tables import StatsTable
 from chem_analysis.base_obj.signal_ import Signal
-from chem_analysis.base_obj.signal_array import SignalArray
+from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.processing.weigths.weights import DataWeight
 
 
@@ -39,7 +39,7 @@ class ResultPeakPicking:
 
 
 class ResultPeakPickingArray:
-    def __init__(self, array: SignalArray):
+    def __init__(self, array: Signal2D):
         self.array = array
         self.results: list[ResultPeakPicking] = []
 
