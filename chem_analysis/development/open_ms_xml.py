@@ -48,7 +48,7 @@ def main():
     data = decoding_mzdata(file_path)
 
     x = data.times
-    y= data.spectrums.sum(axis=1)
+    y = data.spectrums.sum(axis=1)
     import plotly.graph_objs as go
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=x, y=y))

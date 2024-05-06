@@ -1,3 +1,4 @@
+import base64
 import struct
 
 import numpy as np
@@ -54,10 +55,12 @@ def parse_fid(file_path: str):
         data["channel_units"] = "m/z"
         data["time_units"] = "min"
 
-        spectrum_offset, retention_time, total_abundance = fdirectory(file, data["data_offset"], data['num_records'])
+        spectrum_offset, retention_time, total_abundance = fdirectory(file, data["dir_offset"], data['num_records'])
         data['intensity'] = total_abundance
         data['time'] = retention_time
-        data['spectrum_offset'] = spectrum_offset
+        data['data_offset'] = spectrum_offset
+
+        data['data'] = fscan(file, data['data_offset'])
 
     return data
 
@@ -83,11 +86,32 @@ def fnumeric(f, offset: int, encoding: str = '<B') -> int | float:
     return struct.unpack(encoding, f.read(DATA_TYPE_SIZE[encoding[1]]))[0]
 
 
+def fscan(f, offset):
+    n = []
+    mz = []
+    intensity = []
+
+    for i in range(len(offset)):
+        f.seek(offset[i]+12, 0)
+        n.append(struct.unpack('>h', f.read(2))[0])
+        f.seek(4, 1)
+        d = np.fromfile(f, dtype=np.dtype('uint16').newbyteorder('>'), count=2*n[i])
+        mz.append(np.round(np.flip(d[::2]) / 20).astype('uint16'))
+        intensity.append(np.flip(d[1::2]))
+
+    # pack data
+    data = np.zeros((len(mz), 1000), dtype="int16")
+    for i, (m, y) in enumerate(zip(mz, intensity)):
+        data[i, m] = y
+
+    return data
+
+
 def fdirectory(f, offset: int, num_records: int):
     f.seek(offset, 0)
 
-    # Read directory contents
-    data = np.fromfile(f, dtype='int32', count=num_records*3)
+    # # Read directory contents
+    data = np.fromfile(f, dtype=np.dtype('int32').newbyteorder('>'), count=num_records*3)
     spectrum_offset = data[::3]
     retention_time = data[1::3]
     total_abundance = data[2::3]
@@ -100,23 +124,17 @@ def fdirectory(f, offset: int, num_records: int):
 
 
 def main():
-    file_path = r"C:\Users\nicep\Desktop\research_wis\data\10\11\10_11\DJW-10-11-2h-batch-PPh3.D\data.ms"
+    file_path = r"C:\Users\nicep\Desktop\research_wis\data\10\10_13\DJW-10-13-600min-TMS.D\data.ms"
     data = parse_fid(file_path)
 
-    # x = data["time"]
-    # y = data['intensity']
-    # import plotly.graph_objs as go
-    # fig = go.Figure()
-    # fig.add_trace(go.Scatter(x=x, y=y))
-    # fig.show()
+    x = data["time"]
+    y = np.sum(data['data'], axis=1)
+    import plotly.graph_objs as go
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=y))
+    fig.show()
     print(data)
 
-
-# def main():
-#     folder_path = r"C:\Users\nicep\Desktop\research_wis\data\10\11\10_11\DJW-10-11-2h-batch-TMS.D"
-#     file_path = os.path.join(folder_path, 'data.ms')
-#     result = reader(file_path)
-#     print(result)
 
 
 if __name__ == "__main__":
