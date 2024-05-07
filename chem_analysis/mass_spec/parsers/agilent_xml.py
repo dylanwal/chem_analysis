@@ -1,22 +1,14 @@
-
+import pathlib
 import xml.etree.ElementTree as ET
 import base64
-import dataclasses
+from typing import Any
 
 import numpy as np
 
 MAX_MASS_RANGE = 600
 
 
-@dataclasses.dataclass
-class MZData:
-    sample_name: str
-    acquisition_method: str
-    spectrums: np.ndarray
-    times: np.ndarray
-
-
-def decoding_mzdata(file_path):
+def decoding_mzdata(file_path: str | pathlib.Path) -> dict[str, Any]:
     with open(file_path, 'r') as file:
         xml_string = file.read()
 
@@ -42,7 +34,7 @@ def decoding_mzdata(file_path):
     data["spectrums"] = spectrums
     data["times"] = times
 
-    return MZData(**data)
+    return data
 
 
 def check_for_duplicates(arr):
@@ -50,19 +42,3 @@ def check_for_duplicates(arr):
     if np.any(counts > 1) >= 2:
         return True
     return False
-
-def main():
-    file_path = r"C:\Users\nicep\Desktop\research_wis\data\10\10_13\DJW-10-13-600min-TMS.mzdata.xml"
-    data = decoding_mzdata(file_path)
-
-    x = data.times
-    y = data.spectrums.sum(axis=1)
-    import plotly.graph_objs as go
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=x, y=y))
-    fig.show()
-    print(data)
-
-
-if __name__ == "__main__":
-    main()

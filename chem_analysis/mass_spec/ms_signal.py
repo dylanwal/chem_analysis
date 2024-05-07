@@ -24,3 +24,15 @@ class MSSignal(Signal):
         y_label = y_label or "counts"
         super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
         self.parameters = parameters
+
+    @property
+    def high_mz(self) -> int:
+        return np.max(np.nonzero(self.y))
+
+    @property
+    def low_mz(self) -> int:
+        return np.min(np.nonzero(self.y))
+
+    @property
+    def total_count(self) -> int:
+        return int(np.sum(self.y))

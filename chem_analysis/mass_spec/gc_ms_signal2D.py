@@ -26,3 +26,5 @@ class IRSignal2D(Signal2D):
 
     def get_signal(self, index: int, processed: bool = False) -> MSSignal:
         return super().get_signal(index, processed)
+
+
