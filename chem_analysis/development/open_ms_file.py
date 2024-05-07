@@ -1,4 +1,3 @@
-import base64
 import struct
 
 import numpy as np
@@ -99,9 +98,20 @@ def fscan(f, offset):
         mz.append(np.round(np.flip(d[::2]) / 20).astype('uint16'))
         intensity.append(np.flip(d[1::2]))
 
+    intensity_new = []
+    for i, intensity_ in enumerate(intensity):
+        e = np.bitwise_and(intensity_.astype('int32'), np.int32(49152))
+        y = np.bitwise_and(intensity_.astype('int32'), np.int32(16383))
+
+        while np.any(e != 0):
+            y[e != 0] = np.left_shift(y[e != 0], 3)
+            e[e!=0] = e[e!=0] - 16384
+
+        intensity_new.append(y)
+
     # pack data
-    data = np.zeros((len(mz), 1000), dtype="int16")
-    for i, (m, y) in enumerate(zip(mz, intensity)):
+    data = np.zeros((len(mz), 1000), dtype="int32")
+    for i, (m, y) in enumerate(zip(mz, intensity_new)):
         data[i, m] = y
 
     return data
@@ -123,6 +133,12 @@ def fdirectory(f, offset: int, num_records: int):
     return spectrum_offset, retention_time, total_abundance
 
 
+def farray(f, offset, dtype, count, skip):
+    f.seek(offset, 0)
+    x = np.fromfile(f, dtype=dtype, count=count, offset=offset, sep='')[::skip]
+    return x
+
+
 def main():
     file_path = r"C:\Users\nicep\Desktop\research_wis\data\10\10_13\DJW-10-13-600min-TMS.D\data.ms"
     data = parse_fid(file_path)
@@ -134,7 +150,6 @@ def main():
     fig.add_trace(go.Scatter(x=x, y=y))
     fig.show()
     print(data)
-
 
 
 if __name__ == "__main__":
