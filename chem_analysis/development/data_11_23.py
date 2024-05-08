@@ -7,10 +7,12 @@ import plotly.graph_objs as go
 
 import chem_analysis.utils.math
 from chem_analysis.mass_spec.parsers.agilent_folder import parse_D_folder
+from chem_analysis.processing.baseline import bc_polynomial
 
 template = go.layout.Template()
 template.layout.font = dict(family="Arial", size=18, color="black")
 template.layout.plot_bgcolor = "white"
+template.layout.width, template.layout.height = 1200, 600
 template.layout.xaxis.tickprefix = "<b>"
 template.layout.xaxis.ticksuffix = "<b>"
 template.layout.xaxis.showline = True
@@ -19,6 +21,7 @@ template.layout.xaxis.linecolor = "black"
 template.layout.xaxis.ticks = "outside"
 template.layout.xaxis.tickwidth = 4
 template.layout.xaxis.showgrid = False
+template.layout.xaxis.mirror = True
 template.layout.yaxis.tickprefix = "<b>"
 template.layout.yaxis.ticksuffix = "<b>"
 template.layout.yaxis.showline = True
@@ -27,12 +30,7 @@ template.layout.yaxis.linecolor = "black"
 template.layout.yaxis.ticks = "outside"
 template.layout.yaxis.tickwidth = 4
 template.layout.yaxis.showgrid = False
-
-
-def plot(x: np.ndarray, y: np.ndarray, *, fig: go.Figure = None) -> go.Figure:
-    fig = fig or go.Figure()
-    fig.add_trace(go.Scatter(x=x, y=y))
-    return fig
+template.layout.yaxis.mirror = True
 
 
 def gas_ratio_single(data: tuple):
@@ -77,21 +75,33 @@ def main_gas():
     time_normal = time - time_start
 
     fig = go.Figure(layout={"template": template})
-    fig.add_trace(go.Scatter(x=time_normal[1:], y=O2[1:], mode='lines+markers', name="O2"))
-    fig.add_trace(go.Scatter(x=time_normal[1:], y=CO2[1:], mode='lines+markers', name="CO2"))
-    fig.add_trace(go.Scatter(x=time_normal[1:], y=decane[1:], mode='lines+markers', name="decane"))
-    fig.add_trace(go.Scatter(x=[time_o2, time_o2], y=[0, np.max(O2)], mode='lines', name="O2 start"))
+    fig.add_trace(go.Scatter(x=time_normal[1:]/60, y=O2[1:], mode='lines+markers', name="O2"))
+    fig.add_trace(go.Scatter(x=time_normal[1:]/60, y=CO2[1:], mode='lines+markers', name="CO2"))
+    fig.add_trace(go.Scatter(x=time_normal[1:]/60, y=decane[1:], mode='lines+markers', name="decane"))
+    fig.add_trace(go.Scatter(x=[time_o2/60, time_o2/60], y=[0, np.max(O2)], mode='lines', name="O2 start"))
     fig.add_trace(go.Scatter(x=[0, 0], y=[0, np.max(O2)], mode='lines', name="start heat"))
     fig.layout.xaxis.title = "<b>time (min)</b>"
     fig.layout.yaxis.title = "<b>ion count</b>"
-    fig.layout.width, fig.layout.height = 1200, 600
     fig.layout.yaxis.range = [0, None]
     fig.show()
 
-    fig = plot(data[15][1]['time'], np.sum(data[15][1]['data'], axis=1))
+    fig = go.Figure(layout={"template": template})
+    fig.add_trace(go.Scatter(x=data[15][1]['time'], y=np.sum(data[15][1]['data'], axis=1)))
     fig.show()
 
 #######################################################################################################################
+
+
+def liquid_single(data):
+    ini_dict, ms_dict, fid_dict = data
+
+    ms_data = ms_dict['data']
+    ms_time = ms_dict['time']
+    ms_sum = np.sum(ms_data, axis=1)
+
+    baseline = bc
+
+
 def liquid(data):
     return
     O2 = np.empty(len(data))
@@ -108,11 +118,13 @@ def main_liq():
     files.sort(key=lambda x: int(x[66:-9]))
     files = [files[2], files[9]]
     data = [parse_D_folder(pathlib.Path(f)) for f in files]
-    liquid(data)
+    # liquid(data)
 
-    fig = plot(data[1][1]['time'], np.sum(data[1][1]['data'], axis=1))
+    fig = go.Figure(layout={"template": template})
+    fig.add_trace(go.Scatter(x=data[1][1]['time'], y=np.sum(data[1][1]['data'], axis=1)))
     fig.show()
 
 
 if __name__ == "__main__":
-    main_gas()
+    # main_gas()
+    main_liq()

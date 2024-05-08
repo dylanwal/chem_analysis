@@ -1,0 +1,5 @@
+from chem_analysis.processing.baseline.polynomial import Polynomial
+from chem_analysis.processing.baseline.substract import Subtract
+from chem_analysis.processing.baseline.whittaker import AsymmetricLeastSquared, AdaptiveAsymmetricLeastSquared, \
+ImprovedAsymmetricLeastSquared, ReweightedImprovedAsymmetricLeastSquared
+from chem_analysis.processing.baseline.splines import Spline
