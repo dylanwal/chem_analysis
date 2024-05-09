@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 

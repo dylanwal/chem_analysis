@@ -7,7 +7,7 @@ from chem_analysis.base_obj.signal_ import Signal
 # from chem_analysis.base_obj.chromatogram import Chromatogram
 # from chem_analysis.base_obj.signal_array import SignalTimeSeries
 from chem_analysis.plotting.config import PlotConfig, NormalizationOptions
-from chem_analysis.processing.baselines.base import BaselineCorrection
+from chem_analysis.processing.processing_method import Baseline
 from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
 
