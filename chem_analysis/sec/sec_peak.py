@@ -106,7 +106,7 @@ class PeakSEC(PeakBounded):
             numerator = self.w_i * self.mw_n
             zero_mask = (self.mw_i == 0)
             if np.sum(zero_mask) != 0:
-                logger.warning("Peak extends outside calibration window. Results may contain errors.")
+                logger.warning("PeakContinuous extends outside calibration window. Results may contain errors.")
             self._x_i = np.divide(numerator, self.mw_i, out=np.zeros_like(numerator), where=~zero_mask)
             # self._x_i = self.w_i * self.mw_n / self.mw_i
 

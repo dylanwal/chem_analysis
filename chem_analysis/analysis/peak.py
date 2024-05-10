@@ -1,32 +1,46 @@
 import abc
 from collections import OrderedDict
-import dataclasses
+from typing import Protocol
 import numpy as np
 
 import chem_analysis.utils.math as general_math
 from chem_analysis.utils.printing_tables import StatsTable, apply_sig_figs
 
 
-@dataclasses.dataclass
-class PeakParent:
+class PeakParent(Protocol):
     x: np.ndarray
     y: np.ndarray
 
 
-class PeakDiscrete:
-    def __init__(self, parent: PeakParent, index: int, id_: int = None):
-        self.parent = parent
+class Peak(abc.ABC):
+    def __init__(self, id_: int = None):
         self.id_ = id_
+
+    @abc.abstractmethod
+    def get_stats(self) -> OrderedDict:
+        ...
+
+
+class PeakDiscrete(Peak):
+    def __init__(self, parent: PeakParent, index: int, id_: int = None):
+        super().__init__(id_)
+        self.parent = parent
         self.index = index
 
     @property
     def value(self) -> float | int:
         return self.parent.y[self.index]
 
+    def get_stats(self) -> OrderedDict:
+        dict_ = OrderedDict()
+        dict_['id'] = f"{self.id_}"
+        dict_['index'] = f"{self.index}"
+        return dict_
 
-class Peak(abc.ABC):
+
+class PeakContinuous(Peak, abc.ABC):
     def __init__(self, id_: int = None):
-        self.id_ = id_
+        super().__init__(id_)
         self.stats = PeakStats(self)
 
     @property
@@ -40,7 +54,7 @@ class Peak(abc.ABC):
         ...
 
 
-class PeakBounded(Peak):
+class PeakBounded(PeakContinuous):
     def __init__(self, parent: PeakParent, bounds: slice, id_: int = None):
         super().__init__(id_)
         self.parent = parent
@@ -106,7 +120,7 @@ class PeakStats:
         center line of the peak to the front slope;
         >1 tailing to larger values; <1 tailing to smaller numbers
     """
-    def __init__(self, parent: Peak):
+    def __init__(self, parent: PeakContinuous):
         self.parent = parent
         self._y_norm = None
 

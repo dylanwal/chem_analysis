@@ -10,7 +10,7 @@ from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.nmr import NMRSignal, NMRSignalArray
 from chem_analysis.ir import IRSignal, IRSignalArray
 from chem_analysis.processing.processing_method import Baseline
-from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
+from chem_analysis.analysis.peak_picking.picking_result import ResultPeaks
 
 logger = logging.getLogger("plotting")
 
@@ -76,7 +76,7 @@ def signal_raw(
 
 
 def peaks(
-        peaks_: ResultPeakBound,
+        peaks_: ResultPeaks,
         *,
         fig=None,
         config: PlotConfig = None,

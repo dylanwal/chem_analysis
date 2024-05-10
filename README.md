@@ -34,14 +34,14 @@ Design Philosophy:
 ## Capabilities
 ### Processing Methods:
 * Baseline correction
-* Peak Picking
+* PeakContinuous Picking
 * Phase correction (NMR)
 * Referencing (NMR)
 
 
 ### Analysis Methods:
 * Integration
-* Peak fitting
+* PeakContinuous fitting
 * Multi-component analysis (MCA)
 
 ## Plotting / GUI

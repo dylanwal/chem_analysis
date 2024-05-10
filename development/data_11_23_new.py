@@ -38,6 +38,10 @@ def main(folder_: str):
     peaks = ca.analysis.peak_picking.find_peaks_scipy(data, scipy_kwargs={"height": 5000, "width": 0.1})
     peak_result = ca.analysis.boundary_detection.rolling_ball(peaks, n=10, min_height=0.05, n_points_with_pos_slope=1)
 
+    picking_lib = chemistry_lib.to_picking_library()
+    peaks_results_identified = ca.analysis.peak_picking.library_search.find_peaks_retention_time_library(peak_result, picking_lib)
+    print(peaks_results_identified)
+
 
 if __name__ == "__main__":
     folder = r"C:\Users\nicep\Desktop\research_wis\data\11\11_23\gc_ms"

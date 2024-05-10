@@ -6,7 +6,7 @@ from typing import Sequence
 import numpy as np
 from scipy.special import voigt_profile
 
-from chem_analysis.analysis.peak import Peak
+from chem_analysis.analysis.peak import PeakContinuous
 
 
 class PeakModel(abc.ABC):
@@ -64,7 +64,7 @@ class DistributionNormal(PeakModel):
         return DistributionNormalPeak(x, self.scale, self.mean, self.sigma)
 
 
-class DistributionNormalPeak(DistributionNormal, Peak):
+class DistributionNormalPeak(DistributionNormal, PeakContinuous):
     def __init__(self,
                  x: np.ndarray,
                  scale: int | float = 1,
@@ -76,7 +76,7 @@ class DistributionNormalPeak(DistributionNormal, Peak):
                  id_: int = None
                  ):
         DistributionNormal.__init__(self, scale, mean, sigma)
-        Peak.__init__(self, id_)
+        PeakContinuous.__init__(self, id_)
         self._x = x
         self.scale_bounds = scale_bounds
         self.mean_bounds = mean_bounds
@@ -110,7 +110,7 @@ class DistributionCauchy(PeakModel):
         return self.scale / (np.pi * self.gamma * (1 + ((x - self.mean) / 2) ** 2))
 
 
-class DistributionCauchyPeak(DistributionCauchy, Peak):
+class DistributionCauchyPeak(DistributionCauchy, PeakContinuous):
     def __init__(self,
                  x: np.ndarray,
                  scale: int | float = 1,
@@ -122,7 +122,7 @@ class DistributionCauchyPeak(DistributionCauchy, Peak):
                  id_: int = None
                  ):
         DistributionCauchy.__init__(self, scale, mean, gamma)
-        Peak.__init__(self, id_)
+        PeakContinuous.__init__(self, id_)
         self._x = x
         self.scale_bounds = scale_bounds
         self.mean_bounds = mean_bounds
@@ -158,7 +158,7 @@ class DistributionVoigt(PeakModel):
         return self.scale * voigt_profile(x - self.mean, sigma=self.sigma, gamma=self.gamma)
 
 
-class DistributionVoigtPeak(DistributionVoigt, Peak):
+class DistributionVoigtPeak(DistributionVoigt, PeakContinuous):
     _args = ("scale", "mean", "sigma", "gamma")
 
     def __init__(self,
@@ -174,7 +174,7 @@ class DistributionVoigtPeak(DistributionVoigt, Peak):
                  id_: int = None
                  ):
         DistributionVoigt.__init__(self, scale, mean, sigma, gamma)
-        Peak.__init__(self, id_)
+        PeakContinuous.__init__(self, id_)
         self._x = x
         self.scale_bounds = scale_bounds
         self.mean_bounds = mean_bounds

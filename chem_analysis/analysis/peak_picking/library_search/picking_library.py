@@ -59,7 +59,13 @@ class PickingLibrary:
     def __iter__(self):
         return iter(self.peaks)
 
-    def within_tolerance(self, peak: PeakForPicking, pos_x: int | float, pos_y: int | float = None) -> bool:
+    def __contains__(self, item):
+        for peak in self.peaks:
+            if self.within_tolerance(peak, item):
+                return True
+        return False
+
+    def within_tolerance(self, lib_peak: PeakForPicking, signal_peak: Peak) -> bool:
         if self.criteria is None:
             return True
 
@@ -68,7 +74,7 @@ class PickingLibrary:
             criteria = [criteria]
 
         for criteria in criteria:
-            result = criteria.evaluate(peak, pos_x, pos_y)
+            result = criteria.evaluate(lib_peak, signal_peak)
             if self.all_criteria and result:
                 continue
             if result:

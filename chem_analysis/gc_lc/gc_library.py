@@ -133,16 +133,16 @@ class GCLibrary:
             if compound.smiles == smiles:
                 return compound
 
-    def get_n_nearest_compounds(self, retention_time: float, n: int = 1) -> list[Compound]:
-        distance = []
-        for i, peak in enumerate(self.peaks):
-            distance[i] = abs(peak.retention_time - retention_time)
-
-        sort_index = np.argsort(distance)
-        compounds = []
-        for i in range(n):
-            compounds.append(self.compounds[sort_index[i]])
-        return compounds
+    # def get_n_nearest_compounds(self, retention_time: float, n: int = 1) -> list[Compound]:
+    #     distance = []
+    #     for i, peak in enumerate(self.peaks):
+    #         distance[i] = abs(peak.retention_time - retention_time)
+    #
+    #     sort_index = np.argsort(distance)
+    #     compounds = []
+    #     for i in range(n):
+    #         compounds.append(self.compounds[sort_index[i]])
+    #     return compounds
 
     def to_dict(self, sanitize: bool = False) -> dict:
         dict_ = {k: getattr(self, k) for k in vars(self) if not k.startswith("_")}
@@ -178,7 +178,7 @@ class GCLibrary:
             lib = cls.from_dict(json.load(file))
         return lib
 
-    def get_picking_library(self):
+    def to_picking_library(self):
         from chem_analysis.analysis.peak_picking.library_search import PickingLibrary, PeakForPicking
         peaks = []
         for compound in self:

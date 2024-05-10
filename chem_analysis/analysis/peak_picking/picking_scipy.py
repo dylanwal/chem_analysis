@@ -7,7 +7,8 @@ from chem_analysis.utils.math import map_argmax_to_original
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.processing.weigths.weights import DataWeight
-from chem_analysis.analysis.peak_picking.picking_result import ResultPeakPicking, ResultPeakPickingArray
+from chem_analysis.analysis.peak_picking.picking_result import ResultPeaks, ResultPeakArray
+from chem_analysis.analysis.peak import PeakDiscrete
 
 
 def apply_mask_signal(signal: Signal, mask: DataWeight = None) -> np.ndarray:
@@ -17,7 +18,7 @@ def apply_mask_signal(signal: Signal, mask: DataWeight = None) -> np.ndarray:
     return signal.y
 
 
-def apply_limits(signal, result: ResultPeakPicking):
+def apply_limits(signal, result: ResultPeaks):
     if hasattr(signal, "_limits") and signal._limits() is not None:
         limits = signal._limits()
         remove_index = []
@@ -33,11 +34,11 @@ def find_peaks_scipy(
         signal: Signal | Signal2D,
         mask: DataWeight = None,
         scipy_kwargs: dict = None
-) -> ResultPeakPicking | ResultPeakPickingArray:
+) -> ResultPeaks | ResultPeakArray:
     if isinstance(signal, Signal):
         return find_peaks_scipy_single(signal, mask, scipy_kwargs)
     elif isinstance(signal, Signal2D):
-        results = ResultPeakPickingArray(signal)
+        results = ResultPeakArray(signal)
         for i in range(len(signal)):
             result = find_peaks_scipy_single(signal.get_signal(i, processed=True), mask, scipy_kwargs)
             # result.signal = signal
@@ -45,13 +46,14 @@ def find_peaks_scipy(
         return results
 
 
-def find_peaks_scipy_single(signal: Signal, mask: DataWeight = None, scipy_kwargs: dict = None) -> ResultPeakPicking:
+def find_peaks_scipy_single(signal: Signal, mask: DataWeight = None, scipy_kwargs: dict = None) -> ResultPeaks:
     y = apply_mask_signal(signal, mask)
 
     indices_of_peaks, _ = find_peaks(y, **scipy_kwargs or {})
     if mask is not None:
         indices_of_peaks = map_argmax_to_original(indices_of_peaks, mask)
-    result = ResultPeakPicking(signal)
-    result.indexes = indices_of_peaks
+    result = ResultPeaks(signal)
+    for i, peak in enumerate(indices_of_peaks):
+        result.add_peak(PeakDiscrete(signal, index=peak, id_=i))
 
     return result
