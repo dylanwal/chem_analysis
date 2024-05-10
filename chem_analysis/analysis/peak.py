@@ -6,7 +6,7 @@ import numpy as np
 import chem_analysis.utils.math as general_math
 from chem_analysis.utils.printing_tables import StatsTable, apply_sig_figs
 
-
+#TODO: expand for 2D
 class PeakParent(Protocol):
     x: np.ndarray
     y: np.ndarray
@@ -52,6 +52,14 @@ class PeakContinuous(Peak, abc.ABC):
     @abc.abstractmethod
     def y(self) -> np.ndarray:
         ...
+
+    @property
+    def max_loc(self) -> float:
+        return self.x[int(np.argmax(self.y))]
+
+    @property
+    def max_value(self) -> float:
+        return np.max(self.y)
 
 
 class PeakBounded(PeakContinuous):
@@ -142,13 +150,13 @@ class PeakStats:
     # def min_location(self) -> float:
     #     return self.parent.x[self.min_index]
 
-    @property
-    def max_loc(self) -> float:
-        return self.parent.x[int(np.argmax(self.parent.y))]
-
-    @property
-    def max_value(self) -> float:
-        return np.max(self.parent.y)
+    # @property
+    # def max_loc(self) -> float:
+    #     return self.parent.x[int(np.argmax(self.parent.y))]
+    #
+    # @property
+    # def max_value(self) -> float:
+    #     return np.max(self.parent.y)
 
     @property
     def mean(self) -> float:

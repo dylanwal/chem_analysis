@@ -89,6 +89,8 @@ def main_gas():
 
     fig = go.Figure(layout={"template": template})
     fig.add_trace(go.Scatter(x=data[15][1]['time'], y=np.sum(data[15][1]['data'], axis=1)))
+    fig.layout.xaxis.title = "<b>retention time (min)</b>"
+    fig.layout.yaxis.title = "<b>ion count</b>"
     fig.show()
 
 
@@ -278,6 +280,6 @@ def divide_array(array: np.ndarray, num_sections: int) -> list[slice]:
 
 
 if __name__ == "__main__":
-    # main_gas()
-    main_liq()
+    main_gas()
+    # main_liq()
     # main_liq_baseline()

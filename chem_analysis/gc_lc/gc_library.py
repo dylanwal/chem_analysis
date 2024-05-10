@@ -1,6 +1,7 @@
 from __future__ import annotations
 import base64
 import pathlib
+from collections import OrderedDict
 
 import numpy as np
 import bigsmiles
@@ -33,8 +34,16 @@ class Compound:
     def __str__(self):
         return f"{self.name}, {self.group}, {self.retention_time} min, {self.response}"
 
-    def to_dict(self, sanitize: bool = False) -> dict:
-        dict_ = {k: getattr(self, k) for k in vars(self) if not k.startswith("_")}
+    def get_stats(self,) -> OrderedDict:
+        labels = ("label", "group", "smiles")
+        dict_ = OrderedDict((k, getattr(self, k)) for k in labels if not k.startswith("_"))
+
+        if dict_['smiles'] is not None:
+                dict_['smiles'] = str(dict_['smiles'])
+        return dict_
+
+    def to_dict(self, sanitize: bool = False) -> OrderedDict:
+        dict_ = OrderedDict((k, getattr(self, k)) for k in vars(self) if not k.startswith("_"))
 
         if sanitize:
             if dict_['smiles'] is not None:
@@ -179,10 +188,7 @@ class GCLibrary:
         return lib
 
     def to_picking_library(self):
-        from chem_analysis.analysis.peak_picking.library_search import PickingLibrary, PeakForPicking
-        peaks = []
-        for compound in self:
-            if compound.retention_time is not None:
-                peaks.append(PeakForPicking(compound.retention_time))
-
+        from chem_analysis.analysis.peak_picking.library_search.picking_library import PickingLibrary
+        from chem_analysis.analysis.peak_picking.picking_peak import PeakForPickingCompound
+        peaks = [PeakForPickingCompound(compound) for compound in self if compound.retention_time is not None]
         return PickingLibrary(peaks)

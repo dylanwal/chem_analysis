@@ -52,6 +52,9 @@ class ResultPeakArray:
     def __iter__(self):
         return iter(self.results)
 
+    def __getitem__(self, item: int | slice):
+        return self.results[item]
+
     def __len__(self):
         return len(self.results)
 

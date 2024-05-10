@@ -20,7 +20,9 @@ def find_peaks_library_single(peak_result: ResultPeaks, library: PickingLibrary)
     results = ResultPeaks(peak_result.signal)
 
     for peak in peak_result.peaks:
-        if peak in library:
-            results.add_peak(peak)
+        lib_peak = library.search_lib(peak)
+        if lib_peak is not None:
+            new_peak = lib_peak.create_peak(peak)
+            results.add_peak(new_peak)
 
     return results

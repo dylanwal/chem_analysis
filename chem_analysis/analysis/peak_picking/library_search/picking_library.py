@@ -1,49 +1,10 @@
 from typing import Iterable
 
-from chem_analysis.analysis.peak_picking.library_search.criteria import Criteria, CriteriaAbsoluteRangeAnd
+import numpy as np
 
-
-class PeakForPicking:
-    DEFAULT_CRITERIA = CriteriaAbsoluteRangeAnd(atol_x=(0.01, 0.01))
-
-    def __init__(self,
-                 pos_x: int | float,
-                 pos_y: int | float = None,
-                 criteria: Criteria | Iterable[Criteria] = None,
-                 all_criteria: bool = False
-                 ):
-        """
-
-        Parameters
-        ----------
-        pos_x
-        pos_y
-        criteria
-        all_criteria:
-            True: all must criteria must be true to include
-            False: one criteria producing True is sufficient
-        """
-        self.pos_x = pos_x
-        self.pos_y = pos_y
-        self.criteria = criteria
-        self.all_criteria = all_criteria
-
-    def within_tolerance(self, pos_x: int | float, pos_y: int | float = None) -> bool:
-        if self.criteria is None:
-            criteria = self.DEFAULT_CRITERIA
-        else:
-            criteria = self.criteria
-
-        if not isinstance(criteria, Iterable):
-            criteria = [criteria]
-
-        for criteria in criteria:
-            result = criteria.evaluate(self, pos_x, pos_y)
-            if self.all_criteria and result:
-                continue
-            if result:
-                return True
-        return False
+from chem_analysis.analysis.peak import PeakContinuous
+from chem_analysis.analysis.peak_picking.picking_peak import PeakForPicking
+from chem_analysis.analysis.peak_picking.library_search.criteria import Criteria
 
 
 class PickingLibrary:
@@ -59,27 +20,28 @@ class PickingLibrary:
     def __iter__(self):
         return iter(self.peaks)
 
-    def __contains__(self, item):
+    def search_lib(self, signal_peak: PeakContinuous) -> PeakForPicking | None:
         for peak in self.peaks:
-            if self.within_tolerance(peak, item):
-                return True
-        return False
+            possible_matches = []
+            if self.within_tolerance(peak, signal_peak):
+                possible_matches.append(peak)
+            if possible_matches:
+                diff = [abs(signal_peak.max_loc - possible_peak.pos_x) for possible_peak in possible_matches]
+                return possible_matches[np.argmin(diff)]
 
-    def within_tolerance(self, lib_peak: PeakForPicking, signal_peak: Peak) -> bool:
-        if self.criteria is None:
-            return True
+        return None
 
-        criteria = self.criteria
-        if not isinstance(criteria, Iterable):
-            criteria = [criteria]
+    def within_tolerance(self, lib_peak: PeakForPicking, signal_peak: PeakContinuous) -> bool:
+        if self.criteria is not None:
+            criteria = self.criteria
+            if not isinstance(criteria, Iterable):
+                criteria = [criteria]
 
-        for criteria in criteria:
-            result = criteria.evaluate(lib_peak, signal_peak)
-            if self.all_criteria and result:
-                continue
-            if result:
-                return True
+            for criteria_ in criteria:
+                result = criteria_.evaluate(lib_peak, signal_peak)
+                if self.all_criteria and result:
+                    continue
+                if result:
+                    return True
 
-        peak.within_tolerance(pos_x, pos_y)
-
-        return False
+        return lib_peak.within_tolerance(signal_peak)

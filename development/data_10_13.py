@@ -320,6 +320,6 @@ def main(folder_: str):
 
 
 if __name__ == "__main__":
-    folder = r"C:\Users\nicep\Desktop\research_wis\data\11\11_23\gc_ms"
-    # first_load(folder, "DJW-11-23-*min-TMS.D")
+    folder = r"C:\Users\nicep\Desktop\research_wis\data\10\10_13\gc_ms"
+    first_load(folder, "DJW-10-13-*min-TMS.D")
     main(folder)
