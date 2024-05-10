@@ -15,7 +15,7 @@ class SECSignalArray(Signal2D):
 
     def __init__(self,
                  x_raw: np.ndarray,
-                 time_raw: np.ndarray,
+                 y_raw: np.ndarray,
                  data_raw: np.ndarray,
                  calibration: SECCalibration = None,
                  type_: SECTypes = SECTypes.UNKNOWN,
@@ -27,7 +27,7 @@ class SECSignalArray(Signal2D):
         x_label = x_label or "retention_time"
         y_label = y_label or "time"
         z_label = z_label or "signal"
-        super().__init__(x_raw, time_raw, data_raw, x_label, y_label, z_label, name)
+        super().__init__(x_raw, y_raw, data_raw, x_label, y_label, z_label, name)
         self.calibration = calibration
         self.type_ = type_
 

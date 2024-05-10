@@ -195,7 +195,7 @@ def plotly_add_peak_bounds(fig: go.Figure, peak: PeakBounded, config: PlotConfig
     ))
 
 
-def plotly_baseline(fig: go.Figure, baseline: BaselineCorrection, config: PlotConfig) -> go.Figure:
+def plotly_baseline(fig: go.Figure, baseline: Baseline, config: PlotConfig) -> go.Figure:
     if fig is None:
         fig = go.Figure()
 

@@ -12,7 +12,6 @@ from chem_analysis.ir import IRSignal, IRSignalArray
 from chem_analysis.processing.processing_method import Baseline
 from chem_analysis.analysis.boundary_detection.boundary_detection import ResultPeakBound
 
-
 logger = logging.getLogger("plotting")
 
 
@@ -156,11 +155,11 @@ def baseline(
     raise NotImplementedError()
 
 
-def array_dynamic(
+def signal2d_dynamic(
         array_: Signal2D,
         *,
         config=PlotConfig()
-                  ):
+):
     config = config or PlotConfig()
     for option in global_config.get_plotting_options():
         if isinstance(calibration, SECCalibration):
@@ -175,8 +174,7 @@ def array_dynamic(
 
     raise NotImplementedError()
 
-
-# def plot_signal_array_overlap(
+# def signal2d_overlap(
 #         array: SignalTimeSeries,
 #         *,
 #         config: PlotConfig = None,

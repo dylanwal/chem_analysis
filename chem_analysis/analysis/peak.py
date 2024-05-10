@@ -77,7 +77,7 @@ class PeakBounded(Peak):
         dict_ = OrderedDict()
         dict_['slice'] = f"[{self.bounds.start}-{self.bounds.stop}]"
         dict_['slice_loc'] = f"[{apply_sig_figs(self.low_bound_location)}-{apply_sig_figs(self.high_bound_location)}]"
-
+        dict_.update(self.stats.get_stats())
         return dict_
 
     def stats_table(self) -> StatsTable:

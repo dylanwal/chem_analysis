@@ -7,7 +7,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 import chem_analysis.utils.math
-from chem_analysis.mass_spec.parsers.agilent_folder import parse_D_folder
+from chem_analysis.gc_lc.parsers.agilent_folder import parse_D_folder
 
 # from chem_analysis.processing.baseline import bc_polynomial
 

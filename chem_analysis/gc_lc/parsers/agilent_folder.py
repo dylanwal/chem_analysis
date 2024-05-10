@@ -7,6 +7,8 @@ from typing import Any, BinaryIO
 
 import numpy as np
 
+MAX_mz = 1000
+
 # https://docs.python.org/3/library/struct.html#format-characters
 DATA_TYPE_SIZE = {
     "c": 1,
@@ -27,7 +29,7 @@ DATA_TYPE_SIZE = {
 }
 
 
-def parse_D_folder(folder_path: pathlib.Path):
+def parse_D_folder(folder_path: pathlib.Path) -> tuple[dict | None, dict | None, dict | None]:
     ini_dict, ms_dict, fid_dict = None, None, None
 
     ini_path = folder_path / 'pre_post.ini'
@@ -107,8 +109,8 @@ def parse_fid(file_path: str | pathlib.Path):
         if f_numeric(file, data["data_offset"], '>h') == 2048:
             data["data_offset"] = data["data_offset"] + 2048
 
-        data['intensity'] = f_double_array(file, data["data_offset"])
-        data['time'] = np.linspace(data['start_time'], data['end_time'], data['intensity'].size)
+        data['data'] = f_double_array(file, data["data_offset"])
+        data['time'] = np.linspace(data['start_time'], data['end_time'], data['data'].size)
 
     return data
 
@@ -207,7 +209,7 @@ def f_scan(f: BinaryIO, offset: np.ndarray) -> np.ndarray:
         intensity_new.append(y)
 
     # pack data
-    data = np.zeros((len(mz), 1000), dtype="int32")
+    data = np.zeros((len(mz), MAX_mz), dtype="int32")
     for i, (m, y) in enumerate(zip(mz, intensity_new)):
         data[i, m] = y
 

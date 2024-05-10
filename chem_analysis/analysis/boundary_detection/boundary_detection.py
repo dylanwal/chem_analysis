@@ -5,7 +5,7 @@ from collections import OrderedDict
 import numpy as np
 
 from chem_analysis.analysis.peak import PeakBounded
-from chem_analysis.analysis.peak_picking.peak_picking import ResultPeakPicking
+from chem_analysis.analysis.peak_picking.picking_result import ResultPeakPicking
 from chem_analysis.utils.printing_tables import StatsTable
 
 logger = logging.getLogger("chem_analysis.boundary_detection")

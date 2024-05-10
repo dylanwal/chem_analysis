@@ -3,3 +3,4 @@ from chem_analysis.processing.baseline.substract import Subtract
 from chem_analysis.processing.baseline.whittaker import AsymmetricLeastSquared, AdaptiveAsymmetricLeastSquared, \
 ImprovedAsymmetricLeastSquared, ReweightedImprovedAsymmetricLeastSquared
 from chem_analysis.processing.baseline.splines import Spline
+from chem_analysis.processing.baseline.sliding_window import SectionMinMax

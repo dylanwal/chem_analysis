@@ -10,9 +10,10 @@ import chem_analysis.processing.weigths.penalty_functions as penalty_functions
 
 
 class DataWeight(MixinSubClassList, abc.ABC):
-    def __init__(self, threshold: float = 0.5, normalized: bool = True):
+    def __init__(self, threshold: float = 0.5, normalized: bool = True, invert: bool = False):
         self.threshold = threshold
         self.normalized = normalized
+        self.invert = invert
 
     @abc.abstractmethod
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -22,7 +23,8 @@ class DataWeight(MixinSubClassList, abc.ABC):
         weights = self._get_weights(x, y)
         if np.all(weights == 0):
             raise ValueError(f"All weights are zero after applying {type(self).__name__}")
-
+        if self.invert:
+            weights = np.max(weights) - weights
         return weights
 
     def get_normalized_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -159,9 +161,8 @@ class Slices(DataWeight):
         invert:
             flips 0 --> 1 and 1 --> 0
         """
-        super().__init__(threshold, normalized)
+        super().__init__(threshold, normalized, invert)
         self.slices = slices
-        self.invert = invert
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if not isinstance(self.slices, Iterable):
@@ -180,8 +181,6 @@ class Slices(DataWeight):
         for slice_ in slices:
             weights[slice_] = 1
 
-        if self.invert:
-            return np.logical_not(weights)
         return weights
 
 
@@ -192,9 +191,8 @@ class Spans(DataWeight):
                  normalized: bool = True,
                  invert: bool = False
                  ):
-        super().__init__(threshold, normalized)
+        super().__init__(threshold, normalized, invert)
         self.x_spans = x_spans
-        self.invert = invert
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if not isinstance(self.x_spans[0], Iterable):
@@ -208,13 +206,11 @@ class Spans(DataWeight):
             slice_ = get_slice(x, x_span[0], x_span[1])
             weights[slice_] = 1
 
-        if self.invert:
-            return np.logical_not(weights)
         return weights
 
 
 class MultiPoint(DataWeight):
-    def __init__(self, indexes: Iterable[int], threshold: float = 0.5, normalized: bool = True):
+    def __init__(self, indexes: Iterable[int], threshold: float = 0.5, normalized: bool = True, invert: bool = False):
         """
 
         Parameters
@@ -222,7 +218,7 @@ class MultiPoint(DataWeight):
         indexes:
             index where values will be kept
         """
-        super().__init__(threshold, normalized)
+        super().__init__(threshold, normalized, invert)
         self.indexes = indexes
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -236,9 +232,10 @@ class Distance(DataWeight):
                  reference_value: float | int = 0,
                  penalty_function: Callable = penalty_functions.penalty_function_linear,
                  threshold: float = 0.5,
-                 normalized: bool = True
+                 normalized: bool = True,
+                 invert: bool = False
                  ):
-        super().__init__(threshold, normalized)
+        super().__init__(threshold, normalized, invert)
         self.reference_value = reference_value
         self.penalty_function = penalty_function
 
@@ -250,9 +247,10 @@ class DistanceMedian(DataWeight):
     def __init__(self,
                  penalty_function: Callable = penalty_functions.penalty_function_linear,
                  threshold: float = 0.5,
-                 normalized: bool = True
+                 normalized: bool = True,
+                 invert: bool = False
                  ):
-        super().__init__(threshold, normalized)
+        super().__init__(threshold, normalized, invert)
         self.penalty_function = penalty_function
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -287,9 +285,10 @@ class AdaptiveDistanceMedian(DataWeight):
                  speed: float = 10,
                  max_iter: int = 1000,
                  threshold: float = 0.5,
-                 normalized: bool = True
+                 normalized: bool = True,
+                 invert: bool = False
                  ):
-        super().__init__(threshold, normalized)
+        super().__init__(threshold, normalized, invert)
         self.amount = amount
         self.speed = speed
         self.max_iter = max_iter

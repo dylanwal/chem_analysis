@@ -15,10 +15,10 @@ def validate_input(x_raw: np.ndarray, y_raw: np.ndarray, data_raw: np.ndarray):
         raise ValueError(f"'y_raw' must shape 1. \n\treceived: {y_raw.shape}")
     if len(data_raw.shape) != 2:
         raise ValueError(f"'data_raw' must shape 2. \n\treceived: {data_raw.shape}")
-    if x_raw.shape != data_raw.shape[1]:
+    if x_raw.shape[0] != data_raw.shape[1]:
         raise ValueError(f"'x_raw' and 'data_raw[1]' must have same shape. \n\treceived: x_raw:{x_raw.shape} "
                          f"|| data_raw: {data_raw.shape[1]}")
-    if y_raw.shape != data_raw.shape[0]:
+    if y_raw.shape[0] != data_raw.shape[0]:
         raise ValueError(f"'y_raw' and 'data_raw[0]' must have same shape. \n\treceived: y_raw:{y_raw.shape} "
                          f"|| data_raw: {data_raw.shape[0]}")
 
@@ -81,15 +81,15 @@ class Signal2D:
 
     def __repr__(self):
         text = f"{self.name}: "
-        text += f"{self.x_label} vs {self.y_label}"
+        text += f"{self.x_label} vs. {self.y_label} vs. {self.z_label}"
         text += f" (pts: {len(self)})"
         return text
 
     def __len__(self) -> int:
-        return len(self.x)
+        return len(self.y)
 
     def _process(self):
-        self._x, self._y, self._data = self.processor.run(self.x_raw, self.y_raw, self.data)
+        self._x, self._y, self._data = self.processor.run(self.x_raw, self.y_raw, self.data_raw)
 
     @property
     def x(self) -> np.ndarray:
@@ -144,7 +144,7 @@ class Signal2D:
     def from_signals(cls, signals: Sequence[Signal], y: np.ndarray = None):  # -> Signal2D
         """ Turn Sequence of Signals into a Signal2D"""
         # TODO: add interpolation option if x-axis not same
-        if y and len(y.shape) != 1 and y.shape[0] == len(signals):
+        if y is not None and len(y.shape) != 1 and y.shape[0] == len(signals):
             raise ValueError("The number of signals must be the same as the number of y points.\n"
                              f"\tnumber of signals: {len(signals)}\n\tnumber of y points:{y.shape[0]}")
 
@@ -152,10 +152,11 @@ class Signal2D:
         x_label = signals[0].x_label
         z_label = signals[0].y_label
 
-        y = y or np.empty(len(signals))
+        if y is None:
+            y = np.empty(len(signals))
         data = np.empty((len(signals), len(x)), dtype=signals[0].y.dtype)
         for i, sig in enumerate(signals):
-            if np.all(sig.x != x):
+            if not np.all(np.isclose(sig.x, x, rtol=0.01)):
                 raise ValueError(f"Signal {i} has a different x-axis than first signal.")
             data[i, :] = sig.y
             if hasattr(sig, "time_"):
@@ -223,6 +224,7 @@ class Signal2D:
         np.savetxt(path, pack_time_series(self.x, self.time, self.data), **kwargs)  # noqa
 
     def to_npy(self, path: str | pathlib.Path, **kwargs):
+        """Save an array to a binary file in NumPy ``.npy`` format."""
         from chem_analysis.utils.math import pack_time_series
 
         np.save(path, pack_time_series(self.x, self.y, self.data), **kwargs)

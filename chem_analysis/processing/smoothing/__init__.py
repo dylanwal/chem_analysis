@@ -1,5 +1,5 @@
 from chem_analysis.processing.smoothing.savitzky_golay import SavitzkyGolay
-from chem_analysis.processing.smoothing.gaussian import Gaussian
+from chem_analysis.processing.smoothing.convolution import Gaussian, Uniform
 from chem_analysis.processing.smoothing.time_smoothing import ExponentialTime, GaussianTime
 from chem_analysis.processing.smoothing.rolling_window import RollingWindow
 
