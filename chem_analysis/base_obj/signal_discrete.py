@@ -99,39 +99,29 @@ class SignalDiscrete:
             return self.y/np.max(self.y)
         return general_math.normalize_by_max_with_x_range(x=self.x, y=self.y, x_range=x_range)
 
+    def to_dict(self, sanitize: bool = False) -> dict:
+        dict_ = {
+            "name": self.name,
+            "x_label": self.x_label,
+            "y_label": self.y_label,
+            "id_": self.id_
+        }
+        if sanitize:
+            dict_["data"] = np.column_stack([self.x, self.y]).tolist()
+        else:
+            dict_["data"] = np.column_stack([self.x, self.y])
+
+        return dict_
+
     ####################################################################################################################
     ## Save/Load from file #############################################################################################
     ####################################################################################################################
+    def to_json(self, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
+        import json
 
-    @classmethod
-    def from_file(cls, path: str | pathlib.Path):
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-
-        if path.suffix == ".csv":
-            x, y, x_label, y_label = load_csv(path)
-        elif path.suffix == ".feather":
-            from chem_analysis.utils.feather_format import feather_to_numpy
-            data, headers = feather_to_numpy(path)
-            x, y = data[:, 0], data[:, 1]
-            if headers[0] != "0":
-                x_label = headers[0]
-                y_label = headers[1]
-            else:
-                x_label = y_label = None
-        elif path.suffix == ".npy":
-            x, y = np.load(str(path))
-            x_label = y_label = None
-        else:
-            raise NotImplementedError("File type currently not supported.")
-
-        return cls(x, y, x_label=x_label, y_label=y_label)
-
-    def to_feather(self, path: str | pathlib.Path):
-        from chem_analysis.utils.feather_format import numpy_to_feather
-
-        headers = [self.x_label, self.y_label]
-        numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
+        kwargs = kwargs or dict()
+        with open(path, 'w', encoding=encoding) as file:
+            json.dump(self.to_dict(sanitize=True), file, **kwargs)
 
     def to_csv(self, path: str | pathlib.Path, headers: bool = False, encoding: str = "utf-8"):
         kwargs = {"encoding": encoding}
@@ -141,6 +131,75 @@ class SignalDiscrete:
 
     def to_npy(self, path: str | pathlib.Path, **kwargs):
         np.save(path, np.column_stack((self.x, self.y)), **kwargs)
+
+    def to_feather(self, path: str | pathlib.Path):
+        from chem_analysis.utils.feather_format import numpy_to_feather
+
+        headers = [self.x_label, self.y_label]
+        numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
+
+    def to_parquet(self, path: str | pathlib.Path):
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+        # TODO:
+        raise NotImplementedError()
+        arrays = [pa.array(self.x), pa.array(self.y)]
+        table = pa.Table().from_arrays(arrays=arrays, names=("x", "y"))
+        pq.write_table(table, path)
+
+    @classmethod
+    def from_parquet(cls, path: str | pathlib.Path, **kwargs):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        # TODO:
+        raise NotImplementedError()
+
+    @classmethod
+    def from_json(cls, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        import json
+        with open(path, 'r', encoding=encoding) as file:
+            data = json.load(file)
+
+        signal = np.array(data['data'])
+        x = signal[:, 0]
+        y = signal[:, 1]
+        return cls(x, y, x_label=data['x_label'], y_label=data['y_label'], id_=data['id_'])
+
+    @classmethod
+    def from_csv(cls, path: str | pathlib.Path):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        x, y, x_label, y_label = load_csv(path)
+        return cls(x, y, x_label=x_label, y_label=y_label)
+
+    @classmethod
+    def from_npy(cls, path: str | pathlib.Path):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        x, y = np.load(str(path))
+        return cls(x, y)
+
+    @classmethod
+    def from_feather(cls, path: str | pathlib.Path):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        from chem_analysis.utils.feather_format import feather_to_numpy
+        data, headers = feather_to_numpy(path)
+        x, y = data[:, 0], data[:, 1]
+        if headers[0] != "0":
+            x_label = headers[0]
+            y_label = headers[1]
+        else:
+            x_label = y_label = None
+
+        return cls(x, y, x_label=x_label, y_label=y_label)
 
 
 def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | None]:
@@ -153,12 +212,9 @@ def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | N
     with open(path, 'r') as file:
         csv_reader = csv.reader(file)
 
-        # Check if the first row contains numbers
         first_row = next(csv_reader, None)
-
         if len(first_row) != 2:
             raise ValueError("Data not correct format.")
-
         if any(cell.isalpha() for cell in first_row):
             # If the first row contains non-numeric values, consider it as column labels
             x_label, y_label = first_row
@@ -166,11 +222,8 @@ def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | N
             # If the first row contains numbers, treat them as data and set labels to None
             data.append([float(cell) for cell in first_row])
 
-        # Read the remaining rows
         for row in csv_reader:
             data.append([float(cell) for cell in row])
 
-    # Convert data to NumPy array
     data_array = np.array(data)
-
     return data_array[:, 0], data_array[:, 1], x_label, y_label

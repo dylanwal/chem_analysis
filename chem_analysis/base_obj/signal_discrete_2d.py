@@ -4,8 +4,8 @@ from typing import Sequence, Iterable
 import numpy as np
 
 from chem_analysis.processing.processor import Processor
-from chem_analysis.analysis.peak import PeakBounded
-from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.analysis.peak import PeakDiscrete
+from chem_analysis.base_obj.signal_discrete import SignalDiscrete
 
 
 def validate_input(x_raw: np.ndarray, y_raw: np.ndarray, data_raw: np.ndarray):
@@ -23,15 +23,15 @@ def validate_input(x_raw: np.ndarray, y_raw: np.ndarray, data_raw: np.ndarray):
                          f"|| data_raw: {data_raw.shape[0]}")
 
 
-class Signal2D:
+class SignalDiscrete2D:
     """ signal 2D
 
     A signal is any x-y-z data.
 
     """
     __count = 0
-    _peak_type = PeakBounded
-    _signal = Signal
+    _peak_type = PeakDiscrete
+    _signal = SignalDiscrete
 
     def __init__(self,
                  x_raw: np.ndarray,
@@ -67,8 +67,8 @@ class Signal2D:
         self.x_raw = x_raw
         self.y_raw = y_raw
         self.data_raw = data_raw
-        self.id_ = id_ or Signal2D.__count
-        Signal2D.__count += 1
+        self.id_ = id_ or SignalDiscrete2D.__count
+        SignalDiscrete2D.__count += 1
         self.name = name or f"signal_{self.id_}"
         self.x_label = x_label or "x_axis"
         self.y_label = y_label or "y_axis"
@@ -116,7 +116,7 @@ class Signal2D:
     def number_of_signals(self):
         return len(self.y_raw)
 
-    def pop(self, index: int) -> Signal:
+    def pop(self, index: int) -> SignalDiscrete:
         sig = self.get_signal(index)
         self.delete(index)
         return sig
@@ -129,7 +129,7 @@ class Signal2D:
             self.data_raw = np.delete(self.data_raw, i, axis=0)
             self.y_raw = np.delete(self.y_raw, i)
 
-    def get_signal(self, y_index: int, processed: bool = False) -> Signal:
+    def get_signal(self, y_index: int, processed: bool = False) -> SignalDiscrete:
         if processed:
             sig = self._signal(x_raw=self.x, data_raw=self.data[y_index, :], x_label=self.x_label,
                          y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
@@ -141,7 +141,7 @@ class Signal2D:
         return sig
 
     @classmethod
-    def from_signals(cls, signals: Sequence[Signal], y: np.ndarray = None):  # -> Signal2D
+    def from_signals(cls, signals: Sequence[SignalDiscrete], y: np.ndarray = None):  # -> Signal2D
         """ Turn Sequence of Signals into a Signal2D"""
         # TODO: add interpolation option if x-axis not same
         if y is not None and len(y.shape) != 1 and y.shape[0] == len(signals):

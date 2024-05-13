@@ -143,6 +143,23 @@ class Signal:
         headers = [self.x_label, self.y_label]
         numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
 
+    def to_parquet(self, path: str | pathlib.Path):
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+        # TODO:
+        raise NotImplementedError()
+        arrays = [pa.array(self.x), pa.array(self.y)]
+        table = pa.Table().from_arrays(arrays=arrays, names=("x", "y"))
+        pq.write_table(table, path)
+
+    @classmethod
+    def from_parquet(cls, path: str | pathlib.Path, **kwargs):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        # TODO:
+        raise NotImplementedError()
+
     @classmethod
     def from_json(cls, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
         if isinstance(path, str):

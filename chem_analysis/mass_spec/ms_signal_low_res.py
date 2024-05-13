@@ -1,18 +1,17 @@
+from __future__ import annotations
 import numpy as np
 
-from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.base_obj.signal_discrete import SignalDiscrete
 from chem_analysis.mass_spec.ms_parameters import MSParameters
-from chem_analysis.analysis.peak import PeakDiscrete
 
 
-class MSSignal(Signal):
+class MSSignalLowRes(SignalDiscrete):
     """
     Mass spectrum Signal
+    Low resolution (LowRes) limits mz values to integers.
     """
-    _peak_type = PeakDiscrete
 
     def __init__(self,
-                 x_raw: np.ndarray,
                  data_raw: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
@@ -22,7 +21,7 @@ class MSSignal(Signal):
                  ):
         x_label = x_label or "mass-to-charge"
         y_label = y_label or "counts"
-        super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
+        super().__init__(np.arange(len(data_raw)), data_raw, x_label, y_label, name, id_)
         self.parameters = parameters
 
     @property
@@ -40,3 +39,10 @@ class MSSignal(Signal):
     @property
     def total_count(self) -> int:
         return int(np.sum(self.y))
+
+    @classmethod
+    def from_peaks(cls, mz: np.ndarray, data_raw: np.ndarray) -> MSSignalLowRes:
+        data_new = np.zeros(np.max(mz))
+        mz = np.round(mz).astype('uint64')
+        data_new[mz] = data_raw
+        return cls(data_new)
