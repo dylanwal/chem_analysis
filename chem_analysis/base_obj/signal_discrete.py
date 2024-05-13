@@ -5,7 +5,7 @@ import numpy as np
 
 import chem_analysis.utils.math as general_math
 from chem_analysis.processing.processor import Processor
-from chem_analysis.analysis.peak import PeakBounded
+from chem_analysis.analysis.peak import PeakDiscrete
 
 
 def validate_input(x_raw: np.ndarray, data_raw: np.ndarray):
@@ -18,14 +18,14 @@ def validate_input(x_raw: np.ndarray, data_raw: np.ndarray):
                          f"{data_raw.shape}")
 
 
-class Signal:
-    """ signal
+class SignalDiscrete:
+    """ signal discrete
 
-    A signal is any x-y data.
+    A signal is any x-y data. But values fall along discrete x positions
 
     """
     __count = 0
-    _peak_type = PeakBounded
+    _peak_type = PeakDiscrete
 
     def __init__(self,
                  x_raw: np.ndarray,
@@ -54,8 +54,8 @@ class Signal:
 
         self.x_raw = x_raw
         self.data_raw = data_raw
-        self.id_ = id_ or Signal.__count
-        Signal.__count += 1
+        self.id_ = id_ or SignalDiscrete.__count
+        SignalDiscrete.__count += 1
         self.name = name or f"signal_{self.id_}"
         self.x_label = x_label or "x_axis"
         self.y_label = y_label or "y_axis"
@@ -99,34 +99,39 @@ class Signal:
             return self.y/np.max(self.y)
         return general_math.normalize_by_max_with_x_range(x=self.x, y=self.y, x_range=x_range)
 
-    def y_normalized_by_area(self, x_range: Sequence[int | float] = None) -> np.ndarray:
-        if x_range is None:
-            return general_math.normalize_by_area(x=self.x, y=self.y)
-        return general_math.y_normalized_by_area_with_x_range(x=self.x, y=self.y, x_range=x_range)
-
-    def to_dict(self, sanitize: bool = False) -> dict:
-        dict_ = {
-            "name": self.name,
-            "x_label": self.x_label,
-            "y_label": self.y_label,
-            "id_": self.id_
-        }
-        if sanitize:
-            dict_["data"] = np.column_stack([self.x, self.y]).tolist()
-        else:
-            dict_["data"] = np.column_stack([self.x, self.y])
-
-        return dict_
-
     ####################################################################################################################
     ## Save/Load from file #############################################################################################
     ####################################################################################################################
-    def to_json(self, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
-        import json
 
-        kwargs = kwargs or dict()
-        with open(path, 'w', encoding=encoding) as file:
-            json.dump(self.to_dict(sanitize=True), file, **kwargs)
+    @classmethod
+    def from_file(cls, path: str | pathlib.Path):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+
+        if path.suffix == ".csv":
+            x, y, x_label, y_label = load_csv(path)
+        elif path.suffix == ".feather":
+            from chem_analysis.utils.feather_format import feather_to_numpy
+            data, headers = feather_to_numpy(path)
+            x, y = data[:, 0], data[:, 1]
+            if headers[0] != "0":
+                x_label = headers[0]
+                y_label = headers[1]
+            else:
+                x_label = y_label = None
+        elif path.suffix == ".npy":
+            x, y = np.load(str(path))
+            x_label = y_label = None
+        else:
+            raise NotImplementedError("File type currently not supported.")
+
+        return cls(x, y, x_label=x_label, y_label=y_label)
+
+    def to_feather(self, path: str | pathlib.Path):
+        from chem_analysis.utils.feather_format import numpy_to_feather
+
+        headers = [self.x_label, self.y_label]
+        numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
 
     def to_csv(self, path: str | pathlib.Path, headers: bool = False, encoding: str = "utf-8"):
         kwargs = {"encoding": encoding}
@@ -136,58 +141,6 @@ class Signal:
 
     def to_npy(self, path: str | pathlib.Path, **kwargs):
         np.save(path, np.column_stack((self.x, self.y)), **kwargs)
-
-    def to_feather(self, path: str | pathlib.Path):
-        from chem_analysis.utils.feather_format import numpy_to_feather
-
-        headers = [self.x_label, self.y_label]
-        numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
-
-    @classmethod
-    def from_json(cls, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-
-        import json
-        with open(path, 'r', encoding=encoding) as file:
-            data = json.load(file)
-
-        signal = np.array(data['data'])
-        x = signal[:, 0]
-        y = signal[:, 1]
-        return cls(x, y, x_label=data['x_label'], y_label=data['y_label'], id_=data['id_'])
-
-    @classmethod
-    def from_csv(cls, path: str | pathlib.Path):
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-
-        x, y, x_label, y_label = load_csv(path)
-        return cls(x, y, x_label=x_label, y_label=y_label)
-
-    @classmethod
-    def from_npy(cls, path: str | pathlib.Path):
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-
-        x, y = np.load(str(path))
-        return cls(x, y)
-
-    @classmethod
-    def from_feather(cls, path: str | pathlib.Path):
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-
-        from chem_analysis.utils.feather_format import feather_to_numpy
-        data, headers = feather_to_numpy(path)
-        x, y = data[:, 0], data[:, 1]
-        if headers[0] != "0":
-            x_label = headers[0]
-            y_label = headers[1]
-        else:
-            x_label = y_label = None
-
-        return cls(x, y, x_label=x_label, y_label=y_label)
 
 
 def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | None]:
@@ -200,9 +153,12 @@ def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | N
     with open(path, 'r') as file:
         csv_reader = csv.reader(file)
 
+        # Check if the first row contains numbers
         first_row = next(csv_reader, None)
+
         if len(first_row) != 2:
             raise ValueError("Data not correct format.")
+
         if any(cell.isalpha() for cell in first_row):
             # If the first row contains non-numeric values, consider it as column labels
             x_label, y_label = first_row
@@ -210,8 +166,11 @@ def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | N
             # If the first row contains numbers, treat them as data and set labels to None
             data.append([float(cell) for cell in first_row])
 
+        # Read the remaining rows
         for row in csv_reader:
             data.append([float(cell) for cell in row])
 
+    # Convert data to NumPy array
     data_array = np.array(data)
+
     return data_array[:, 0], data_array[:, 1], x_label, y_label

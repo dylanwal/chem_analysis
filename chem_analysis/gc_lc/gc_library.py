@@ -1,38 +1,60 @@
 from __future__ import annotations
 import base64
+import logging
 import pathlib
 from collections import OrderedDict
 
 import numpy as np
 import bigsmiles
 
-MAX_mz = 1000
+from chem_analysis.config import global_config
+
+logger = logging.getLogger(global_config.root_logger_name + ".schedular")
+
+class CompoundResponse:
+    def __init__(self,
+                 method: str = None,
+                 retention_time: int | float = None,
+                 response: int | float | None = None,
+                 mass_spectrum: np.ndarray = None,
+                 ):
+        self.method = method
+        self.retention_time = retention_time
+        self.response = response
+        self.mass_spectrum = mass_spectrum
 
 
 class Compound:
     def __init__(self,
                  label: str,
+                 responses: list[CompoundResponse],
                  group: str = None,
-                 retention_time: int | float = None,
                  smiles: str | None = None,
                  name: str | None = None,
                  cas: str | None = None,
-                 response: int | float | None = None,
-                 mass_spectrum: np.ndarray = None,
                  ):
         self.label = label
+        self.responses = responses
+
         self.group = group
         self.name = name or label
         self.cas = cas
         if isinstance(smiles, str):
             smiles = bigsmiles.BigSMILES(smiles)
         self.smiles = smiles
-        self.retention_time = retention_time
-        self.response = response
-        self.mass_spectrum = mass_spectrum
 
     def __str__(self):
-        return f"{self.name}, {self.group}, {self.retention_time} min, {self.response}"
+        text = f"{self.label}"
+        text += f", {self.name}" or ""
+        text += f"( {self.group})" or ""
+        text += f" | responses: {len(self.responses)}"
+        return text
+
+    def __repr__(self):
+        text = self.__str__()
+        text += f", {self.cas}" or ""
+        text += f", {self.smiles}" or ""
+        return text
 
     def get_stats(self,) -> OrderedDict:
         labels = ("label", "group", "smiles")
@@ -52,7 +74,9 @@ class Compound:
                 filtered_data = dict_["mass_spectrum"][dict_["mass_spectrum"] != 0]
                 mz = np.nonzero(dict_["mass_spectrum"])
                 dict_["mass_spectrum"] = np.column_stack([mz, filtered_data]).tolist()
-                # dict_["mass_spectrum"] = base64.b64encode(obj.tobytes()).decode('utf-8')
+                # dict_["mass_spectrum"] = base64.b64encode(
+                    # np.column_stack([mz, filtered_data]).tobytes()
+                # ).decode('utf-8')
 
         return dict_
 
@@ -60,7 +84,7 @@ class Compound:
     def from_dict(cls, dict_: dict) -> Compound:
         if dict_["mass_spectrum"] is not None:
             data = np.array(dict_["mass_spectrum"])
-            array_ = np.zeros(MAX_mz)
+            array_ = np.zeros(global_config.max_mz)
             index = (data[:, 0]).as_type('uint64')
             array_[index] = data[:, 1]
             dict_["mass_spectrum"] = array_
@@ -100,6 +124,11 @@ class GCLibrary:
         else:
             raise StopIteration
 
+    def __contains__(self, item: Compound):
+        if item in self.compounds:
+            return True
+        return False
+
     def _reset_cache(self):
         self._groups = None
         self._index = 0
@@ -118,8 +147,16 @@ class GCLibrary:
         return self._groups
 
     def add_compound(self, compound: Compound):
+        if compound in self:
+            logging.warning(f"Can't add duplicate compound. The original compound in {self} is retained. "
+                            f"\n Compound: {compound}")
+
         self.compounds.append(compound)
         self._reset_cache()
+
+    def add_libraries(self, lib: GCLibrary):
+        for comp in lib:
+            self.add_compound(comp)
 
     def find_by_name(self, name: str) -> Compound | None:
         for compound in self.compounds:  # TODO: add fuzzy matching

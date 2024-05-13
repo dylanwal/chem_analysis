@@ -9,15 +9,17 @@ class PlottingLibraries(enum.Enum):
 
 class Configuration:
     plotting_libraries = PlottingLibraries
+    root_logger_name = "chem_analysis"
 
     def __init__(self):
         self.preferred_plot = PlottingLibraries.PLOTLY
         self._plotting_libraries = []
+        self._find_available_plotting_libraries()
+
         self.sig_fig: int = 3
         self.table_format: str = "rounded_grid"
         self.processing_save_intermediates: bool = False
-
-        self._find_available_plotting_libraries()
+        self.max_mz: int = 1000
 
     def load_from_env(self):
         pass  # TODO: add support

@@ -34,5 +34,9 @@ class MSSignal(Signal):
         return np.min(np.nonzero(self.y))
 
     @property
+    def number_of_peaks(self) -> int:
+        return len(np.nonzero(self.y))
+
+    @property
     def total_count(self) -> int:
         return int(np.sum(self.y))
