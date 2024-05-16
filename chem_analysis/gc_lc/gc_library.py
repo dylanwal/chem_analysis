@@ -9,7 +9,8 @@ import bigsmiles
 
 from chem_analysis.config import global_config
 
-logger = logging.getLogger(global_config.root_logger_name + ".schedular")
+logger = logging.getLogger(__name__)
+
 
 class CompoundResponse:
     def __init__(self,

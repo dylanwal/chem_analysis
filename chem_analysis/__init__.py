@@ -1,7 +1,7 @@
 from chem_analysis.config import global_config
 import logging
 
-logger = logging.getLogger(global_config.root_logger_name)
+logger = logging.getLogger("chem_analysis")
 
 import chem_analysis.processing as processing
 import chem_analysis.analysis as analysis

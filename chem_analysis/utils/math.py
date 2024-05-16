@@ -150,18 +150,33 @@ def get_slice(
 
 def map_argmax_to_original(index: int | np.ndarray, mask) -> int | np.ndarray:
     """
-    Map the index from masked array back to the index of the original array.
+    Map the index from a masked array back to the index of the original array.
 
-    Parameters:
-    - argmax_index: Index obtained from the argmax of the masked array.
-    - mask: Boolean mask indicating which elements were retained in the original array.
+    Parameters
+    ----------
+    index : int
+        Index obtained from the argmax of the masked array.
+    mask : array_like, bool
+        Boolean mask indicating which elements were retained in the original array.
 
-    Returns:
-    - original_index: Index in the original array corresponding to the argmax of the masked array.
+    Returns
+    -------
+    int or np.ndarray
+        Index in the original array corresponding to the argmax of the masked array.
+        Returns None if argmax_index is out of bounds or the corresponding mask value is False.
     """
     masked_indices = np.where(mask)[0]  # Get the indices of the retained elements
     original_index = masked_indices[index]
     return original_index
+
+
+def get_index_of_values_in_common(array_a: np.ndarray, array_b: np.ndarray) ->  list[int | None]:
+    indices = []
+    for value in array_b:
+        result = np.where(array_a == value)[0]
+        indices.append(result[0] if len(result) > 0 else None)
+
+    return indices
 
 
 def normalize_by_max(y: np.ndarray) -> np.ndarray:
@@ -286,3 +301,32 @@ def get_width_at(x: np.ndarray, y: np.ndarray, height: float | int = 0.5) -> tup
         x_high = p(height_half_max)
 
     return x_low, x_high
+
+
+def min_uint_dtype(max_value: int | float) -> np.dtype:
+    dtypes = [np.uint8, np.uint16, np.uint32, np.uint64, np.uint128]
+
+    # Find the smallest dtype that can represent all values in the array
+    for dtype in dtypes:
+        if max_value <= np.iinfo(dtype).max:
+            return dtype
+
+    raise ValueError("Number is larger than 'uint128' and can't be represented.")
+
+
+def min_int_dtype(max_value: int | float, min_value: int | float, allow_uints: bool = True) -> np.dtype:
+    if allow_uints and min_value > 0:
+        return min_uint_dtype(max_value)
+
+    dtypes = [np.int8, np.int16, np.int32, np.int64, np.int128]
+
+    # Find the smallest dtype that can represent all values in the array
+    for dtype in dtypes:
+        if max_value <= np.iinfo(dtype).max:
+            return dtype
+
+    raise ValueError("Number is larger than 'int128' and can't be represented.")
+
+
+def min_int_dtype_array(array: np.ndarray, allow_uints: bool = True) -> np.dtype:
+    return min_int_dtype(np.max(array), np.min(array), allow_uints)

@@ -1,4 +1,5 @@
 import pathlib
+import logging
 from typing import Sequence, Iterable
 
 import numpy as np
@@ -6,6 +7,8 @@ import numpy as np
 from chem_analysis.processing.processor import Processor
 from chem_analysis.analysis.peak import PeakDiscrete
 from chem_analysis.base_obj.signal_discrete import SignalDiscrete
+
+logger = logging.getLogger(__name__)
 
 
 def validate_input(x_raw: np.ndarray, y_raw: np.ndarray, data_raw: np.ndarray):
@@ -141,24 +144,88 @@ class SignalDiscrete2D:
         return sig
 
     @classmethod
-    def from_signals(cls, signals: Sequence[SignalDiscrete], y: np.ndarray = None):  # -> Signal2D
-        """ Turn Sequence of Signals into a Signal2D"""
-        # TODO: add interpolation option if x-axis not same
+    def from_signals(cls,
+                     signals: Sequence[SignalDiscrete],
+                     y: np.ndarray = None,
+                     min_x: int = None,
+                     max_x: int = None
+                     ):  # -> Signal2D
+        """
+        Turn Sequence of SignalDiscrete into a SignalDiscrte2D
+
+        NOTE: In order to make a shared x-axis, x values are turned into ints
+
+        Parameters
+        ----------
+        signals:
+            signals to convert to signal2D
+        y:
+            if not provided, y will be 1,2,3,4,...
+        min_x:
+            min_x when unification is required.
+            if not provided the min(x) will be used.
+            Only used when covert to int or uint
+        max_x:
+            max_x when unification is required.
+            if not provided the max(x) will be used.
+            Only used when covert to int or uint
+
+        Returns
+        -------
+
+        """
+        from chem_analysis.utils.math import min_int_dtype, get_index_of_values_in_common
+
         if y is not None and len(y.shape) != 1 and y.shape[0] == len(signals):
             raise ValueError("The number of signals must be the same as the number of y points.\n"
                              f"\tnumber of signals: {len(signals)}\n\tnumber of y points:{y.shape[0]}")
 
-        x = signals[0].x
+        FLAG_SAME_X = True
+        first_x = signals[0].x
+        for signal in signals:
+            if not np.all(np.isclose(signal.x, first_x, rtol=0.01)):
+                FLAG_SAME_X = False
+                break
+
         x_label = signals[0].x_label
         z_label = signals[0].y_label
-
         if y is None:
             y = np.empty(len(signals))
+
+        if FLAG_SAME_X:
+            x = signals[0].x
+            data = np.empty((len(signals), len(x)), dtype=signals[0].y.dtype)
+            for i, sig in enumerate(signals):
+                data[i, :] = sig.y
+                if hasattr(sig, "time_"):
+                    y[i] = sig.time_
+                else:
+                    y[i] = i
+            return cls(x_raw=x, y_raw=y, data_raw=data, x_label=x_label, z_label=z_label)
+
+        # convert x to int or uint and place values at right spots
+        max_x_from_signals = np.max([np.max(sig.x) for sig in signals])
+        min_x_from_signals = np.min([np.min(sig.x) for sig in signals])
+        if max_x is not None:
+            if max_x < max_x_from_signals:
+                logging.warning(f"max_x {max_x} is less than the max(x) ({max_x_from_signals}), "
+                                f"thus some values may be cut off")
+        if min_x is not None:
+            if min_x > min_x_from_signals:
+                logging.warning(f"max_x {max_x} is less than the max(x) ({min_x_from_signals}), "
+                                f"thus some values may be cut off")
+
+        dtype = min_int_dtype(max_x or max_x_from_signals, min_x or min_x_from_signals)
+        x = np.arange(min_x, max_x, dtype=dtype)
+
         data = np.empty((len(signals), len(x)), dtype=signals[0].y.dtype)
         for i, sig in enumerate(signals):
-            if not np.all(np.isclose(sig.x, x, rtol=0.01)):
-                raise ValueError(f"Signal {i} has a different x-axis than first signal.")
-            data[i, :] = sig.y
+            new_x = np.round(x)
+            index = get_index_of_values_in_common(x, new_x)
+            for i_, ii in enumerate(index):
+                if ii is not None:
+                    data[i, ii] = sig.y[i_]
+
             if hasattr(sig, "time_"):
                 y[i] = sig.time_
             else:
