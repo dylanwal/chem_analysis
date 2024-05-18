@@ -36,7 +36,22 @@ class MSSignal2D(SignalDiscrete2D):
     def from_signals(cls,
                      signals: Sequence[SignalDiscrete],
                      y: np.ndarray = None,
+                     x_label: str = None,
+                     y_label: str = None,
+                     z_label: str = None,
                      min_x: int = None,
                      max_x: int = None
                      ) -> MSSignal2D:
-        return super().from_signals(signals, y, min_x, max_x)
+        return super().from_signals(signals, y, x_label, y_label, z_label, min_x, max_x)
+
+    @classmethod
+    def from_list(cls,
+                  data: Sequence[Sequence[np.ndarray]],
+                  y: np.ndarray = None,
+                  x_label: str = None,
+                  y_label: str = None,
+                  z_label: str = None,
+                  min_x: int = None,
+                  max_x: int = None,
+                  ) -> MSSignal2D:
+        return super().from_list(data, y, x_label, y_label, z_label, min_x, max_x)

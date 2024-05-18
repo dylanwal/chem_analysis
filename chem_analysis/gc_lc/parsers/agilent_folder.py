@@ -7,8 +7,6 @@ from typing import Any, BinaryIO
 
 import numpy as np
 
-MAX_mz = 1000
-
 # https://docs.python.org/3/library/struct.html#format-characters
 DATA_TYPE_SIZE = {
     "c": 1,
@@ -147,8 +145,8 @@ def parse_gcms(file_path: str | pathlib.Path):
         data["channel_units"] = "m/z"
         data["time_units"] = "min"
 
-        data['data_offset'], data['time'], data['intensity'] = f_directory(file, data["dir_offset"],
-                                                                           data['num_records'])
+        data_offset, time, intensity = f_directory(file, data["dir_offset"], data['num_records'])
+        data['data_offset'], data['time'], data['intensity'] = data_offset, time, intensity
         data['data'] = f_scan(file, data['data_offset'])
 
     return data
@@ -183,7 +181,7 @@ def f_double_array(f: BinaryIO, offset: int) -> np.ndarray:
     return np.fromfile(f, dtype="float64", count=n)
 
 
-def f_scan(f: BinaryIO, offset: np.ndarray) -> np.ndarray:
+def f_scan(f: BinaryIO, offset: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:
     n = []
     mz = []
     intensity = []
@@ -193,7 +191,7 @@ def f_scan(f: BinaryIO, offset: np.ndarray) -> np.ndarray:
         n.append(struct.unpack('>h', f.read(2))[0])
         f.seek(4, 1)
         d = np.fromfile(f, dtype=np.dtype('uint16').newbyteorder('>'), count=2 * n[i])
-        mz.append(np.round(np.flip(d[::2]) / 20).astype('uint16'))
+        mz.append(np.flip(d[::2]) / 20)
         intensity.append(np.flip(d[1::2]))
 
     # convert to int16 to int32 (some of int16 bits represent bit shifts)
@@ -208,12 +206,7 @@ def f_scan(f: BinaryIO, offset: np.ndarray) -> np.ndarray:
 
         intensity_new.append(y)
 
-    # pack data
-    data = np.zeros((len(mz), MAX_mz), dtype="int32")
-    for i, (m, y) in enumerate(zip(mz, intensity_new)):
-        data[i, m] = y
-
-    return data
+    return list(zip(mz, intensity_new))
 
 
 def f_directory(f: BinaryIO, offset: int, num_records: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -4,7 +4,10 @@ from typing import Sequence
 
 import numpy as np
 
-MIN_FLOAT = np.finfo(float).eps
+MIN_FLOAT = np.float64.min  # np.finfo(float).eps
+DTYPE_UINT = (np.uint8, np.uint16, np.uint32, np.uint64)
+DTYPE_INT = (np.int8, np.int16, np.int32, np.int64)
+DTYPE_FLOAT = (np.float16, np.float32, np.float64)
 
 
 def pack_time_series(x: np.ndarray, time_: np.ndarray, z: np.array) -> np.ndarray:
@@ -170,7 +173,7 @@ def map_argmax_to_original(index: int | np.ndarray, mask) -> int | np.ndarray:
     return original_index
 
 
-def get_index_of_values_in_common(array_a: np.ndarray, array_b: np.ndarray) ->  list[int | None]:
+def get_index_of_values_in_common(array_a: np.ndarray, array_b: np.ndarray) -> list[int | None]:
     indices = []
     for value in array_b:
         result = np.where(array_a == value)[0]
@@ -304,29 +307,50 @@ def get_width_at(x: np.ndarray, y: np.ndarray, height: float | int = 0.5) -> tup
 
 
 def min_uint_dtype(max_value: int | float) -> np.dtype:
-    dtypes = [np.uint8, np.uint16, np.uint32, np.uint64, np.uint128]
-
     # Find the smallest dtype that can represent all values in the array
-    for dtype in dtypes:
+    for dtype in DTYPE_UINT:
         if max_value <= np.iinfo(dtype).max:
             return dtype
 
-    raise ValueError("Number is larger than 'uint128' and can't be represented.")
+    raise ValueError(f"Number is larger than '{DTYPE_UINT[-1]}' and can't be represented.")
 
 
-def min_int_dtype(max_value: int | float, min_value: int | float, allow_uints: bool = True) -> np.dtype:
+def min_int_dtype(max_abs_value: int | float, min_value: int | float, allow_uints: bool = True) -> np.dtype:
     if allow_uints and min_value > 0:
-        return min_uint_dtype(max_value)
-
-    dtypes = [np.int8, np.int16, np.int32, np.int64, np.int128]
+        return min_uint_dtype(max_abs_value)
 
     # Find the smallest dtype that can represent all values in the array
-    for dtype in dtypes:
-        if max_value <= np.iinfo(dtype).max:
+    for dtype in DTYPE_INT:
+        if max_abs_value <= np.iinfo(dtype).max:
             return dtype
 
-    raise ValueError("Number is larger than 'int128' and can't be represented.")
+    raise ValueError(f"Number is larger than '{DTYPE_INT[-1]}' and can't be represented.")
 
 
 def min_int_dtype_array(array: np.ndarray, allow_uints: bool = True) -> np.dtype:
-    return min_int_dtype(np.max(array), np.min(array), allow_uints)
+    return min_int_dtype(max(np.max(array), np.abs(np.min(array))), np.min(array), allow_uints)
+
+
+def min_float_dtype(max_abs_value: float) -> np.dtype:
+    # Find the smallest dtype that can represent all values in the array
+    for dtype in DTYPE_FLOAT:
+        if max_abs_value <= np.iinfo(dtype).max:
+            return dtype
+
+    raise ValueError(f"Number is larger than '{DTYPE_FLOAT[-1]}' and can't be represented.")
+
+
+def min_float_dtype_array(array: np.ndarray) -> np.dtype:
+    return min_float_dtype(max(np.max(array), np.abs(np.min(array))))
+
+
+def set_minimum_dtype(array: np.ndarray) -> np.ndarray:
+    if array.dtype in DTYPE_UINT or array.dtype in DTYPE_INT:
+        dtype_ = min_int_dtype_array(array)
+        return array.astype(dtype_)
+
+    if array.dtype in DTYPE_FLOAT:
+        dtype_ = min_float_dtype_array(array)
+        return array.astype(dtype_)
+
+    raise ValueError("Not supported dtype.")

@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class CompoundResponse:
+    # Update version in GCLibrary if changes made
     __slots__ = "method", "retention_time", "response", "mass_spectrum", "notes"
     RETENTION_TIME_UNIT = "min"
 
@@ -65,6 +66,7 @@ class CompoundResponse:
 
 
 class Compound:
+    # Update version in GCLibrary if changes made
     __slots__ = "label", "responses", "groups", "smiles", "name", "cas"
 
     def __init__(self,
@@ -74,6 +76,7 @@ class Compound:
                  smiles: str | None = None,
                  name: str | None = None,
                  cas: str | None = None,
+                 **kwargs
                  ):
         """
 
@@ -102,6 +105,10 @@ class Compound:
         if isinstance(smiles, str):
             smiles = bigsmiles.BigSMILES(smiles)
         self.smiles = smiles
+
+        if kwargs:
+            for k, v in kwargs.items():
+                setattr(self, k, v)
 
     def __str__(self):
         text = f"{self.label}"

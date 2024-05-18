@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import datetime
 import logging
 import pathlib
 from collections import OrderedDict, defaultdict
@@ -10,8 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 class GCLibrary:
-    def __init__(self, compounds: list[Compound] = None, name: str = None):
+    VERSION = 1  # update if anything changes here or in Compound
+
+    def __init__(self,
+                 name: str,
+                 compounds: list[Compound] = None,
+                 datetime_created: datetime.datetime = None,
+                 datetime_updated: datetime.datetime = None
+                 ):
         self.name = name
+        self.datetime_created = datetime_created or datetime.datetime.now()
+        self.datetime_updated = datetime_updated or datetime.datetime.now()  # updated in .to_JSON
         self._compounds = []
         if compounds:
             for compound in compounds:
@@ -97,12 +108,15 @@ class GCLibrary:
 
     def to_dict(self, sanitize: bool = False, binary: bool = False) -> OrderedDict:
         dict_ = OrderedDict()
-        vars_ = filter(lambda x: not x.startswith("_"), vars(self)) + ["_compounds"]
+        vars_ = list(filter(lambda x: not x.startswith("_"), vars(self))) + ["_compounds"]
         for k in vars_:
             attr = getattr(self, k)
             if sanitize:
                 if k == "_compounds":
+                    k = "compounds"
                     attr = [comp.to_dict(sanitize, binary) for comp in attr]
+                if isinstance(attr, datetime.datetime):
+                    attr = attr.isoformat()
 
             dict_[k] = attr
 
@@ -111,6 +125,8 @@ class GCLibrary:
     def to_JSON(self, file_path: str | pathlib.Path, binary: bool = False, json_kwargs: dict[str, Any] = None):
         import json
         lib_dict = self.to_dict(sanitize=True, binary=binary)
+        lib_dict["datetime_updated"] = datetime.datetime.now().isoformat()
+        lib_dict["version"] = self.VERSION
 
         if isinstance(file_path, str):
             file_path = pathlib.Path(file_path)
@@ -127,6 +143,10 @@ class GCLibrary:
 
     @classmethod
     def from_dict(cls, dict_: dict) -> GCLibrary:
+        if dict_['version'] != cls.VERSION:
+            raise ValueError(f"Version {dict_['version']} does not match the current version {cls.VERSION}")
+        dict_.pop("version")
+
         if dict_["compounds"] is not None:
             dict_["compounds"] = [Compound.from_dict(compound) for compound in dict_["compounds"]]
         return cls(**dict_)

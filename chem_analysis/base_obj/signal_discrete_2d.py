@@ -7,6 +7,7 @@ import numpy as np
 from chem_analysis.processing.processor import Processor
 from chem_analysis.analysis.peak import PeakDiscrete
 from chem_analysis.base_obj.signal_discrete import SignalDiscrete
+import chem_analysis.utils.math as utils_math
 
 logger = logging.getLogger(__name__)
 
@@ -135,10 +136,10 @@ class SignalDiscrete2D:
     def get_signal(self, y_index: int, processed: bool = False) -> SignalDiscrete:
         if processed:
             sig = self._signal(x_raw=self.x, data_raw=self.data[y_index, :], x_label=self.x_label,
-                         y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
+                               y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
         else:
             sig = self._signal(x_raw=self.x_raw, data_raw=self.data_raw[y_index, :], x_label=self.x_label,
-                         y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
+                               y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
             sig.processor = self.processor.get_copy()
         sig.y_value = self.y[y_index]
         return sig
@@ -147,6 +148,9 @@ class SignalDiscrete2D:
     def from_signals(cls,
                      signals: Sequence[SignalDiscrete],
                      y: np.ndarray = None,
+                     x_label: str = None,
+                     y_label: str = None,
+                     z_label: str = None,
                      min_x: int = None,
                      max_x: int = None
                      ):  # -> Signal2D
@@ -161,6 +165,12 @@ class SignalDiscrete2D:
             signals to convert to signal2D
         y:
             if not provided, y will be 1,2,3,4,...
+        x_label: str
+            x-axis label
+        y_label: str
+            y-axis label
+        z_label: str
+            z-axis label
         min_x:
             min_x when unification is required.
             if not provided the min(x) will be used.
@@ -174,64 +184,74 @@ class SignalDiscrete2D:
         -------
 
         """
-        from chem_analysis.utils.math import min_int_dtype, get_index_of_values_in_common
-
         if y is not None and len(y.shape) != 1 and y.shape[0] == len(signals):
             raise ValueError("The number of signals must be the same as the number of y points.\n"
                              f"\tnumber of signals: {len(signals)}\n\tnumber of y points:{y.shape[0]}")
 
-        FLAG_SAME_X = True
-        first_x = signals[0].x
-        for signal in signals:
-            if not np.all(np.isclose(signal.x, first_x, rtol=0.01)):
-                FLAG_SAME_X = False
-                break
+        data = [(sig.x, sig.y) for sig in signals]
+        return cls.from_list(data, y, x_label=signals[0].x_label, z_label=signals[0].y_label, min_x=min_x, max_x=max_x)
 
-        x_label = signals[0].x_label
-        z_label = signals[0].y_label
+    @classmethod
+    def from_list(cls,
+                  data: Sequence[Sequence[np.ndarray]],
+                  y: np.ndarray = None,
+                  x_label: str = None,
+                  y_label: str = None,
+                  z_label: str = None,
+                  min_x: int = None,
+                  max_x: int = None,
+                  ):
+        if len(data[0]) != 2:
+            raise ValueError(f"The structure of 'data' in {type(cls).__name__}"
+                             f".from_list() must be [[x, y],[x, y],...,[x,y]].\n")
+
+        if y is not None and len(y.shape) != 1 and y.shape[0] == len(data):
+            raise ValueError("The number of signals must be the same as the number of y points.\n"
+                             f"\tnumber of data: {len(data)}\n\tnumber of y points:{y.shape[0]}")
         if y is None:
-            y = np.empty(len(signals))
+            y = np.arange(len(data))
 
-        if FLAG_SAME_X:
-            x = signals[0].x
-            data = np.empty((len(signals), len(x)), dtype=signals[0].y.dtype)
-            for i, sig in enumerate(signals):
-                data[i, :] = sig.y
-                if hasattr(sig, "time_"):
-                    y[i] = sig.time_
-                else:
-                    y[i] = i
+        first_x = data[0][0]
+        for signal in data:
+            if len(signal[0]) != len(first_x):
+                break
+            if not np.all(np.isclose(signal[0], first_x, rtol=0.01)):
+                break
+        else:
+            # all x are the same
+            x = data[0][0]
+            data = np.empty((len(data), len(x)), dtype=data[0][1].dtype)
+            for i, sig in enumerate(data):
+                data[i, :] = sig[1]
+            data = utils_math.set_minimum_dtype(data)
             return cls(x_raw=x, y_raw=y, data_raw=data, x_label=x_label, z_label=z_label)
 
-        # convert x to int or uint and place values at right spots
-        max_x_from_signals = np.max([np.max(sig.x) for sig in signals])
-        min_x_from_signals = np.min([np.min(sig.x) for sig in signals])
-        if max_x is not None:
+        # x are not the same
+        max_x_from_signals = np.max([np.max(sig[0]) for sig in data])
+        min_x_from_signals = np.min([np.min(sig[0]) for sig in data])
+        if max_x is None:
+            max_x = max_x_from_signals
+        else:
             if max_x < max_x_from_signals:
                 logging.warning(f"max_x {max_x} is less than the max(x) ({max_x_from_signals}), "
                                 f"thus some values may be cut off")
-        if min_x is not None:
+        if min_x is None:
+            min_x = min_x_from_signals
+        else:
             if min_x > min_x_from_signals:
                 logging.warning(f"max_x {max_x} is less than the max(x) ({min_x_from_signals}), "
                                 f"thus some values may be cut off")
 
-        dtype = min_int_dtype(max_x or max_x_from_signals, min_x or min_x_from_signals)
-        x = np.arange(min_x, max_x, dtype=dtype)
-
-        data = np.empty((len(signals), len(x)), dtype=signals[0].y.dtype)
-        for i, sig in enumerate(signals):
-            new_x = np.round(x)
-            index = get_index_of_values_in_common(x, new_x)
+        x = np.arange(min_x, max_x, dtype=utils_math.min_int_dtype(max_x, min_x))
+        data_new = np.zeros((len(data), len(x)), dtype=data[0][1].dtype)
+        for i, sig in enumerate(data):
+            new_x = np.round(sig[0])
+            index = utils_math.get_index_of_values_in_common(x, new_x)
             for i_, ii in enumerate(index):
                 if ii is not None:
-                    data[i, ii] = sig.y[i_]
+                    data_new[i, ii] = sig[1][i_]
 
-            if hasattr(sig, "time_"):
-                y[i] = sig.time_
-            else:
-                y[i] = i
-
-        return cls(x_raw=x, y_raw=y, data_raw=data, x_label=x_label, z_label=z_label)
+        return cls(x_raw=x, y_raw=y, data_raw=data_new, x_label=x_label, z_label=z_label)
 
     ####################################################################################################################
     ## Save/Load from file #############################################################################################
@@ -273,7 +293,7 @@ class SignalDiscrete2D:
         from chem_analysis.utils.feather_format import numpy_to_feather
         from chem_analysis.utils.math import pack_time_series
 
-        headers = list(str(0) for i in range(len(self.y)+1))
+        headers = list(str(0) for i in range(len(self.y) + 1))
         headers[0] = self.x_label
         headers[1] = self.y_label
         headers[2] = self.z_label
