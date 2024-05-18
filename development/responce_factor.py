@@ -1,7 +1,7 @@
 
 import chem_analysis as ca
 
-lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library.JSON"
+lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\new_library.JSON"
 chemistry_lib = ca.mass_spec.GCLibrary.from_JSON(lib_path)
 
 

@@ -1,4 +1,4 @@
-from chem_analysis.gc_lc.gc_library import GCLibrary, Compound
+from chem_analysis.gc_lc.library.library import GCLibrary, Compound
 from chem_analysis.gc_lc.gc_parameters import GCParameters
 from chem_analysis.gc_lc.gc_signal import GCSignal
 from chem_analysis.gc_lc.gc_ms_signal import GCMSSignal

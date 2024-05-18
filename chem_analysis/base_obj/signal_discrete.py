@@ -99,6 +99,9 @@ class SignalDiscrete:
             return self.y/np.max(self.y)
         return general_math.normalize_by_max_with_x_range(x=self.x, y=self.y, x_range=x_range)
 
+    def to_list(self) -> list[float | int,  float | int]:
+        return np.column_stack([self.x, self.y]).tolist()
+
     def to_dict(self, sanitize: bool = False) -> dict:
         dict_ = {
             "name": self.name,

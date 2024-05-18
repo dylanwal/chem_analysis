@@ -52,7 +52,7 @@ class PeakForPicking:
         return copy.copy(peak)
 
 
-from chem_analysis.gc_lc.gc_library import Compound
+from chem_analysis.gc_lc.library.library import Compound
 
 
 class PeakForPickingCompound(PeakForPicking):
