@@ -26,6 +26,3 @@ class GCMSSignal(Signal):
         data_raw = np.sum(ms_raw.data, axis=1)
         super().__init__(copy.copy(ms_raw.y), data_raw, x_label, y_label, name, id_)
         self.parameters = parameters
-
-    def get_ms(self, index: int | slice):
-        ...

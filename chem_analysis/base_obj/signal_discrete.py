@@ -99,10 +99,16 @@ class SignalDiscrete:
             return self.y/np.max(self.y)
         return general_math.normalize_by_max_with_x_range(x=self.x, y=self.y, x_range=x_range)
 
-    def to_list(self) -> list[float | int,  float | int]:
-        return np.column_stack([self.x, self.y]).tolist()
+    def to_list(self, reduce: bool = False) -> list[float | int,  float | int]:
+        return self.to_numpy(reduce).tolist()
 
-    def to_dict(self, sanitize: bool = False) -> dict:
+    def to_numpy(self, reduce: bool = False):
+        if reduce:
+            mask = np.nonzero(self.y)
+            return np.column_stack([self.x[mask], self.y[mask]])
+        return np.column_stack([self.x, self.y])
+
+    def to_dict(self, sanitize: bool = False, reduce: bool = True) -> dict:
         dict_ = {
             "name": self.name,
             "x_label": self.x_label,
@@ -110,9 +116,9 @@ class SignalDiscrete:
             "id_": self.id_
         }
         if sanitize:
-            dict_["data"] = np.column_stack([self.x, self.y]).tolist()
+            dict_["data"] = self.to_list(reduce)
         else:
-            dict_["data"] = np.column_stack([self.x, self.y])
+            dict_["data"] = self.to_numpy(reduce)
 
         return dict_
 
@@ -142,13 +148,13 @@ class SignalDiscrete:
         numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
 
     def to_parquet(self, path: str | pathlib.Path):
-        import pyarrow as pa
-        import pyarrow.parquet as pq
         # TODO:
         raise NotImplementedError()
-        arrays = [pa.array(self.x), pa.array(self.y)]
-        table = pa.Table().from_arrays(arrays=arrays, names=("x", "y"))
-        pq.write_table(table, path)
+        # import pyarrow as pa
+        # import pyarrow.parquet as pq
+        # arrays = [pa.array(self.x), pa.array(self.y)]
+        # table = pa.Table().from_arrays(arrays=arrays, names=("x", "y"))
+        # pq.write_table(table, path)
 
     @classmethod
     def from_parquet(cls, path: str | pathlib.Path, **kwargs):

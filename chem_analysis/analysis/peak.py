@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 from collections import OrderedDict
 from typing import Protocol
@@ -36,74 +37,6 @@ class PeakDiscrete(Peak):
         dict_['id'] = f"{self.id_}"
         dict_['index'] = f"{self.index}"
         return dict_
-
-
-class PeakContinuous(Peak, abc.ABC):
-    def __init__(self, id_: int = None):
-        super().__init__(id_)
-        self.stats = PeakStats(self)
-
-    @property
-    @abc.abstractmethod
-    def x(self) -> np.ndarray:
-        ...
-
-    @property
-    @abc.abstractmethod
-    def y(self) -> np.ndarray:
-        ...
-
-    @property
-    def max_loc(self) -> float:
-        return self.x[int(np.argmax(self.y))]
-
-    @property
-    def max_value(self) -> float:
-        return np.max(self.y)
-
-
-class PeakBounded(PeakContinuous):
-    def __init__(self, parent: PeakParent, bounds: slice, id_: int = None):
-        super().__init__(id_)
-        self.parent = parent
-        self.bounds = bounds
-
-    def __repr__(self):
-        return f"peak: {self.id_} at {self.bounds}"
-
-    @property
-    def x(self) -> np.ndarray:
-        return self.parent.x[self.bounds]
-
-    @property
-    def y(self) -> np.ndarray:
-        return self.parent.y[self.bounds]
-
-    @property
-    def low_bound_value(self) -> float:
-        return self.parent.y[self.bounds.start]
-
-    @property
-    def high_bound_value(self) -> float:
-        return self.parent.y[self.bounds.stop]
-
-    @property
-    def low_bound_location(self) -> float:
-        return self.parent.x[self.bounds.start]
-
-    @property
-    def high_bound_location(self) -> float:
-        return self.parent.x[self.bounds.stop]
-
-    def get_stats(self) -> OrderedDict:
-        dict_ = OrderedDict()
-        dict_['slice'] = f"[{self.bounds.start}-{self.bounds.stop}]"
-        dict_['slice_loc'] = f"[{apply_sig_figs(self.low_bound_location)}-{apply_sig_figs(self.high_bound_location)}]"
-        dict_.update(self.stats.get_stats())
-        return dict_
-
-    def stats_table(self) -> StatsTable:
-        return StatsTable.from_dict(self.get_stats())
 
 
 class PeakStats:
@@ -200,6 +133,83 @@ class PeakStats:
         properties.remove("stats_table")
         for stat in properties:
             dict_[stat] = getattr(self, stat)
+        return dict_
+
+    def stats_table(self) -> StatsTable:
+        return StatsTable.from_dict(self.get_stats())
+
+
+class PeakContinuous(Peak, abc.ABC):
+    _STATS = PeakStats
+
+    def __init__(self, id_: int = None):
+        super().__init__(id_)
+        self._stats = None
+
+    @property
+    @abc.abstractmethod
+    def x(self) -> np.ndarray:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def y(self) -> np.ndarray:
+        ...
+
+    @property
+    def max_loc(self) -> float:
+        return self.x[int(np.argmax(self.y))]
+
+    @property
+    def max_value(self) -> float:
+        return np.max(self.y)
+
+    @property
+    def stats(self) -> PeakStats:
+        if self._stats is None:
+            self._stats = self._STATS(self)
+
+        return self._stats
+
+
+class PeakBounded(PeakContinuous):
+    def __init__(self, parent: PeakParent, bounds: slice, id_: int = None):
+        super().__init__(id_)
+        self.parent = parent
+        self.bounds = bounds
+
+    def __repr__(self):
+        return f"peak: {self.id_} at {self.low_bound_location:.2f}-{self.high_bound_location:.2f}"
+
+    @property
+    def x(self) -> np.ndarray:
+        return self.parent.x[self.bounds]
+
+    @property
+    def y(self) -> np.ndarray:
+        return self.parent.y[self.bounds]
+
+    @property
+    def low_bound_value(self) -> float:
+        return self.parent.y[self.bounds.start]
+
+    @property
+    def high_bound_value(self) -> float:
+        return self.parent.y[self.bounds.stop]
+
+    @property
+    def low_bound_location(self) -> float:
+        return self.parent.x[self.bounds.start]
+
+    @property
+    def high_bound_location(self) -> float:
+        return self.parent.x[self.bounds.stop]
+
+    def get_stats(self) -> OrderedDict:
+        dict_ = OrderedDict()
+        dict_['slice'] = f"[{self.bounds.start}-{self.bounds.stop}]"
+        dict_['slice_loc'] = f"[{apply_sig_figs(self.low_bound_location)}-{apply_sig_figs(self.high_bound_location)}]"
+        dict_.update(self.stats.get_stats())
         return dict_
 
     def stats_table(self) -> StatsTable:

@@ -2,3 +2,4 @@ import chem_analysis.analysis.peak_picking as peak_picking
 import chem_analysis.analysis.boundary_detection as boundary_detection
 import chem_analysis.analysis.multi_component_analysis as mca
 import chem_analysis.analysis.integration.integrate_signal as integrate
+import chem_analysis.analysis.ms_extraction as ms_extraction

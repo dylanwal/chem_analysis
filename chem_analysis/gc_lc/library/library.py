@@ -78,6 +78,17 @@ class GCLibrary:
         self.compounds.append(compound)
         self._reset_cache()
 
+    def delete_compound(self, compound: Compound | str):
+        if isinstance(compound, str):
+            compound_ = self.find_by_name(compound)
+            if compound_ is None:
+                compound_ = self.find_by_label(compound)
+            if compound_ is None:
+                raise ValueError(f"'compound' not found in library.\n\tcompound: {str(compound)}")
+            compound = compound_
+
+        self._compounds.remove(compound)
+
     def add_library(self, lib: GCLibrary):
         for comp in lib:
             self.add_compound(comp)
@@ -122,16 +133,25 @@ class GCLibrary:
 
         return dict_
 
-    def to_JSON(self, file_path: str | pathlib.Path, binary: bool = False, json_kwargs: dict[str, Any] = None):
-        import json
-        lib_dict = self.to_dict(sanitize=True, binary=binary)
-        lib_dict["datetime_updated"] = datetime.datetime.now().isoformat()
-        lib_dict["version"] = self.VERSION
-
+    def to_JSON(self,
+                file_path: str | pathlib.Path,
+                *,
+                binary: bool = False,
+                overwrite: bool = False,
+                json_kwargs: dict[str, Any] = None
+                ):
         if isinstance(file_path, str):
             file_path = pathlib.Path(file_path)
         if file_path.suffix != ".json":
             file_path = file_path.with_suffix(".json")
+        if file_path.exists() and not overwrite:
+            raise ValueError("Library file already exists. Set 'overwrite' to true.")
+
+        import json
+        lib_dict = self.to_dict(sanitize=True, binary=binary)
+        lib_dict["datetime_updated"] = datetime.datetime.now().isoformat()
+        lib_dict["version"] = self.VERSION
+        lib_dict["encoding"] = "UTF-8"
 
         if json_kwargs is None:
             json_kwargs = {}
@@ -146,6 +166,7 @@ class GCLibrary:
         if dict_['version'] != cls.VERSION:
             raise ValueError(f"Version {dict_['version']} does not match the current version {cls.VERSION}")
         dict_.pop("version")
+        dict_.pop("encoding")
 
         if dict_["compounds"] is not None:
             dict_["compounds"] = [Compound.from_dict(compound) for compound in dict_["compounds"]]

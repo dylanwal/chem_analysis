@@ -25,8 +25,11 @@ class PlotlyConfig(PlotConfig):
         return fig, config
 
     @staticmethod
-    def plotly_layout():
-        import plotly.graph_objs as go
+    def plotly_layout() -> dict:
+        return dict(template=PlotlyConfig.plotly_template())
+
+    @staticmethod
+    def plotly_template() -> go.Template:
         template = go.layout.Template()
         template.layout.font = dict(family="Arial", size=18, color="black")
         template.layout.plot_bgcolor = "white"

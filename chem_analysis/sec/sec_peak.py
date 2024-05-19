@@ -1,3 +1,4 @@
+from __future__ import annotations
 import dataclasses
 from collections import OrderedDict
 import logging
@@ -10,7 +11,7 @@ from chem_analysis.analysis.peak import PeakBounded, PeakStats, PeakParent
 from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.utils.printing_tables import StatsTable
 
-logger = logging.getLogger("chem_analysis.peak_SEC")
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -19,7 +20,71 @@ class PeakParentSEC(PeakParent):
     calibration: SECCalibration | None
 
 
+class PeakStatsSEC(PeakStats):
+    """
+
+    Attributes
+    ----------
+    mw_max: float
+        molecular weight at peak max
+    mw_mean: float
+        mean molecular weight distribution (same as mw_n)
+    mw_std: float
+        standard deviation of molecular weight distribution
+    mw_skew: float
+        skew of molecular weight distribution
+        symmetric: -0.5 to 0.5; moderate skew: -1 to -0.5 or 0.5 to 1; high skew: <-1 or >1;
+        positive tailing to higher numbers; negative tailing to smaller numbers
+    mw_kurtosis: float
+        kurtosis of molecular weight distribution (Fisher)  (Warning: highly sensitive to peak bounds)
+        negative: flatter peak; positive: sharp peak
+    mw_full_width_half_max: float
+        full width half max of molecular weight distribution
+    mw_asymmetry_factor: float
+        asymmetry factor of molecular weight distribution; distance from the center line of the peak to the back
+        slope divided by the distance from the center line of the peak to the front slope
+        >1 tailing to larger values; <1 tailing to smaller numbers
+
+    """
+
+    def __init__(self, parent: PeakSEC):
+        super().__init__(parent)
+
+    @property
+    def mw_max(self) -> float:
+        return np.max(self.parent.mw_i)
+
+    @property
+    def mw_mean(self) -> float:
+        return general_math.get_mean_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i)
+
+    @property
+    def mw_std(self):
+        return general_math.get_standard_deviation_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean)
+
+    @property
+    def mw_skew(self):
+        return general_math.get_skew_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean,
+                                            standard_deviation=self.mw_std)
+
+    @property
+    def mw_kurtosis(self):
+        return general_math.get_kurtosis_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean,
+                                                standard_deviation=self.mw_std)
+
+    @property
+    def mw_fwhm(self):
+        """mw_full_width_half_max"""
+        return general_math.get_full_width_at_height(x=self.parent.mw_i, y=self.parent.x_i, height=0.5)
+
+    @property
+    def mw_asym(self):
+        """mw_asymmetry_factor"""
+        return general_math.get_asymmetry_factor(x=self.parent.mw_i, y=self.parent.x_i, height=0.1)
+
+
 class PeakSEC(PeakBounded):
+    _STATS = PeakStatsSEC
     """
 
     Attributes
@@ -40,16 +105,23 @@ class PeakSEC(PeakBounded):
 
     def __init__(self, parent: PeakParentSEC, bounds: slice, id_: int = None):
         super().__init__(parent, bounds, id_)
-        if parent.mw_i is None:
-            self.stats = PeakStats(self)
-        else:
-            self.stats = PeakStatsSEC(self)
+
 
         self._mw_n = None
         self._mw_d = None
         self._w_i = None
         self._x_i = None
         self._mw_i_None = False
+
+    @property
+    def stats(self) -> PeakStats | PeakStatsSEC:
+        if self._stats is None:
+            if self.parent.mw_i is None:
+                self._stats = PeakStats(self)
+            else:
+                self._stats = PeakStatsSEC(self)
+
+        return self._stats
 
     @property
     def mw_i(self) -> np.ndarray | None:
@@ -124,64 +196,3 @@ class PeakSEC(PeakBounded):
         return StatsTable.from_dict(self.get_stats())
 
 
-class PeakStatsSEC(PeakStats):
-    """
-
-    Attributes
-    ----------
-    mw_max: float
-        molecular weight at peak max
-    mw_mean: float
-        mean molecular weight distribution (same as mw_n)
-    mw_std: float
-        standard deviation of molecular weight distribution
-    mw_skew: float
-        skew of molecular weight distribution
-        symmetric: -0.5 to 0.5; moderate skew: -1 to -0.5 or 0.5 to 1; high skew: <-1 or >1;
-        positive tailing to higher numbers; negative tailing to smaller numbers
-    mw_kurtosis: float
-        kurtosis of molecular weight distribution (Fisher)  (Warning: highly sensitive to peak bounds)
-        negative: flatter peak; positive: sharp peak
-    mw_full_width_half_max: float
-        full width half max of molecular weight distribution
-    mw_asymmetry_factor: float
-        asymmetry factor of molecular weight distribution; distance from the center line of the peak to the back
-        slope divided by the distance from the center line of the peak to the front slope
-        >1 tailing to larger values; <1 tailing to smaller numbers
-
-    """
-
-    def __init__(self, parent: PeakSEC):
-        super().__init__(parent)
-
-    @property
-    def mw_max(self) -> float:
-        return np.max(self.parent.mw_i)
-
-    @property
-    def mw_mean(self) -> float:
-        return general_math.get_mean_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i)
-
-    @property
-    def mw_std(self):
-        return general_math.get_standard_deviation_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean)
-
-    @property
-    def mw_skew(self):
-        return general_math.get_skew_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean,
-                                            standard_deviation=self.mw_std)
-
-    @property
-    def mw_kurtosis(self):
-        return general_math.get_kurtosis_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean,
-                                                standard_deviation=self.mw_std)
-
-    @property
-    def mw_fwhm(self):
-        """mw_full_width_half_max"""
-        return general_math.get_full_width_at_height(x=self.parent.mw_i, y=self.parent.x_i, height=0.5)
-
-    @property
-    def mw_asym(self):
-        """mw_asymmetry_factor"""
-        return general_math.get_asymmetry_factor(x=self.parent.mw_i, y=self.parent.x_i, height=0.1)
