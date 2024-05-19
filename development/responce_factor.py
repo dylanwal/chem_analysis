@@ -1,9 +1,12 @@
 import glob
+import pathlib
+
+import plotly.graph_objs as go
 
 import chem_analysis as ca
 
-# lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\new_library.JSON"
-# chemistry_lib = ca.mass_spec.GCLibrary.from_JSON(lib_path)
+lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library.json"
+chemistry_lib = ca.mass_spec.GCLibrary.from_JSON(lib_path)
 
 REFERENCE_DATA = [
      {
@@ -50,16 +53,36 @@ REFERENCE_DATA = [
 ]
 
 
+def process_one(signal: ca.base_obj.Signal, type_: str) -> ca.analysis.peak_picking.ResultPeaks:
+    if type_ == "fid":
+        signal.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(1.3, 3.3), invert=True))
+    signal.processor.add(ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True))
+
+    peak_locations = ca.analysis.peak_picking.find_peaks_scipy(signal, scipy_kwargs={"height": 20000, "width": 0.1})
+    peak_result_fid = ca.analysis.boundary_detection.rolling_ball(peak_locations, n=10, min_height=0.002, n_points_with_pos_slope=1)
+
+    fig = go.Figure(layout=dict(template=ca.plotting.PlotlyConfig.plotly_layout()))
+    # ca.plotting.baseline(signal, fig=fig)
+    ca.plotting.signal(signal, fig=fig)
+    ca.plotting.peaks(peak_result_fid, fig=fig)
+
+    current_file_path = pathlib.Path(__file__)
+    fig.write_html(current_file_path.parent / f"figs/{type_}_{signal.name}.html")
+
+    return peak_result_fid
+
+
 def main(root_folder: str, pattern: str):
     specific_folders = glob.glob(root_folder + pattern)
     data = [ca.gc_lc.GCParser.from_Agilent_D_folder(folder) for folder in specific_folders]
 
-    peak_results = []
-    for fid, ms in data:
-        fid.processor.add(ca.processing.baseline.SectionMinMax())
-        ms.processor.add(ca.processing.baseline.SectionMinMax())
+    fid_peak_results = []
+    ms_peak_results = []
+    for ms, fid in data:
+        fid_peak_results.append(process_one(fid, "fid"))
+        ms_peak_results.append(process_one(ms, "ms"))
 
-    print(data)
+    print(fid_peak_results)
     #
     # data = ca.gc_lc.GCMSSignal2D.from_file(folder_ + r"\data.npz")
     # results = ResultGrouper(time_=data.y)
@@ -76,6 +99,6 @@ def main_first():
 
 if __name__ == "__main__":
     # main_first()
-    root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
-    pattern = r"\DJW-cal-Kn_2-*.D"
-    main(root_folder, pattern)
+    root_folder_ = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
+    pattern_ = r"\DJW-cal-Kn_2-*.D"
+    main(root_folder_, pattern_)

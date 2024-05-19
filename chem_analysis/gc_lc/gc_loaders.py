@@ -19,11 +19,16 @@ class GCParser:
         gc_signal, fid_signal = None, None
         if ms_data is not None:
             ms_data_2d = MSSignal2D.from_list(data=ms_data.pop('data'), y=ms_data.pop('time'))
+            ms_data_2d.name = ms_data.pop('sample_name')
             gc_signal = GCMSSignal(ms_raw=ms_data_2d)
             gc_signal.parameters = GCParameters(**(ini_data | ms_data))
 
         if fid_data is not None:
-            fid_signal = GCSignal(x_raw=fid_data.pop('time'), data_raw=fid_data.pop('data'))
+            fid_signal = GCSignal(
+                x_raw=fid_data.pop('time'),
+                data_raw=fid_data.pop('data'),
+                name=fid_data.pop('sample_name')
+            )
             fid_signal.parameters = GCParameters(**(ini_data | fid_data))
 
         return gc_signal, fid_signal

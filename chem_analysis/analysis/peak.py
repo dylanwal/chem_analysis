@@ -138,25 +138,25 @@ class PeakStats:
 
         return self._y_norm
 
-    # @property
-    # def min_value(self) -> float:
-    #     return np.min(self.parent.y)
-    #
-    # @property
-    # def min_index(self) -> int:
-    #     return int(np.argmin(self.parent.y))
-    #
-    # @property
-    # def min_location(self) -> float:
-    #     return self.parent.x[self.min_index]
+    @property
+    def min_value(self) -> float:
+        return np.min(self.parent.y)
 
-    # @property
-    # def max_loc(self) -> float:
-    #     return self.parent.x[int(np.argmax(self.parent.y))]
-    #
-    # @property
-    # def max_value(self) -> float:
-    #     return np.max(self.parent.y)
+    @property
+    def min_index(self) -> int:
+        return int(np.argmin(self.parent.y))
+
+    @property
+    def min_location(self) -> float:
+        return self.parent.x[self.min_index]
+
+    @property
+    def max_loc(self) -> float:
+        return self.parent.x[int(np.argmax(self.parent.y))]
+
+    @property
+    def max_value(self) -> float:
+        return np.max(self.parent.y)
 
     @property
     def mean(self) -> float:

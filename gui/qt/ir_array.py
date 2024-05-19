@@ -1,18 +1,12 @@
 import os
 
-import numpy as np
 from PyQt6 import QtWidgets
 from PyQt6 import QtCore
-from PyQt6 import QtGui
 
-import pyqtgraph as pg
-from pyqtgraph.parametertree import interact, ParameterTree, Parameter
-from pyqtgraph.dockarea.Dock import Dock
-from pyqtgraph.dockarea.DockArea import DockArea
 from pyqtgraph.Qt import QtCore
 
 import chem_analysis as ca
-from chem_analysis.plotting.qt_array import ArrayView
+from chem_analysis.plotting.qt_plots.qt_array import ArrayView
 
 
 class IRArrayView(ArrayView):

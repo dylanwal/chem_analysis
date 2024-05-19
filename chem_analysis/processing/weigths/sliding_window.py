@@ -61,9 +61,12 @@ def sectioned_std(y,
     window = max(window, 1)
     # compute noise level by breaking the data into sections and find section with min sigma
     slices = divide_array(y, sections)
-    min_sigma = np.inf
+    min_sigma = np.max(y) - abs(np.min(y))
     for slice_ in slices:
-        min_sigma = min(min_sigma, np.std(y[slice_]))
+        std_ = np.std(y[slice_])
+        if std_ == 0:
+            continue
+        min_sigma = min(min_sigma, std_)
 
     # smooth specta with convolution
     _, smoothed_y = smoother.run(np.empty(0), y)

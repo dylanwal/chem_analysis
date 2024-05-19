@@ -1,11 +1,8 @@
-from typing import Iterable
-
 
 import numpy as np
 from scipy.optimize import minimize_scalar
 
 from chem_analysis.processing.processing_method import Baseline
-from chem_analysis.processing.weigths.weights import DataWeight
 
 
 class Subtract(Baseline):
@@ -13,11 +10,10 @@ class Subtract(Baseline):
                  y: np.ndarray,
                  x: np.ndarray = None,
                  multiplier: float = 1,
-                 mask: DataWeight | Iterable[DataWeight] = None,
                  non_temporal_processing: bool = False,
                  save_result: bool = False
                  ):
-        super().__init__(mask, non_temporal_processing, save_result)
+        super().__init__(non_temporal_processing, save_result)
         self.y_sub = y
         self.x_sub = x
         self.multiplier = multiplier
@@ -34,11 +30,10 @@ class SubtractOptimize(Baseline):
                  y: np.ndarray,
                  x: np.ndarray = None,
                  bounds: tuple[float, float] = (-2, 2),
-                 mask: DataWeight | Iterable[DataWeight] = None,
                  non_temporal_processing: bool = False,
                  save_result: bool = False
                  ):
-        super().__init__(mask, non_temporal_processing, save_result)
+        super().__init__(non_temporal_processing, save_result)
         self.y_sub = y
         self.x_sub = x
         self.bounds = bounds

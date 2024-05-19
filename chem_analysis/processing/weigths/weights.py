@@ -24,7 +24,10 @@ class DataWeight(MixinSubClassList, abc.ABC):
         if np.all(weights == 0):
             raise ValueError(f"All weights are zero after applying {type(self).__name__}")
         if self.invert:
-            weights = np.max(weights) - weights
+            if weights.dtype == np.bool_:
+                weights = np.logical_not(weights)
+            else:
+                weights = np.max(weights) - weights
         return weights
 
     def get_normalized_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -186,13 +189,16 @@ class Slices(DataWeight):
 
 class Spans(DataWeight):
     def __init__(self,
-                 x_spans: Sequence[float] | Iterable[Sequence[float]] = None,  # Sequence of length 2
+                 x_spans: Sequence[float] | Iterable[Sequence[float]],  # Sequence of length 2
                  threshold: float = 0.5,
                  normalized: bool = True,
                  invert: bool = False
                  ):
         super().__init__(threshold, normalized, invert)
         self.x_spans = x_spans
+
+    def __str__(self):
+        return f"{self.x_spans}"
 
     def _get_weights(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if not isinstance(self.x_spans[0], Iterable):
@@ -203,14 +209,19 @@ class Spans(DataWeight):
         weights = np.zeros_like(x, dtype=bool)
 
         for x_span in x_spans:
-            slice_ = get_slice(x, x_span[0], x_span[1])
+            slice_ = get_slice(x, x_span[0], x_span[1], checks=True)
             weights[slice_] = 1
 
         return weights
 
 
 class MultiPoint(DataWeight):
-    def __init__(self, indexes: Iterable[int], threshold: float = 0.5, normalized: bool = True, invert: bool = False):
+    def __init__(self,
+                 indexes: Iterable[int],
+                 threshold: float = 0.5,
+                 normalized: bool = True,
+                 invert: bool = False
+                 ):
         """
 
         Parameters

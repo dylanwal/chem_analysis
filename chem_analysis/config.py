@@ -8,7 +8,7 @@ class PlottingLibraries(enum.Enum):
 
 
 class Configuration:
-    plotting_libraries = PlottingLibraries
+    PLOTTING_LIBRARIES = PlottingLibraries
 
     def __init__(self):
         self.preferred_plot = PlottingLibraries.PLOTLY
@@ -21,7 +21,7 @@ class Configuration:
         self.max_mz: int = 1000
 
     def load_from_env(self):
-        pass  # TODO: add support
+        pass  # TODO: add support    this should include plot config too
 
     def get_plotting_options(self) -> list[PlottingLibraries]:
         self._find_available_plotting_libraries()
@@ -53,34 +53,6 @@ class Configuration:
             self._plotting_libraries.append(PlottingLibraries.PYGRAPHQT)
         except ImportError:
             pass
-
-    @staticmethod
-    def plotly_layout():
-        import plotly.graph_objs as go
-        template = go.layout.Template()
-        template.layout.font = dict(family="Arial", size=18, color="black")
-        template.layout.plot_bgcolor = "white"
-        template.layout.width, template.layout.height = 1200, 600
-        template.layout.xaxis.tickprefix = "<b>"
-        template.layout.xaxis.ticksuffix = "<b>"
-        template.layout.xaxis.showline = True
-        template.layout.xaxis.linewidth = 5
-        template.layout.xaxis.linecolor = "black"
-        template.layout.xaxis.ticks = "outside"
-        template.layout.xaxis.tickwidth = 4
-        template.layout.xaxis.showgrid = False
-        template.layout.xaxis.mirror = True
-        template.layout.yaxis.tickprefix = "<b>"
-        template.layout.yaxis.ticksuffix = "<b>"
-        template.layout.yaxis.showline = True
-        template.layout.yaxis.linewidth = 5
-        template.layout.yaxis.linecolor = "black"
-        template.layout.yaxis.ticks = "outside"
-        template.layout.yaxis.tickwidth = 4
-        template.layout.yaxis.showgrid = False
-        template.layout.yaxis.mirror = True
-
-        return template
 
 
 global_config = Configuration()

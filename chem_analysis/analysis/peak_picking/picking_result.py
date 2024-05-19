@@ -10,7 +10,7 @@ from chem_analysis.base_obj.signal_2d import Signal2D
 class ResultPeaks:
     def __init__(self, signal: Signal):
         self.signal = signal
-        self.peaks = []
+        self.peaks: list[Peak] = []
 
     def __str__(self):
         return f"# of Peaks: {len(self)}"
@@ -27,8 +27,8 @@ class ResultPeaks:
     def __getitem__(self, item: int | slice):
         return self.peaks[item]
 
-    def values(self):
-        return self.signal.x[self.peaks]
+    # def values(self):
+    #     return self.signal.x[self.peaks]
 
     def get_stats(self) -> list[OrderedDict]:
         dicts_ = []

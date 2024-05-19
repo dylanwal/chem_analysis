@@ -1,11 +1,8 @@
-from typing import Iterable
-
 import abc
 
 import numpy as np
 
 from chem_analysis.utils.code_for_subclassing import MixinSubClassList
-from chem_analysis.processing.weigths.weights import DataWeight, DataWeightChain
 
 
 class ProcessingMethod(MixinSubClassList, abc.ABC):
@@ -55,41 +52,31 @@ class FourierTransform(ProcessingMethod, abc.ABC):
     ...
 
 
+class Edit(ProcessingMethod, abc.ABC):
+    ...
+
+
 class Baseline(ProcessingMethod, abc.ABC):
     def __init__(self,
-                 mask: DataWeight | Iterable[DataWeight] = None,
                  non_temporal_processing: bool = False,
                  save_result: bool = False
                  ):
         super().__init__(non_temporal_processing)
 
-        if mask is not None and isinstance(mask, Iterable):
-            mask = DataWeightChain(mask)
-        self.mask: DataWeight = mask
-
-        # save results
+        # for saving intermediate results
         self.save_result = save_result
         self.baseline = None
         self.x = None
         self.data = None
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        if self.mask is not None:
-            mask = self.mask.get_mask(x, y)
-            x_ = x[mask]
-            y_ = y[mask]
-        else:
-            x_ = x
-            y_ = y
-
-        baseline = self.get_baseline(x_, y_)
-        baseline = np.interp(x, x_, baseline)
+        baseline = self.get_baseline(x, y)
         data = y - baseline
 
         if self.save_result:
             self.baseline = baseline
             self.x = x
-            self.data = data
+            self.data = y
 
         return x, data
 

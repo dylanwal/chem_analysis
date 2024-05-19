@@ -110,6 +110,10 @@ def get_slice(
             raise ValueError("'start' value is larger than 'end'. \nFix: Flip bounds.")
         if not quick_check_for_sorted_array(x):
             raise ValueError("Array is not sorted. \nFix: sort 'x'")
+        if start < np.min(x):
+            raise ValueError(f"'start' is outside the range of 'x'. \n\tstart:{start}\n\tmin(x): {np.min(x)}")
+        if end > np.max(x):
+            raise ValueError(f"'end' is outside the range of 'x'. \n\tend:{end}\n\tmax(x): {np.max(x)}")
 
     if start is None:
         start_ = None

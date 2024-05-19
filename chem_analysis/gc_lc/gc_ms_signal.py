@@ -21,6 +21,7 @@ class GCMSSignal(Signal):
                  ):
         x_label = x_label or "retention time"
         y_label = y_label or "intensity"
+        name = name or ms_raw.name
         self.ms_raw = ms_raw
         data_raw = np.sum(ms_raw.data, axis=1)
         super().__init__(copy.copy(ms_raw.y), data_raw, x_label, y_label, name, id_)

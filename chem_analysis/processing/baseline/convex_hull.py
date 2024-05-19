@@ -4,7 +4,6 @@ import numpy as np
 from scipy.spatial import ConvexHull as scipy_ConvexHull
 
 from chem_analysis.processing.processing_method import Baseline
-from chem_analysis.processing.weigths.weights import DataWeight
 
 
 def convex_hull_removal(U, wavelengths):

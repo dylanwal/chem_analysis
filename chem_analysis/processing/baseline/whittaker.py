@@ -1,10 +1,8 @@
-from typing import Iterable
 
 import numpy as np
 from scipy import sparse
 
 from chem_analysis.utils.math import MIN_FLOAT
-from chem_analysis.processing.weigths.weights import DataWeight, DataWeightChain
 from chem_analysis.processing.processing_method import Baseline
 
 diagonals = [
@@ -101,11 +99,10 @@ class AsymmetricLeastSquared(Baseline):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 mask: DataWeight | Iterable[DataWeight] = None,
                  non_temporal_processing: bool = False,
                  save_result: bool = False
                  ):
-        super().__init__(mask, non_temporal_processing, save_result)
+        super().__init__(non_temporal_processing, save_result)
         self.lambda_ = lambda_
         self.p = p
         self.diff_order = diff_order
@@ -219,11 +216,10 @@ class ImprovedAsymmetricLeastSquared(Baseline):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 mask: DataWeight | Iterable[DataWeight] = None,
                  non_temporal_processing: bool = False,
                  save_result: bool = False
                  ):
-        super().__init__(mask, non_temporal_processing, save_result)
+        super().__init__(non_temporal_processing, save_result)
         self.lambda_ = lambda_
         self.lambda_1 = lambda_1
         self.p = p
@@ -332,11 +328,10 @@ class ReweightedImprovedAsymmetricLeastSquared(Baseline):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 mask: DataWeight | Iterable[DataWeight] = None,
                  non_temporal_processing: bool = False,
                  save_result: bool = False
                  ):
-        super().__init__(mask, non_temporal_processing, save_result)
+        super().__init__(non_temporal_processing, save_result)
         self.lambda_ = lambda_
         self.diff_order = diff_order
         self.max_iter = max_iter
@@ -362,7 +357,7 @@ def adaptive_asymmetric_least_squared(
         weights: np.ndarray = None
 ) -> tuple[np.ndarray, dict]:
     """
-   adaptive iteratively reweighted penalized least squares
+   adaptive iteratively reweighted penalized the least squares
 
     Parameters
     ----------
@@ -442,11 +437,10 @@ class AdaptiveAsymmetricLeastSquared(Baseline):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 mask: DataWeight | Iterable[DataWeight] = None,
                  non_temporal_processing: bool = False,
                  save_result: bool = False
                  ):
-        super().__init__(mask, non_temporal_processing, save_result)
+        super().__init__(non_temporal_processing, save_result)
         self.lambda_ = lambda_
         self.diff_order = diff_order
         self.max_iter = max_iter

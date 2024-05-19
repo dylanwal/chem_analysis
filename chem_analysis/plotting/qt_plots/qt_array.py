@@ -3,15 +3,14 @@ import numpy as np
 
 from PyQt6 import QtWidgets
 from PyQt6 import QtCore
-from PyQt6 import QtGui
 
 import pyqtgraph as pg
-from pyqtgraph.parametertree import interact, ParameterTree, Parameter
+from pyqtgraph.parametertree import ParameterTree
 from pyqtgraph.dockarea.Dock import Dock
 from pyqtgraph.dockarea.DockArea import DockArea
 from pyqtgraph.Qt import QtCore
 
-from chem_analysis.plotting.qt_helpers import CustomViewBox
+from chem_analysis.plotting.qt_plots.qt_helpers import CustomViewBox
 from chem_analysis.base_obj.signal_array import SignalArray
 
 pg.setConfigOption('background', 'w')

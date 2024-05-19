@@ -4,8 +4,11 @@ import pathlib
 import struct
 from datetime import datetime
 from typing import Any, BinaryIO
+import logging
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 # https://docs.python.org/3/library/struct.html#format-characters
 DATA_TYPE_SIZE = {
@@ -104,8 +107,8 @@ def parse_fid(file_path: str | pathlib.Path):
         data["channel_units"] = f_pascal(file, 4172, 'UTF-16')
         data['channel_desc'] = f_pascal(file, 4213, 'UTF-16')
 
-        if f_numeric(file, data["data_offset"], '>h') == 2048:
-            data["data_offset"] = data["data_offset"] + 2048
+        # if f_numeric(file, data["data_offset"], '>h') == 2048:
+        data["data_offset"] = data["data_offset"] + 2048
 
         data['data'] = f_double_array(file, data["data_offset"])
         data['time'] = np.linspace(data['start_time'], data['end_time'], data['data'].size)
@@ -178,7 +181,9 @@ def f_double_array(f: BinaryIO, offset: int) -> np.ndarray:
     file_size = f.tell()
     f.seek(offset, os.SEEK_SET)
     n = (file_size - offset) // 8
-    return np.fromfile(f, dtype="float64", count=n)
+    data = np.fromfile(f, dtype=np.dtype("float64").newbyteorder('<'), count=n)
+
+    return data
 
 
 def f_scan(f: BinaryIO, offset: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:

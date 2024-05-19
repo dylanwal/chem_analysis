@@ -4,72 +4,27 @@ from chem_analysis.config import global_config
 from chem_analysis.plotting.config import PlotConfig
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.sec.sec_calibration import SECCalibration
-from chem_analysis.base_obj.signal_2d import Signal2D
-from chem_analysis.sec import SECSignal, SECSignalArray
-from chem_analysis.sec.sec_calibration import SECCalibration
-from chem_analysis.nmr import NMRSignal, NMRSignalArray
-from chem_analysis.ir import IRSignal, IRSignalArray
 from chem_analysis.processing.processing_method import Baseline
 from chem_analysis.analysis.peak_picking.picking_result import ResultPeaks
 
-logger = logging.getLogger("plotting")
+logger = logging.getLogger(__name__)
 
 
 def signal(
         signal_: Signal,
         *,
         fig=None,
-        config: PlotConfig = None,
+        config: PlotConfig | None = None,
+        raw: bool = False
 ):
-    config = config or PlotConfig()
     for option in global_config.get_plotting_options():
-        if option == global_config.plotting_libraries.PLOTLY:
-            if isinstance(signal, SECSignal):
-                from chem_analysis.plotting.SEC_plotly import plotly_signal
-                return plotly_signal(fig, signal_, config)
-            if isinstance(signal, IRSignal):
-                pass
-            if isinstance(signal, NMRSignal):
-                pass
-
-            # default plotting
-            from chem_analysis.plotting.plotting_plotly import plotly_signal
-            return plotly_signal(fig, signal_, config)
-
-        if option == global_config.plotting_libraries.MATPLOTLIB:
+        if option == global_config.PLOTTING_LIBRARIES.PLOTLY:
+            from chem_analysis.plotting.plotly_plots.plotly_signal import plotly_signal
+            return plotly_signal(signal_, fig, config, raw)
+        if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
             pass
 
-        if option == global_config.plotting_libraries.PYGRAPHQT:
-            pass
-
-    raise NotImplementedError()
-
-
-def signal_raw(
-        signal_: Signal,
-        *,
-        fig=None,
-        config: PlotConfig = None,
-):
-    config = config or PlotConfig()
-    for option in global_config.get_plotting_options():
-        if option == global_config.plotting_libraries.PLOTLY:
-            if isinstance(signal, SECSignal):
-                from chem_analysis.plotting.SEC_plotly import plotly_signal_raw
-                return plotly_signal_raw(fig, signal_, config)
-            if isinstance(signal, IRSignal):
-                pass
-            if isinstance(signal, NMRSignal):
-                pass
-
-                # default plotting
-            from chem_analysis.plotting.plotting_plotly import plotly_signal_raw
-            return plotly_signal_raw(fig, signal_, config)
-
-        if option == global_config.plotting_libraries.MATPLOTLIB:
-            pass
-
-        if option == global_config.plotting_libraries.PYGRAPHQT:
+        if option == global_config.PLOTTING_LIBRARIES.PYGRAPHQT:
             pass
 
     raise NotImplementedError()
@@ -79,18 +34,17 @@ def peaks(
         peaks_: ResultPeaks,
         *,
         fig=None,
-        config: PlotConfig = None,
+        config: PlotConfig | None = None,
 ):
-    config = config or PlotConfig()
     for option in global_config.get_plotting_options():
-        if option == global_config.plotting_libraries.PLOTLY:
-            from chem_analysis.plotting.plotting_plotly import plotly_peaks
-            return plotly_peaks(fig, peaks_, config)
+        if option == global_config.PLOTTING_LIBRARIES.PLOTLY:
+            from chem_analysis.plotting.plotly_plots.plotly_peaks import plotly_peaks
+            return plotly_peaks(peaks_, fig, config)
 
-        if option == global_config.plotting_libraries.MATPLOTLIB:
+        if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
             pass
 
-        if option == global_config.plotting_libraries.PYGRAPHQT:
+        if option == global_config.PLOTTING_LIBRARIES.PYGRAPHQT:
             pass
 
     raise NotImplementedError()
@@ -100,79 +54,73 @@ def calibration(
         calibration_: SECCalibration,
         *,
         fig=None,
-        config=PlotConfig()
+        config: PlotConfig | None = None,
 ):
-    config = config or PlotConfig()
     for option in global_config.get_plotting_options():
-        if option == global_config.plotting_libraries.PLOTLY:
-            if isinstance(calibration_, SECCalibration):
-                from chem_analysis.plotting.SEC_plotly import plotly_sec_calibration
-                return plotly_sec_calibration(calibration_, fig=fig, config=config)
+        if option == global_config.PLOTTING_LIBRARIES.PLOTLY:
+            from chem_analysis.plotting.plotly_plots.plotly_calibration import plotly_calibration
+            return plotly_calibration(calibration_, fig, config)
 
-        if option == global_config.plotting_libraries.MATPLOTLIB:
+        if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
             pass
 
-        if option == global_config.plotting_libraries.PYGRAPHQT:
+        if option == global_config.PLOTTING_LIBRARIES.PYGRAPHQT:
             pass
 
     raise NotImplementedError()
+
+
+def get_baseline_from_signal(signal_: Signal):
+    baselines = [method_ for method_ in signal_.processor.methods if isinstance(method_, Baseline)]
+    if len(baselines) == 0:
+        raise ValueError("No Baseline methods detected.")
+    return baselines[0]
 
 
 def baseline(
-        signal_: Signal,
+        baseline_: Baseline | Signal,
         *,
         fig=None,
-        config=PlotConfig()
+        config: PlotConfig | None = None,
 ):
-    config = config or PlotConfig()
-    if not signal_.processor.processed:
-        _ = signal_.x  # triggers processing
+    if isinstance(baseline_, Signal):
+        baseline_ = get_baseline_from_signal(baseline_)
+    if baseline_.baseline is None:
+        raise RuntimeError("No baseline detected.\nEither the processing method has not been run yet (call Signal.x to force processing) or"
+                         "the 'Baseline.save_result' attribute was not set to 'True'.")
 
-    for method in signal_.processor.methods:
-        if isinstance(method, Baseline):
-            baseline_ = method
-            break
-    else:
-        error_text = "No baseline correction found to add to plot."
-        if fig:
-            logger.warning(error_text)
-            return fig
-        else:
-            raise RuntimeError(error_text)
-
-    config = config or PlotConfig()
     for option in global_config.get_plotting_options():
-        if option == global_config.plotting_libraries.PLOTLY:
-            from chem_analysis.plotting.plotting_plotly import plotly_baseline
-            return plotly_baseline(fig, baseline_, config)
+        if option == global_config.PLOTTING_LIBRARIES.PLOTLY:
+            from chem_analysis.plotting.plotly_plots.plotly_baseline import plotly_baseline
+            return plotly_baseline(baseline_, fig, config)
 
-        if option == global_config.plotting_libraries.MATPLOTLIB:
+        if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
             pass
 
-        if option == global_config.plotting_libraries.PYGRAPHQT:
+        if option == global_config.PLOTTING_LIBRARIES.PYGRAPHQT:
             pass
 
     raise NotImplementedError()
 
-
-def signal2d_dynamic(
-        array_: Signal2D,
-        *,
-        config=PlotConfig()
-):
-    config = config or PlotConfig()
-    for option in global_config.get_plotting_options():
-        if isinstance(calibration, SECCalibration):
-            pass
-
-        if option == global_config.plotting_libraries.MATPLOTLIB:
-            pass
-
-        if option == global_config.plotting_libraries.PYGRAPHQT:
-            from chem_analysis.plotting.qt_array import qt_array
-            return qt_array(array_)
-
-    raise NotImplementedError()
+#
+# def signal2d_dynamic(
+#         array_: Signal2D,
+#         *,
+#         config=PlotConfig()
+# ):
+#     config = config or PlotConfig()
+#     for option in global_config.get_plotting_options():
+#         if isinstance(calibration, SECCalibration):
+#             pass
+#
+#         if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
+#             pass
+#
+#         if option == global_config.PLOTTING_LIBRARIES.PYGRAPHQT:
+#             from chem_analysis.plotting.qt_plots.qt_array import qt_array
+#             return qt_array(array_)
+#
+#     raise NotImplementedError()
 
 # def signal2d_overlap(
 #         array: SignalTimeSeries,
@@ -190,7 +138,7 @@ def signal2d_dynamic(
 #     config.set_color_count(array.number_of_signals)
 #     config.set_attrs_from_kwargs(**kwargs)
 #
-#     if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
+#     if global_config.plotting_library == global_config.PLOTTING_LIBRARIES.PLOTLY:
 #         return plotly_signal_array(array, config)
 #
 #     raise NotImplementedError()
@@ -212,7 +160,7 @@ def signal2d_dynamic(
 #     config.set_color_count(array.number_of_signals)
 #     config.set_attrs_from_kwargs(**kwargs)
 #
-#     if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
+#     if global_config.plotting_library == global_config.PLOTTING_LIBRARIES.PLOTLY:
 #         return plotly_signal_array_3D(array, config)
 #
 #     raise NotImplementedError()
@@ -234,7 +182,7 @@ def signal2d_dynamic(
 #     config.set_color_count(array.number_of_signals)
 #     config.set_attrs_from_kwargs(**kwargs)
 #
-#     if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
+#     if global_config.plotting_library == global_config.PLOTTING_LIBRARIES.PLOTLY:
 #         return plotly_signal_array_surface(array, config)
 #
 #     raise NotImplementedError()
@@ -256,7 +204,7 @@ def signal2d_dynamic(
 #     config.set_color_count(chromatogram.number_of_signals)
 #     config.set_attrs_from_kwargs(**kwargs)
 #
-#     if global_config.plotting_library == global_config.plotting_libraries.PLOTLY:
+#     if global_config.plotting_library == global_config.PLOTTING_LIBRARIES.PLOTLY:
 #         return plotly_chromatogram(chromatogram, config)
 #
 #     raise NotImplementedError()

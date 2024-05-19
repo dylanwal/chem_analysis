@@ -1,10 +1,8 @@
-from typing import Iterable
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
 from chem_analysis.processing.processing_method import Baseline, Smoothing
-from chem_analysis.processing.weigths.weights import DataWeight
 from chem_analysis.processing.weigths.sliding_window import sectioned_std
 
 
@@ -14,11 +12,10 @@ class SectionMinMax(Baseline):
                  sections: int = 32,
                  number_of_deviations: int | float = 2,
                  smoother: Smoothing = None,
-                 mask: DataWeight | Iterable[DataWeight] = None,
                  non_temporal_processing: bool = False,
                  save_result: bool = False
                  ):
-        super().__init__(mask, non_temporal_processing, save_result)
+        super().__init__(non_temporal_processing, save_result)
         self.window = window
         self.sections = sections
         self.number_of_deviations = number_of_deviations
@@ -40,4 +37,5 @@ def baseline_section_std(y,
     x_mask = x[mask]
     y_mask = y[mask]
     return gaussian_filter(np.interp(x, x_mask, y_mask), 100)
+    # TODO: np.interp could be replaced with Splines or something else -> make it an option
 
