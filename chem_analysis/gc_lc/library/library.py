@@ -156,7 +156,7 @@ class GCLibrary:
         if json_kwargs is None:
             json_kwargs = {}
         if 'indent' not in json_kwargs:
-            json_kwargs['indent'] = 4
+            json_kwargs['indent'] = 2
 
         with open(file_path, 'w', encoding='UTF-8') as file:
             json.dump(lib_dict, file, **json_kwargs)

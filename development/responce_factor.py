@@ -137,11 +137,9 @@ def process_group(reference_data, root_folder, pattern, concentrations, figure_l
             )
         )
 
-    # LIBRARY.to_JSON(lib_path, overwrite=True, binary=True)
-
 
 def run_kn_2():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "K6_2",
             "groups": ["ketone", "methyl_ketone"],
@@ -198,13 +196,13 @@ def run_kn_2():
     root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
     pattern = r"\DJW-cal-Kn_2-[0-9].D"
     figure_label = "Kn_2"
-    peak_mask = ca.processing.weigths.Spans([4, 31])
+    peak_mask = ca.processing.weigths.Spans([4, 31], invert=True)
 
     process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
 
 
 def run_k10():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "K10_3",
             "groups": ["ketone"],
@@ -259,7 +257,7 @@ def run_k10():
 
 
 def run_k10_4():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "K10_4",
             "groups": ["ketone"],
@@ -289,7 +287,7 @@ def run_k10_4():
     ])
 
     root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
-    pattern = r"\DJW-K10_4_[0-9].D"
+    pattern = r"\DJW-K10_4_[0-9]_solo.D"
     figure_label = "K10_4"
     peak_mask = ca.processing.weigths.Spans([[20, 31]], invert=True)
 
@@ -297,7 +295,7 @@ def run_k10_4():
 
 
 def run_k10_5():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "K10_5",
             "groups": ["ketone"],
@@ -334,7 +332,7 @@ def run_k10_5():
 
 
 def run_da():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "TCB",
             "groups": "standard",
@@ -394,15 +392,15 @@ def run_da():
     ])
 
     root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
-    pattern = r"\DJW-cal-DA[0-9].D"
+    pattern = r"\DJW-cal-DA[0-9]-TMS.D"
     figure_label = "DA"
-    peak_mask = ca.processing.weigths.Spans([28, 46], invert=True)
+    peak_mask = ca.processing.weigths.Spans([[28, 43.03], [43.3, 44.8]], invert=True)
 
     process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
 
 
 def run_ca1():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "CA3",
             "groups": ["carboxylic acid", "TMS"],
@@ -456,13 +454,13 @@ def run_ca1():
     root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
     pattern = r"\DJW-cal-CA1_[0-9].D"
     figure_label = "CA"
-    peak_mask = ca.processing.weigths.Spans([[None, 4], [5.5, 17], [28, 31], [38, 41]], invert=True)
+    peak_mask = ca.processing.weigths.Spans([[None, 4], [5.5, 7], [14, 18], [28, 31], [38, 41]], invert=True)
 
     process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
 
 
 def run_ca2():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "CA5",
             "groups": ["carboxylic acid", "TMS"],
@@ -521,7 +519,7 @@ def run_ca2():
 
 
 def run_C10():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "C10",
             "groups": ["alkane"],
@@ -558,7 +556,7 @@ def run_C10():
 
 
 def run_A10():
-    reference_data = [
+    reference_data = [  # order of chemical must match chromatogram
         {
             "label": "A10_5",
             "groups": ["alcohol", "TMS"],
@@ -625,6 +623,296 @@ def run_A10():
     process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
 
 
+def run_A1():
+    reference_data = [  # order of chemical must match chromatogram
+        # {
+        #     "label": "A3_1",
+        #     "groups": ["alcohol", "TMS"],
+        #     "name": "1-propanol, TMS",
+        #     "cas": "",
+        #     "smiles": "CCCO[Si](C)(C)C",
+        #     "parent": "1-propanol"
+        # },
+        # {
+        #     "label": "A4_1",
+        #     "groups": ["alcohol", "TMS"],
+        #     "name": "1-butanol, TMS",
+        #     "cas": "",
+        #     "smiles": "CCCCO[Si](C)(C)C",
+        #     "parent": "1-butanol"
+        # },
+        {
+            "label": "A5_1",
+            "groups": ["alcohol", "TMS"],
+            "name": "1-pentanol, TMS",
+            "cas": "",
+            "smiles": "CCCCCO[Si](C)(C)C",
+            "parent": "1-pentanol"
+        },
+        {
+            "label": "A6_1",
+            "groups": ["alcohol", "TMS"],
+            "name": "1-hexanol, TMS",
+            "cas": "",
+            "smiles": "CCCCCCO[Si](C)(C)C",
+            "parent": "1-hexanol"
+        },
+        {
+            "label": "TCB",
+            "groups": "standard",
+            "name": "1,2,3-trichlorobenzene",
+            "cas": "87-61-6",
+            "smiles": "C1=CC(=C(C(=C1)Cl)Cl)Cl",
+            "density": 1.45,
+            "boiling_temperature": 218.5
+        }
+    ]
+    concentrations = np.array([
+        [1.748517449, 1.808756319, 1.751107878, 1.748612949, 1],
+        [0.8742587244, 0.9043781595, 0.8755539389, 0.8743064746, 1],
+        [0.3497034898, 0.3617512638, 0.3502215755, 0.3497225898, 1],
+        [0.1748517449, 0.1808756319, 0.1751107878, 0.1748612949, 1]
+    ])
+    concentrations = concentrations[:, 2:]
+
+    root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
+    pattern = r"\DJW-cal-A1-[0-9]-TMS.D"
+    figure_label = "A1"
+    peak_mask = ca.processing.weigths.Spans([[5, 9.5], [28, 31]], invert=True)
+
+    process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
+
+
+def run_A2():
+    reference_data = [  # order of chemical must match chromatogram
+        {
+            "label": "A7_1",
+            "groups": ["alcohol", "TMS"],
+            "name": "1-heptanol, TMS",
+            "cas": "",
+            "smiles": "CCCCCCCO[Si](C)(C)C",
+            "parent": "1-heptanol"
+        },
+        {
+            "label": "A8_1",
+            "groups": ["alcohol", "TMS"],
+            "name": "1-octanol, TMS",
+            "cas": "",
+            "smiles": "CCCCCCCCO[Si](C)(C)C",
+            "parent": "1-octanol"
+        },
+        {
+            "label": "A9_1",
+            "groups": ["alcohol", "TMS"],
+            "name": "1-nonanol, TMS",
+            "cas": "",
+            "smiles": "CCCCCCCCCO[Si](C)(C)C",
+            "parent": "1-nonanol"
+        },
+        {
+            "label": "TCB",
+            "groups": "standard",
+            "name": "1,2,3-trichlorobenzene",
+            "cas": "87-61-6",
+            "smiles": "C1=CC(=C(C(=C1)Cl)Cl)Cl",
+            "density": 1.45,
+            "boiling_temperature": 218.5
+        }
+    ]
+    concentrations = np.array([
+        [1.904742484, 1.763449104, 1.732274244, 1],
+        [0.9523712422, 0.881724552, 0.866137122, 1],
+        [0.3809484969, 0.3526898208, 0.3464548488, 1],
+        [0.1904742484, 0.1763449104, 0.1732274244, 1]
+    ])
+
+    root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
+    pattern = r"\DJW-cal-A2-[0-9]-TMS.D"
+    figure_label = "A2"
+    peak_mask = ca.processing.weigths.Spans([[13.5, 14.5], [19, 21], [25, 31]], invert=True)
+
+    process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
+
+
+def run_AA10():
+    reference_data = [  # order of chemical must match chromatogram
+        {
+            "label": "TCB",
+            "groups": "standard",
+            "name": "1,2,3-trichlorobenzene",
+            "cas": "87-61-6",
+            "smiles": "C1=CC(=C(C(=C1)Cl)Cl)Cl",
+            "density": 1.45,
+            "boiling_temperature": 218.5
+        },
+        {
+            "label": "AA10_5",
+            "groups": ["alcohol", "acetylated"],
+            "name": "5-decanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCC(OC(=O)C)CCCC",
+            "parent": "5-decanol"
+        },
+        {
+            "label": "AA10_4",
+            "groups": ["alcohol", "acetylated"],
+            "name": "4-decanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCCC(OC(=O)C)CCC",
+            "parent": "4-decanol"
+        },
+        {
+            "label": "AA10_3",
+            "groups": ["alcohol", "acetylated"],
+            "name": "3-decanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCCCC(OC(=O)C)CC",
+            "parent": "3-decanol"
+        },
+        {
+            "label": "AA10_2",
+            "groups": ["alcohol", "acetylated"],
+            "name": "2-decanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCCCC(OC(=O)C)C",
+            "parent": "2-decanol"
+        },
+        {
+            "label": "AA10",
+            "groups": ["alcohol", "acetylated"],
+            "name": "1-decanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCCCCCCOC(=O)C",
+            "parent": "1-decanol"
+        },
+    ]
+    concentrations = np.array([
+        [1, 0.3837045671, 1.711547729, 1.697907536, 1.690197861, 1.702651951],
+        [1, 0.1918522835, 0.8557738644, 0.8489537678, 0.8450989305, 0.8513259753],
+        [1, 0.07674091341, 0.3423095458, 0.3395815071, 0.3380395722, 0.3405303901],
+        [1, 0.03837045671, 0.1711547729, 0.1697907536, 0.1690197861, 0.1702651951]
+
+    ])
+
+    root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
+    pattern = r"\DJW-cal-AA10-[0-9]-redo.D"
+    figure_label = "AA10"
+    peak_mask = ca.processing.weigths.Spans([[28, 32.6], [33.45, 40]], invert=True)
+
+    process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
+
+
+def run_AA1():
+    reference_data = [  # order of chemical must match chromatogram
+        # {
+        #     "label": "AA3_1",
+        #     "groups": ["alcohol", "acetylated"],
+        #     "name": "1-propanol, acetylated",
+        #     "cas": "",
+        #     "smiles": "CCCOC(=O)C",
+        #     "parent": "1-propanol"
+        # },
+        {
+            "label": "AA4_1",
+            "groups": ["alcohol", "acetylated"],
+            "name": "1-butanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCOC(=O)C",
+            "parent": "1-butanol"
+        },
+        {
+            "label": "AA5_1",
+            "groups": ["alcohol", "acetylated"],
+            "name": "1-pentanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCOC(=O)C",
+            "parent": "1-pentanol"
+        },
+        {
+            "label": "AA6_1",
+            "groups": ["alcohol", "acetylated"],
+            "name": "1-hexanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCCOC(=O)C",
+            "parent": "1-hexanol"
+        },
+        {
+            "label": "TCB",
+            "groups": "standard",
+            "name": "1,2,3-trichlorobenzene",
+            "cas": "87-61-6",
+            "smiles": "C1=CC(=C(C(=C1)Cl)Cl)Cl",
+            "density": 1.45,
+            "boiling_temperature": 218.5
+        }
+    ]
+    concentrations = np.array([
+        [1.748517449, 1.808756319, 1.751107878, 1.748612949, 1],
+        [0.8742587244, 0.9043781595, 0.8755539389, 0.8743064746, 1],
+        [0.3497034898, 0.3617512638, 0.3502215755, 0.3497225898, 1],
+        [0.1748517449, 0.1808756319, 0.1751107878, 0.1748612949, 1]
+    ])
+    concentrations = concentrations[:, 1:]
+
+    root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
+    pattern = r"\DJW-cal-AA1-[0-9].D"
+    figure_label = "AA1"
+    peak_mask = ca.processing.weigths.Spans([[5, 6], [8, 9.4], [12, 31]], invert=True)
+
+    process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
+
+
+def run_AA2():
+    reference_data = [  # order of chemical must match chromatogram
+        {
+            "label": "A7_1",
+            "groups": ["alcohol", "acetylated"],
+            "name": "1-heptanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCCCOC(=O)C",
+            "parent": "1-heptanol"
+        },
+        {
+            "label": "A8_1",
+            "groups": ["alcohol", "acetylated"],
+            "name": "1-octanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCCCCOC(=O)C",
+            "parent": "1-octanol"
+        },
+        {
+            "label": "A9_1",
+            "groups": ["alcohol", "acetylated"],
+            "name": "1-nonanol, acetylated",
+            "cas": "",
+            "smiles": "CCCCCCCCCOC(=O)C",
+            "parent": "1-nonanol"
+        },
+        {
+            "label": "TCB",
+            "groups": "standard",
+            "name": "1,2,3-trichlorobenzene",
+            "cas": "87-61-6",
+            "smiles": "C1=CC(=C(C(=C1)Cl)Cl)Cl",
+            "density": 1.45,
+            "boiling_temperature": 218.5
+        }
+    ]
+    concentrations = np.array([
+        [1.904742484, 1.763449104, 1.732274244, 1],
+        [0.9523712422, 0.881724552, 0.866137122, 1],
+        [0.3809484969, 0.3526898208, 0.3464548488, 1],
+        [0.1904742484, 0.1763449104, 0.1732274244, 1]
+    ])
+
+    root_folder = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\standards"
+    pattern = r"\DJW-cal-A2-[0-9].D"
+    figure_label = "AA2"
+    peak_mask = ca.processing.weigths.Spans([[10, 24.5], [28, 31]], invert=True)
+
+    process_group(reference_data, root_folder, pattern, concentrations, figure_label, peak_mask)
+
+
 def main_first():
     lib_ = ca.gc_lc.GCLibrary('DJW-oxidation')
     lib_.to_JSON(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\new_library.JSON")
@@ -641,8 +929,16 @@ if __name__ == "__main__":
     # run_ca2()
     # run_C10()
     # run_A10()
-    run_A1()
+    # run_A1()
     # run_A2()
     # run_AA10()
     # run_AA1()
-    # run_AA2()
+    # run_AA2()  # not the best data
+
+    run_k_1()
+    run_HA()
+    run_Br10()
+    run_lactone()
+    run_BHA() # branched hydroxy acids
+
+    # LIBRARY.to_JSON(lib_path, overwrite=True, binary=True)
