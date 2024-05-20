@@ -7,6 +7,8 @@ from collections import OrderedDict
 import numpy as np
 import bigsmiles
 
+from chem_analysis.mass_spec.ms_signal import MSSignal
+
 logger = logging.getLogger(__name__)
 
 
@@ -96,7 +98,7 @@ class CompoundResponse:
 
 class Compound:
     # Update version in GCLibrary if changes made
-    __slots__ = "label", "responses", "groups", "smiles", "name", "cas", "density", "boiling_temperature"
+    __slots__ = "label", "responses", "groups", "smiles", "name", "cas", "density", "boiling_temperature", "parent"
 
     def __init__(self,
                  label: str,
@@ -107,6 +109,7 @@ class Compound:
                  cas: str | None = None,
                  density: int | float | None = None,
                  boiling_temperature: int | float | None = None,
+                 parent: str = None
                  ):
         """
 
@@ -124,6 +127,8 @@ class Compound:
             name of chemical
         cas:
             cas number
+        parent:
+            if compound is from derivatization
         """
         self.label = label
         self.responses = responses
@@ -137,6 +142,7 @@ class Compound:
         self.smiles = smiles
         self.density = density
         self.boiling_temperature = boiling_temperature
+        self.parent = parent
 
     def __str__(self):
         text = f"{self.label}"
@@ -154,6 +160,17 @@ class Compound:
     @property
     def methods(self) -> list[str]:
         return list(response.method for response in self.responses)
+
+    @property
+    def derivative(self) -> bool:
+        return self.derivative is not None
+
+    def get_ms(self) -> None | MSSignal:
+        for response in self.responses:
+            if response.mass_spectrum is not None:
+                return MSSignal(x_raw=response.mass_spectrum[:, 0], data_raw=response.mass_spectrum[:, 1])
+
+        return None
 
     def to_dict(self, sanitize: bool = False, binary: bool = False) -> OrderedDict:
         dict_ = OrderedDict()

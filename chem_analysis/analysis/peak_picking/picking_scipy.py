@@ -11,13 +11,6 @@ from chem_analysis.analysis.peak_picking.picking_result import ResultPeaks, Resu
 from chem_analysis.analysis.peak import PeakDiscrete
 
 
-def apply_mask_signal(signal: Signal, mask: DataWeight = None) -> np.ndarray:
-    if mask is not None:
-        mask = mask.get_mask(signal.x, signal.y)
-        return signal.y[mask]
-    return signal.y
-
-
 def apply_limits(signal, result: ResultPeaks):
     if hasattr(signal, "_limits") and signal._limits() is not None:
         limits = signal._limits()
@@ -47,7 +40,11 @@ def find_peaks_scipy(
 
 
 def find_peaks_scipy_single(signal: Signal, mask: DataWeight = None, scipy_kwargs: dict = None) -> ResultPeaks:
-    y = apply_mask_signal(signal, mask)
+    if mask is not None:
+        mask = mask.get_mask(signal.x, signal.y)
+        y = signal.y[mask]
+    else:
+        y = signal.y
 
     indices_of_peaks, _ = find_peaks(y, **scipy_kwargs or {})
     if mask is not None:

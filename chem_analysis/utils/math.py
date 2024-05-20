@@ -66,8 +66,8 @@ def quick_check_for_sorted_array(x: np.ndarray, min_check: int = 5000) -> bool:
 
 def get_slice(
         x: np.ndarray,
-        start=None,
-        end=None,
+        start: int | float | None = None,
+        end: int | float | None = None,
         *,
         checks: bool = True,
         strict_bounds: bool = True,
@@ -110,9 +110,9 @@ def get_slice(
             raise ValueError("'start' value is larger than 'end'. \nFix: Flip bounds.")
         if not quick_check_for_sorted_array(x):
             raise ValueError("Array is not sorted. \nFix: sort 'x'")
-        if start < np.min(x):
+        if start is not None and start < np.min(x):
             raise ValueError(f"'start' is outside the range of 'x'. \n\tstart:{start}\n\tmin(x): {np.min(x)}")
-        if end > np.max(x):
+        if end is not None and end > np.max(x):
             raise ValueError(f"'end' is outside the range of 'x'. \n\tend:{end}\n\tmax(x): {np.max(x)}")
 
     if start is None:

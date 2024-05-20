@@ -66,7 +66,7 @@ def rolling_ball_n_points(
             if derivative_value > max_derivative:
                 points_with_positive_slope += 1
                 if points_with_positive_slope >= n_points_with_pos_slope:
-                    ub_index = i + points_with_positive_slope - 1
+                    ub_index = i - points_with_positive_slope
                     break
             else:
                 points_with_positive_slope = 0

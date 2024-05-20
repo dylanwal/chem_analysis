@@ -52,5 +52,8 @@ class PlotlyConfig(PlotConfig):
         template.layout.yaxis.tickwidth = 4
         template.layout.yaxis.showgrid = False
         template.layout.yaxis.mirror = True
+        # template.layout.hoverlabel.bgcolor = "white"
+        # template.layout.hoverlabel.font.size = 12
+        template.layout.hoverlabel.font.family = "Arial"
 
         return template

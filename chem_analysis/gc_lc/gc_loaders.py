@@ -1,5 +1,7 @@
 import pathlib
 
+import numpy as np
+
 from chem_analysis.gc_lc.gc_parameters import GCParameters
 from chem_analysis.gc_lc.gc_signal import GCSignal
 from chem_analysis.mass_spec.ms_signal_2D import MSSignal2D
@@ -18,7 +20,12 @@ class GCParser:
 
         gc_signal, fid_signal = None, None
         if ms_data is not None:
-            ms_data_2d = MSSignal2D.from_list(data=ms_data.pop('data'), y=ms_data.pop('time'))
+            data = ms_data.pop('data')
+            for i, sig in enumerate(data):
+                if len(sig[0]) == 0:
+                    data[i] = [np.array([0]), np.array([0])]
+
+            ms_data_2d = MSSignal2D.from_list(data=data, y=ms_data.pop('time'))
             ms_data_2d.name = ms_data.pop('sample_name')
             gc_signal = GCMSSignal(ms_raw=ms_data_2d)
             gc_signal.parameters = GCParameters(**(ini_data | ms_data))

@@ -3,6 +3,7 @@ import logging
 from chem_analysis.config import global_config
 from chem_analysis.plotting.config import PlotConfig
 from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.base_obj.signal_discrete import SignalDiscrete
 from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.processing.processing_method import Baseline
 from chem_analysis.analysis.peak_picking.picking_result import ResultPeaks
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def signal(
-        signal_: Signal,
+        signal_: Signal | SignalDiscrete,
         *,
         fig=None,
         config: PlotConfig | None = None,

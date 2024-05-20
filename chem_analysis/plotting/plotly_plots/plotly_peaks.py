@@ -37,8 +37,21 @@ def plotly_add_peak_shade(fig: go.Figure, peak: PeakBounded, config: PlotlyConfi
         line={"width": 0},
         showlegend=True,
         legendgroup=label,
+        hovertemplate='<b>%{customdata}</b>',
+        customdata=[get_hover_stats(peak)]*len(peak.x),
         name=label
     ))
+
+
+def get_hover_stats(peak: PeakBounded):
+    text = [
+        f"id: {peak.id_}",
+        f"span: [{peak.low_bound_location:.2f}, {peak.high_bound_location:.2f}]",
+        f"max: {peak.max_loc:.2f}",
+        f"area: {peak.stats.area:.2f}"
+    ]
+
+    return "<br>".join(text)
 
 
 def plotly_add_peak_max(fig: go.Figure, peak: PeakBounded, config: PlotlyConfig, label: str):
