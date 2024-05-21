@@ -15,7 +15,7 @@ class Configuration:
         self._plotting_libraries = []
         self._find_available_plotting_libraries()
 
-        self.sig_fig: int = 3
+        self.sig_fig: int = 4
         self.table_format: str = "rounded_grid"
         self.processing_save_intermediates: bool = False
         self.max_mz: int = 1000

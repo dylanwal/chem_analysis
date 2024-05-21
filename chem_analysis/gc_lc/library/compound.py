@@ -3,36 +3,76 @@ from typing import Iterable
 import base64
 import logging
 from collections import OrderedDict
+import ast
 
 import numpy as np
 import bigsmiles
 
+from chem_analysis.config import global_config
 from chem_analysis.mass_spec.ms_signal import MSSignal
 
 logger = logging.getLogger(__name__)
 
 
+OPTIMIZATION_KEY = {
+    "name": "name",
+    "datetime_created": "ctime",
+    "datetime_updated": "utime",
+    "compounds": "comps",
+    "label": "label",
+    "responses": "resps",
+    "method": "method",
+    "retention_time": "rtime",
+    "response": "resp",
+    "mass_spectrum": "ms",
+    "notes": "notes",
+    "mass_spectrum_encoding": "ms_e",
+    "smiles": "smiles",
+    "groups": "group",
+    "cas": "cas",
+    "density": "den",
+    "boiling_temperature": "btemp",
+    "parent": "parent"
+
+}
+OPTIMIZATION_KEY_REVERSE = {v: k for k, v in OPTIMIZATION_KEY.items()}
+
+
+def is_optimized(keys: Iterable) -> bool:
+    normal_count = 0
+    optimized_count = 0
+    for k in keys:
+        if k in OPTIMIZATION_KEY:
+            normal_count += 1
+        if k in OPTIMIZATION_KEY_REVERSE:
+            optimized_count += 1
+    return optimized_count > normal_count
+
+
 class NumpyEncoding:
-    DEFAULT_TEXT = "ASCII"
+    TEXT_ENCODING = "ASCII"
     DEFAULT_BYTES = "Base64"
 
     def __init__(self,
-                 text: str,
                  bytes_: str,
                  dtype: str,
                  shape: tuple[int, ...]
                  ):
-        self.text = text
         self.bytes_ = bytes_
         self.dtype = dtype
         self.shape = shape
 
+    def __str__(self):
+        return f"{self.bytes_};{self.dtype};{self.shape}"
+
     @classmethod
     def from_array(cls, array: np.ndarray) -> NumpyEncoding:
-        return cls(cls.DEFAULT_TEXT, cls.DEFAULT_BYTES, array.dtype.str, array.shape)
+        return cls(cls.DEFAULT_BYTES, array.dtype.str, array.shape)
 
-    def to_dict(self) -> dict:
-        return {k: v for k, v in self.__dict__.items()}
+    @classmethod
+    def from_string(cls, text: str) -> NumpyEncoding:
+        text = text.split(";")
+        return cls(bytes_=text[0], dtype=text[1], shape=ast.literal_eval(text[2]))
 
 
 class CompoundResponse:
@@ -62,7 +102,7 @@ class CompoundResponse:
     def __repr__(self):
         return self.__str__()
 
-    def to_dict(self, sanitize: bool = False, binary: bool = False) -> OrderedDict:
+    def to_dict(self, sanitize: bool = False, binary: bool = False, optimize: bool = False) -> OrderedDict:
         dict_ = OrderedDict()
         vars_ = self.__slots__
         for k in vars_:
@@ -72,20 +112,35 @@ class CompoundResponse:
                 if k == 'mass_spectrum' and attr is not None:
                     if binary:
                         encoding = NumpyEncoding.from_array(attr)
-                        dict_["mass_spectrum_encoding"] = encoding.to_dict()
-                        attr = base64.b64encode(attr.tobytes()).decode(encoding.text)
+                        dict_["mass_spectrum_encoding"] = str(encoding)
+                        attr = base64.b64encode(attr.tobytes()).decode(NumpyEncoding.TEXT_ENCODING)
                     else:
                         attr = attr.tolist()
+
+            if optimize:
+                if k == "retention_time" and attr is not None and isinstance(attr, float):
+                    attr = round(attr, global_config.sig_fig)
+                if k == "response" and attr is not None and isinstance(attr, float):
+                    attr = round(attr, global_config.sig_fig)
+                if "mass_spectrum_encoding" in dict_:
+                    dict_[OPTIMIZATION_KEY["mass_spectrum_encoding"]] = dict_.pop("mass_spectrum_encoding")
+
+                k = OPTIMIZATION_KEY[k]
 
             dict_[k] = attr
 
         return dict_
 
     @classmethod
-    def from_dict(cls, dict_: dict) -> CompoundResponse:
+    def from_dict(cls, dict_: dict, optimized: bool = None) -> CompoundResponse:
+        if optimized is None:
+            optimized = is_optimized(dict_.keys())
+        if optimized:
+            dict_ = {OPTIMIZATION_KEY_REVERSE.get(k, k): v for k, v in dict_.items()}
+
         if dict_["mass_spectrum"] is not None:
             if isinstance(dict_["mass_spectrum"], str):
-                numpy_encoding = NumpyEncoding(**dict_.pop("mass_spectrum_encoding"))
+                numpy_encoding = NumpyEncoding.from_string(dict_.pop("mass_spectrum_encoding"))
                 dict_["mass_spectrum"] = np.frombuffer(
                     base64.b64decode(dict_["mass_spectrum"]),
                     dtype=numpy_encoding.dtype,
@@ -161,10 +216,6 @@ class Compound:
     def methods(self) -> list[str]:
         return list(response.method for response in self.responses)
 
-    @property
-    def derivative(self) -> bool:
-        return self.derivative is not None
-
     def get_ms(self) -> None | MSSignal:
         for response in self.responses:
             if response.mass_spectrum is not None:
@@ -172,7 +223,7 @@ class Compound:
 
         return None
 
-    def to_dict(self, sanitize: bool = False, binary: bool = False) -> OrderedDict:
+    def to_dict(self, sanitize: bool = False, binary: bool = False, optimize: bool = False) -> OrderedDict:
         dict_ = OrderedDict()
         vars_ = self.__slots__
         for k in vars_:
@@ -182,14 +233,27 @@ class Compound:
                 if k == 'smiles' and attr is not None:
                     attr = str(attr)
                 if k == 'responses':
-                    attr = [response.to_dict(sanitize, binary) for response in attr]
+                    attr = [response.to_dict(sanitize=sanitize, binary=binary, optimize=optimize) for response in attr]
+
+            if optimize:
+                if k == "density" and attr is not None and isinstance(attr, float):
+                    attr = round(attr, global_config.sig_fig)
+                if k == "boiling_temperature" and attr is not None and isinstance(attr, float):
+                    attr = round(attr, global_config.sig_fig)
+
+                k = OPTIMIZATION_KEY[k]
 
             dict_[k] = attr
 
         return dict_
 
     @classmethod
-    def from_dict(cls, dict_: dict) -> Compound:
+    def from_dict(cls, dict_: dict, optimized: bool = None) -> Compound:
+        if optimized is None:
+            optimized = is_optimized(dict_.keys())
+        if optimized:
+            dict_ = {OPTIMIZATION_KEY_REVERSE.get(k, k): v for k, v in dict_.items()}
+
         if dict_["smiles"] is not None:
             dict_["smiles"] = bigsmiles.BigSMILES(dict_["smiles"])
         if dict_["responses"] is not None:

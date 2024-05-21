@@ -915,7 +915,9 @@ def run_AA2():
 
 def main_first():
     lib_ = ca.gc_lc.GCLibrary('DJW-oxidation')
-    lib_.to_JSON(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\new_library.JSON")
+    # lib_.to_JSON(lib_)
+    global LIBRARY
+    LIBRARY = lib_
 
 
 if __name__ == "__main__":
@@ -936,9 +938,10 @@ if __name__ == "__main__":
     # run_AA2()  # not the best data
 
     run_k_1()
-    run_HA()
-    run_Br10()
-    run_lactone()
-    run_BHA() # branched hydroxy acids
+    # run_HA()
+    # run_Br10()
+    # run_lactone()
+    # run_BHA() # branched hydroxy acids
 
-    # LIBRARY.to_JSON(lib_path, overwrite=True, binary=True)
+    # LIBRARY.to_JSON(lib_path, overwrite=True, binary=True, optimize=True)
+    # LIBRARY.to_pickle(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library.pkl")

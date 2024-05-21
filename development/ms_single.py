@@ -9,12 +9,13 @@ LIBRARY = ca.mass_spec.GCLibrary.from_JSON(lib_path)
 
 def main():
     chem = LIBRARY.find_by_label("TCB")
-    ms = chem.get_ms()
-
-    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
-    ca.plotting.signal(ms, fig=fig)
-    fig.layout.title = f"{chem.name}"
-    fig.write_html(f"ms_{chem.label}.html", include_plotlyjs='cdn')
+    print(chem.methods)
+    # ms = chem.get_ms()
+    #
+    # fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    # ca.plotting.signal(ms, fig=fig)
+    # fig.layout.title = f"{chem.name}"
+    # fig.write_html(f"ms_{chem.label}.html", include_plotlyjs='cdn')
 
 
 if __name__ == "__main__":

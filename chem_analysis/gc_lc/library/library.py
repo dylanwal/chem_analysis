@@ -6,7 +6,7 @@ import pathlib
 from collections import OrderedDict, defaultdict
 from typing import Any
 
-from chem_analysis.gc_lc.library.compound import Compound
+from chem_analysis.gc_lc.library.compound import Compound, OPTIMIZATION_KEY, OPTIMIZATION_KEY_REVERSE, is_optimized
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ class GCLibrary:
             if str(compound.smiles) == smiles:
                 return compound
 
-    def to_dict(self, sanitize: bool = False, binary: bool = False) -> OrderedDict:
+    def to_dict(self, sanitize: bool = False, binary: bool = False, optimize: bool = False) -> OrderedDict:
         dict_ = OrderedDict()
         vars_ = list(filter(lambda x: not x.startswith("_"), vars(self))) + ["_compounds"]
         for k in vars_:
@@ -125,9 +125,12 @@ class GCLibrary:
             if sanitize:
                 if k == "_compounds":
                     k = "compounds"
-                    attr = [comp.to_dict(sanitize, binary) for comp in attr]
+                    attr = [comp.to_dict(sanitize=sanitize, binary=binary, optimize=optimize) for comp in attr]
                 if isinstance(attr, datetime.datetime):
                     attr = attr.isoformat()
+
+            if optimize:
+                k = OPTIMIZATION_KEY[k]
 
             dict_[k] = attr
 
@@ -137,6 +140,7 @@ class GCLibrary:
                 file_path: str | pathlib.Path,
                 *,
                 binary: bool = False,
+                optimize: bool = False,
                 overwrite: bool = False,
                 json_kwargs: dict[str, Any] = None
                 ):
@@ -148,7 +152,7 @@ class GCLibrary:
             raise ValueError("Library file already exists. Set 'overwrite' to true.")
 
         import json
-        lib_dict = self.to_dict(sanitize=True, binary=binary)
+        lib_dict = self.to_dict(sanitize=True, binary=binary, optimize=optimize)
         lib_dict["datetime_updated"] = datetime.datetime.now().isoformat()
         lib_dict["version"] = self.VERSION
         lib_dict["encoding"] = "UTF-8"
@@ -161,15 +165,38 @@ class GCLibrary:
         with open(file_path, 'w', encoding='UTF-8') as file:
             json.dump(lib_dict, file, **json_kwargs)
 
+    def to_pickle(self, file_path: str | pathlib.Path, *, overwrite: bool = False):
+        import pickle
+        if isinstance(file_path, str):
+            file_path = pathlib.Path(file_path)
+        if file_path.suffix != ".pkl":
+            file_path = file_path.with_suffix(".pkl")
+        if file_path.exists() and not overwrite:
+            raise ValueError("Library file already exists. Set 'overwrite' to true.")
+
+        with open(file_path, 'wb') as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def from_pickle(cls, file_path: str | pathlib.Path) -> GCLibrary:
+        import pickle
+        with open(file_path, 'rb') as file:
+            loaded_obj = pickle.load(file)
+        return loaded_obj
+
     @classmethod
     def from_dict(cls, dict_: dict) -> GCLibrary:
+        optimized = is_optimized(dict_.keys())
+        if optimized:
+            dict_ = {OPTIMIZATION_KEY_REVERSE.get(k, k): v for k, v in dict_.items()}
+
         if dict_['version'] != cls.VERSION:
             raise ValueError(f"Version {dict_['version']} does not match the current version {cls.VERSION}")
         dict_.pop("version")
         dict_.pop("encoding")
 
         if dict_["compounds"] is not None:
-            dict_["compounds"] = [Compound.from_dict(compound) for compound in dict_["compounds"]]
+            dict_["compounds"] = [Compound.from_dict(compound, optimized=optimized) for compound in dict_["compounds"]]
         return cls(**dict_)
 
     @classmethod
