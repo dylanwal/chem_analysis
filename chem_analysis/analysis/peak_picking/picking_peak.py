@@ -3,7 +3,7 @@ from typing import Iterable
 from collections import OrderedDict
 
 from chem_analysis.analysis.peak import PeakContinuous, PeakBounded, PeakParent
-from chem_analysis.analysis.peak_picking.library_search.criteria import Criteria, CriteriaAbsoluteRangeAnd
+from chem_analysis.analysis.mass_spec_analysis.criteria import Criteria, CriteriaAbsoluteRangeAnd
 
 
 class PeakForPicking:

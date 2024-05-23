@@ -178,6 +178,7 @@ def map_argmax_to_original(index: int | np.ndarray, mask) -> int | np.ndarray:
 
 
 def get_index_of_values_in_common(array_a: np.ndarray, array_b: np.ndarray) -> list[int | None]:
+    """ get index where values in array_b is in array_a """
     indices = []
     for value in array_b:
         result = np.where(array_a == value)[0]
@@ -358,3 +359,14 @@ def set_minimum_dtype(array: np.ndarray) -> np.ndarray:
         return array.astype(dtype_)
 
     raise ValueError("Not supported dtype.")
+
+
+def map_discrete_x_axis(x_new: np.ndarray, x_old: np.ndarray, y_old: np.ndarray, ignore_issues: bool = False) \
+        -> np.ndarray:
+    y_new = np.zeros_like(x_new, dtype=y_old.dtype)
+    index = get_index_of_values_in_common(x_new, x_old)
+    if any(i is None for i in index) and ignore_issues:
+        raise ValueError("Mapping not.")
+    y_new[index] = y_old
+
+    return y_new

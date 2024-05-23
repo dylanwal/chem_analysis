@@ -7,6 +7,7 @@ import numpy as np
 import chem_analysis.utils.math as general_math
 from chem_analysis.utils.printing_tables import StatsTable, apply_sig_figs
 
+
 #TODO: expand for 2D
 class PeakParent(Protocol):
     x: np.ndarray

@@ -245,11 +245,8 @@ class SignalDiscrete2D:
         x = np.arange(min_x, max_x, dtype=utils_math.min_int_dtype(max_x, min_x))
         data_new = np.zeros((len(data), len(x)), dtype=data[0][1].dtype)
         for i, sig in enumerate(data):
-            new_x = np.round(sig[0])
-            index = utils_math.get_index_of_values_in_common(x, new_x)
-            for i_, ii in enumerate(index):
-                if ii is not None:
-                    data_new[i, ii] = sig[1][i_]
+            new_y = utils_math.map_discrete_x_axis(x, np.round(sig[0]), sig[1])
+            data_new[i, :] = new_y
 
         return cls(x_raw=x, y_raw=y, data_raw=data_new, x_label=x_label, z_label=z_label)
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from chem_analysis.analysis.peak import PeakContinuous
 from chem_analysis.analysis.peak_picking.picking_peak import PeakForPicking
-from chem_analysis.analysis.peak_picking.library_search.criteria import Criteria
+from chem_analysis.analysis.mass_spec_analysis.criteria import Criteria
 
 
 class PickingLibrary:

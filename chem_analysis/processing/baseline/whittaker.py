@@ -22,7 +22,7 @@ def asymmetric_least_squared(
         weights: np.ndarray = None
 ) -> tuple[np.ndarray, dict]:
     """
-   Asymmetric least squared (AsLS) fitting.
+   Asymmetric least squared (ALS) fitting.
 
     Parameters
     ----------
