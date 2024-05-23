@@ -216,6 +216,13 @@ class Compound:
     def methods(self) -> list[str]:
         return list(response.method for response in self.responses)
 
+    def get_response(self, method: str) -> CompoundResponse:
+        for response in self.responses:
+            if response.method == method:
+                return response
+        else:
+            raise ValueError(f"No response for {method}")
+
     def get_ms(self) -> None | MSSignal:
         for response in self.responses:
             if response.mass_spectrum is not None:

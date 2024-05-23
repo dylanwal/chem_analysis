@@ -6,7 +6,7 @@ import numpy as np
 from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.sec.sec_signal import SECSignal, SECTypes
-from chem_analysis.sec.sec_peak import PeakSEC
+from chem_analysis.analysis.integration.sec_peak import PeakSEC
 
 
 class SECSignalArray(Signal2D):

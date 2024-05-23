@@ -1,2 +1,3 @@
+from chem_analysis.analysis.integration.integration_result import PeakIntegration, ResultIntegration, ResultIntegration2D
 from chem_analysis.analysis.integration.integrate_signal import integrate_trapz, integrate_simpson
 from chem_analysis.analysis.integration.intregrate_signal2D import integrate_trapz2D, integrate_simpson2D

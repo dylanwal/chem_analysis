@@ -1,5 +1,6 @@
 import glob
 import pathlib
+import re
 import shutil
 
 import plotly.graph_objs as go
@@ -8,6 +9,9 @@ import chem_analysis as ca
 
 lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library.json"
 LIBRARY = ca.mass_spec.GCLibrary.from_JSON(lib_path)
+INTERNAL_STANDARD = LIBRARY.find_by_label("TCB")
+picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_fid")
+picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_ms")
 
 
 def process_one_signal(signal: ca.base_obj.Signal, type_: str, figure_folder, peak_mask) \
@@ -35,8 +39,19 @@ def process_one_signal(signal: ca.base_obj.Signal, type_: str, figure_folder, pe
     return peak_result
 
 
-def get_figure_path(root_folder: str) -> pathlib.Path:
-    figure_folder = pathlib.Path(root_folder) / "figs"
+def peaks_to_compounds(
+        results: list[ca.analysis.peak_picking.ResultPeaks],
+        picking_library: ca.analysis.ms_analysis.PickingLibrary
+):
+    compounds = []
+    for result in results:
+        compounds.append(ca.analysis.ms_analysis.search_retention_time(picking_library, result))
+
+    return compounds
+
+
+def get_figure_path(root_folder: pathlib.Path) -> pathlib.Path:
+    figure_folder = root_folder / "figs"
     if figure_folder.exists():
         shutil.rmtree(figure_folder)
     figure_folder.mkdir(parents=True, exist_ok=True)
@@ -44,16 +59,23 @@ def get_figure_path(root_folder: str) -> pathlib.Path:
     return figure_folder
 
 
-def get_data(data_path, sort_func):
-    specific_folders = glob.glob(data_path + "/*.D")
+def get_data(data_path: pathlib.Path, pattern: str, sort_func=None):
+    if sort_func is None:
+        pattern_compile = re.compile(pattern.replace("*", "([0-9]+)"))
+        sort_func = lambda x: int(pattern_compile.match(x).groups()[0])
+
+    specific_folders = glob.glob(pattern, root_dir=data_path)
     print(len(specific_folders), "files found for analysis")
     specific_folders.sort(key=sort_func)
+    specific_folders = [data_path / file for file in specific_folders]
     return [ca.gc_lc.GCParser.from_Agilent_D_folder(folder) for folder in specific_folders]
 
 
-def process_timeseries(data_path: str, sort_func, peak_mask):
+def process_timeseries(data_path: str, pattern: str, peak_mask):
+    if isinstance(data_path, str):
+        data_path = pathlib.Path(data_path)
     figure_folder = get_figure_path(data_path)
-    data = get_data(data_path, sort_func)
+    data = get_data(data_path, pattern)
 
     # process data
     fid_peak_results = []
@@ -63,17 +85,19 @@ def process_timeseries(data_path: str, sort_func, peak_mask):
         ms_peak_results.append(process_one_signal(ms, "ms", figure_folder, peak_mask))
 
     # peaks --> compounds
-    picking_lib = LIBRARY.to_picking_library()
-    peaks_compounds = ca.analysis.peak_picking.library_search.find_peaks_retention_time_library(ms_peak_results,
-                                                                                                picking_lib)
+    fid_compounds = peaks_to_compounds(fid_peak_results, picking_lib_fid)
+    ms_compounds = peaks_to_compounds(ms_peak_results, picking_lib_ms)
+
     # plotting timeseries
 
 
+
 def main():
-    data_path = ""
-    sort_func = lambda x: x.split("//")[-1].replace("redo", "").replace("-", "").replace("_", "")
+    data_path = r"C:\Users\nicep\Desktop\10_13"
+    pattern = "DJW-10-13-*min-PPh3.D"
     peak_mask = ca.processing.weigths.Spans([4, 31], invert=True)
-    process_timeseries(data_path, sort_func, peak_mask)
+
+    process_timeseries(data_path, pattern, peak_mask)
 
 
 if __name__ == "__main__":

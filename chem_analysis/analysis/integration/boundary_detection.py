@@ -2,9 +2,10 @@ import logging
 
 import numpy as np
 
-from chem_analysis.analysis.peak_picking.picking_result import ResultPeaks
+from chem_analysis.analysis.peak_picking.picking_result import ResultPicking
+from chem_analysis.analysis.integration.integration_result import PeakIntegration, ResultIntegration
 
-logger = logging.getLogger("chem_analysis.boundary_detection")
+logger = logging.getLogger(__name__)
 
 
 def rolling_ball_n_points(
@@ -82,14 +83,14 @@ def rolling_ball_n_points(
 
 
 def rolling_ball(
-        picking_result: ResultPeaks,
+        picking_result: ResultPicking,
         n: int = 2,
         poly_degree: int = 1,
         deriv_degree: int = None,
         max_derivative: float = 0,
         n_points_with_pos_slope: int = 1,
         min_height: float = 0.01,
-) -> ResultPeaks:
+) -> ResultIntegration:
     """
 
     Parameters
@@ -108,7 +109,7 @@ def rolling_ball(
     -------
 
     """
-    result = ResultPeaks(picking_result.signal)
+    result = ResultIntegration(signal=picking_result.signal)
 
     if len(picking_result.peaks) == 0:
         logger.warning("No peaks to do boundary detection for.")
@@ -123,7 +124,7 @@ def rolling_ball(
             continue
 
         result.add_peak(
-            picking_result.signal._peak_type(
+            PeakIntegration(
                 parent=picking_result.signal,
                 bounds=slice(lb_index, ub_index),
                 id_=i

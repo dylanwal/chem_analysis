@@ -5,7 +5,6 @@ import numpy as np
 
 import chem_analysis.utils.math as general_math
 from chem_analysis.processing.processor import Processor
-from chem_analysis.analysis.peak import PeakBounded
 
 
 def validate_input(x_raw: np.ndarray, data_raw: np.ndarray):
@@ -25,7 +24,6 @@ class Signal:
 
     """
     __count = 0
-    _peak_type = PeakBounded
 
     def __init__(self,
                  x_raw: np.ndarray,

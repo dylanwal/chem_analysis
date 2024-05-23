@@ -5,7 +5,7 @@ import numpy as np
 
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.sec.sec_calibration import SECCalibration
-from chem_analysis.sec.sec_peak import PeakSEC
+from chem_analysis.analysis.integration.sec_peak import PeakSEC
 
 
 class SECTypes(Enum):
@@ -20,8 +20,8 @@ class SECSignal(Signal):
     """
     SECSignal
     """
+    _PeakIntegration = PeakSEC
     TYPES_ = SECTypes
-    _peak_type = PeakSEC
 
     def __init__(self,
                  x_raw: np.ndarray,

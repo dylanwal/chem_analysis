@@ -242,7 +242,7 @@ class SignalDiscrete2D:
                 logging.warning(f"max_x {max_x} is less than the max(x) ({min_x_from_signals}), "
                                 f"thus some values may be cut off")
 
-        x = np.arange(min_x, max_x, dtype=utils_math.min_int_dtype(max_x, min_x))
+        x = np.arange(min_x, max_x+1, dtype=utils_math.min_int_dtype(max_x, min_x))
         data_new = np.zeros((len(data), len(x)), dtype=data[0][1].dtype)
         for i, sig in enumerate(data):
             new_y = utils_math.map_discrete_x_axis(x, np.round(sig[0]), sig[1])

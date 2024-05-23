@@ -1,11 +1,14 @@
 from __future__ import annotations
 import abc
+import itertools
 from collections import OrderedDict
-from typing import Protocol
+from typing import Protocol, Callable, Iterable
+from functools import wraps
+
 import numpy as np
 
 import chem_analysis.utils.math as general_math
-from chem_analysis.utils.printing_tables import StatsTable, apply_sig_figs
+from chem_analysis.utils.printing_tables import StatsTable
 
 
 #TODO: expand for 2D
@@ -15,12 +18,45 @@ class PeakParent(Protocol):
 
 
 class Peak(abc.ABC):
+    def __new__(cls, *args, **kwargs):
+        if "parent" in kwargs:
+            parent = kwargs["parent"]
+        else:
+            parent = args[0]
+        if hasattr(parent, "_" + cls.__name__):
+            return parent._peak_integration(*args, **kwargs)
+
+        return cls(*args, **kwargs)
+
     def __init__(self, id_: int = None):
         self.id_ = id_
 
-    @abc.abstractmethod
-    def get_stats(self) -> OrderedDict:
-        ...
+    def _get_exclude_from_stats(self) -> set[str]:
+        return {"stats_table", "stats_dict"}
+
+    def stats_dict(self, exclude: Iterable[str] = None) -> OrderedDict:
+        attrs = [i for i in self.__dir__() if not i.startswith("_")]
+        if exclude is not None:
+            exclude = itertools.chain(self._get_exclude_from_stats(), exclude)
+        else:
+            exclude = self._get_exclude_from_stats()
+        for exclude_ in exclude:
+            if exclude_ in attrs:
+                attrs.remove(exclude_)
+
+        attrs.sort()
+        dict_ = OrderedDict()
+        for attr in attrs:
+            attr_ = getattr(self, attr)
+            if isinstance(attr_, Callable):
+                dict_[attr] = attr_()
+            else:
+                dict_[attr] = attr_
+
+        return dict_
+
+    def stats_table(self, exclude: Iterable[str] = None) -> StatsTable:
+        return StatsTable.from_dict(self.stats_dict(exclude))
 
 
 class PeakDiscrete(Peak):
@@ -29,123 +65,20 @@ class PeakDiscrete(Peak):
         self.parent = parent
         self.index = index
 
+    def _get_exclude_from_stats(self) -> set[str]:
+        return super()._get_exclude_from_stats().union({"parent"})
+
     @property
     def value(self) -> float | int:
         return self.parent.y[self.index]
 
-    def get_stats(self) -> OrderedDict:
-        dict_ = OrderedDict()
-        dict_['id'] = f"{self.id_}"
-        dict_['index'] = f"{self.index}"
-        return dict_
-
-
-class PeakStats:
-    """
-    area: float
-        area under the peak
-    mean: float
-        average value
-    std: float
-        standard deviation
-    skew: float
-        skew
-        symmetric: -0.5 to 0.5; moderate skew: -1 to -0.5 or 0.5 to 1; high skew: <-1 or >1;
-        positive tailing to higher numbers; negative tailing to smaller numbers
-    kurtosis: float
-        kurtosis (Fisher) (Warning: highly sensitive to peak bounds)
-        negative: flatter peak; positive: sharp peak
-    full_width_half_max: float
-        full width at half maximum
-    asymmetry_factor: float
-        asymmetry factor; distance from the center line of the peak to the back slope divided by the distance from the
-        center line of the peak to the front slope;
-        >1 tailing to larger values; <1 tailing to smaller numbers
-    """
-    def __init__(self, parent: PeakContinuous):
-        self.parent = parent
-        self._y_norm = None
-
-    def _get_y_norm(self) -> np.ndarray:
-        if self._y_norm is None:
-            self._y_norm = self.parent.y/np.trapz(x=self.parent.x, y=self.parent.y)
-
-        return self._y_norm
-
-    @property
-    def min_value(self) -> float:
-        return np.min(self.parent.y)
-
-    @property
-    def min_index(self) -> int:
-        return int(np.argmin(self.parent.y))
-
-    @property
-    def min_location(self) -> float:
-        return self.parent.x[self.min_index]
-
-    @property
-    def max_loc(self) -> float:
-        return self.parent.x[int(np.argmax(self.parent.y))]
-
-    @property
-    def max_value(self) -> float:
-        return np.max(self.parent.y)
-
-    @property
-    def mean(self) -> float:
-        return general_math.get_mean_of_pdf(self.parent.x, y_norm=self._get_y_norm())
-
-    @property
-    def std(self):
-        return general_math.get_standard_deviation_of_pdf(self.parent.x, y_norm=self._get_y_norm(), mean=self.mean)
-
-    @property
-    def skew(self):
-        return general_math.get_skew_of_pdf(self.parent.x, y_norm=self._get_y_norm(), mean=self.mean,
-                                            standard_deviation=self.std)
-
-    @property
-    def kurtosis(self):
-        return general_math.get_kurtosis_of_pdf(self.parent.x, y_norm=self._get_y_norm(), mean=self.mean,
-                                                standard_deviation=self.std)
-
-    @property
-    def fwhm(self):
-        """full_width_half_max"""
-        return general_math.get_full_width_at_height(x=self.parent.x, y=self.parent.y, height=0.5)
-
-    @property
-    def asym(self):
-        """asymmetry_factor"""
-        return general_math.get_asymmetry_factor(x=self.parent.x, y=self.parent.y, height=0.1)
-
-    @property
-    def area(self, x: np.ndarray = None) -> float:
-        if x is None:
-            x = self.parent.x
-        return np.trapz(x=x, y=self.parent.y)
-
-    def get_stats(self) -> OrderedDict:
-        dict_ = OrderedDict()
-        properties = [attr for attr in self.__dir__() if not attr.startswith("_")]
-        properties.remove("parent")
-        properties.remove("get_stats")
-        properties.remove("stats_table")
-        for stat in properties:
-            dict_[stat] = getattr(self, stat)
-        return dict_
-
-    def stats_table(self) -> StatsTable:
-        return StatsTable.from_dict(self.get_stats())
-
 
 class PeakContinuous(Peak, abc.ABC):
-    _STATS = PeakStats
 
     def __init__(self, id_: int = None):
         super().__init__(id_)
         self._stats = None
+        self._y_norm = None
 
     @property
     @abc.abstractmethod
@@ -157,20 +90,71 @@ class PeakContinuous(Peak, abc.ABC):
     def y(self) -> np.ndarray:
         ...
 
+    def _get_exclude_from_stats(self) -> set[str]:
+        return super()._get_exclude_from_stats()
+
+    def _get_y_norm(self) -> np.ndarray:
+        if self._y_norm is None:
+            self._y_norm = self.y/np.trapz(x=self.x, y=self.y)
+
+        return self._y_norm
+
     @property
-    def max_loc(self) -> float:
+    def min_y(self) -> float:
+        return np.min(self.y)
+
+    @property
+    def min_index(self) -> int:
+        return int(np.argmin(self.y))
+
+    @property
+    def min_x(self) -> float:
+        return self.x[self.min_index]
+
+    @property
+    def max_x(self) -> float:
         return self.x[int(np.argmax(self.y))]
 
     @property
-    def max_value(self) -> float:
-        return np.max(self.y)
+    def max_index(self) -> int:
+        return int(np.argmax(self.y))
 
     @property
-    def stats(self) -> PeakStats:
-        if self._stats is None:
-            self._stats = self._STATS(self)
+    def max_y(self) -> float:
+        return np.max(self.y)
 
-        return self._stats
+    def mean(self) -> float:
+        return general_math.get_mean_of_pdf(self.x, y_norm=self._get_y_norm())
+
+    def std(self):
+        return general_math.get_standard_deviation_of_pdf(self.x, y_norm=self._get_y_norm(), mean=self.mean())
+
+    @wraps(general_math.get_skew_of_pdf)
+    def skew(self):
+        return general_math.get_skew_of_pdf(self.x, y_norm=self._get_y_norm(), mean=self.mean(),
+                                            standard_deviation=self.std())
+
+    @wraps(general_math.get_kurtosis_of_pdf)
+    def kurtosis(self):
+        return general_math.get_kurtosis_of_pdf(self.x, y_norm=self._get_y_norm(), mean=self.mean(),
+                                                standard_deviation=self.std())
+
+    @wraps(general_math.get_full_width_at_height)
+    def full_width_half_maximum(self, height: float = 0.5) -> float:
+        if not (0 < height < 1):
+            raise ValueError('height must be between 0 and 1')
+        return general_math.get_full_width_at_height(x=self.x, y=self.y, height=height)
+
+    @wraps(general_math.get_asymmetry_factor)
+    def asymmetry_factor(self, height: float = 0.1) -> float:
+        if not (0 < height < 1):
+            raise ValueError('height must be between 0 and 1')
+        return general_math.get_asymmetry_factor(x=self.x, y=self.y, height=height)
+
+    def area(self, x: np.ndarray = None) -> float:
+        if x is None:
+            x = self.x
+        return np.trapz(x=x, y=self.y)
 
 
 class PeakBounded(PeakContinuous):
@@ -180,7 +164,10 @@ class PeakBounded(PeakContinuous):
         self.bounds = bounds
 
     def __repr__(self):
-        return f"peak: {self.id_} at {self.low_bound_location:.2f}-{self.high_bound_location:.2f}"
+        return f"peak: {self.id_} at {self.low_bound_x:.2f}-{self.high_bound_x:.2f}"
+
+    def _get_exclude_from_stats(self) -> set[str]:
+        return super()._get_exclude_from_stats().union({"x", "y", "parent"})
 
     @property
     def x(self) -> np.ndarray:
@@ -191,27 +178,17 @@ class PeakBounded(PeakContinuous):
         return self.parent.y[self.bounds]
 
     @property
-    def low_bound_value(self) -> float:
+    def low_bound_y(self) -> float:
         return self.parent.y[self.bounds.start]
 
     @property
-    def high_bound_value(self) -> float:
+    def high_bound_y(self) -> float:
         return self.parent.y[self.bounds.stop]
 
     @property
-    def low_bound_location(self) -> float:
+    def low_bound_x(self) -> float:
         return self.parent.x[self.bounds.start]
 
     @property
-    def high_bound_location(self) -> float:
+    def high_bound_x(self) -> float:
         return self.parent.x[self.bounds.stop]
-
-    def get_stats(self) -> OrderedDict:
-        dict_ = OrderedDict()
-        dict_['slice'] = f"[{self.bounds.start}-{self.bounds.stop}]"
-        dict_['slice_loc'] = f"[{apply_sig_figs(self.low_bound_location)}-{apply_sig_figs(self.high_bound_location)}]"
-        dict_.update(self.stats.get_stats())
-        return dict_
-
-    def stats_table(self) -> StatsTable:
-        return StatsTable.from_dict(self.get_stats())

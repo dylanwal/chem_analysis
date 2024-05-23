@@ -109,7 +109,7 @@ class ResultGrouper:
         new_comp.add(i, compound.stats.area)
         self.compounds.append(new_comp)
 
-    def add_result(self, i: int, result: ca.analysis.peak_picking.picking_result.ResultPeaks):
+    def add_result(self, i: int, result: chem_analysis.analysis.picking_result.ResultPeaks):
         for peak in result:
             self.add(i, peak)
 

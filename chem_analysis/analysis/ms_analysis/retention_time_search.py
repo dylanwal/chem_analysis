@@ -1,5 +1,5 @@
 
-from chem_analysis.analysis.peak_picking.picking_result import ResultPeaks, ResultPeakArray
+from chem_analysis.analysis.picking_result import ResultPeaks, ResultPeakArray
 from chem_analysis.analysis.peak_picking.library_search.picking_library import PickingLibrary
 
 

@@ -241,6 +241,16 @@ def get_skew_of_pdf(x: np.ndarray, y: np.ndarray = None, *,
                     mean: int | float = None,
                     standard_deviation: int | float = None
                     ) -> float:
+    """
+    skew: float
+    skew
+    symmetric: -0.5 to 0.5; moderate skew: -1 to -0.5 or 0.5 to 1; high skew: <-1 or >1;
+    positive tailing to higher numbers; negative tailing to smaller numbers
+
+    Returns
+    -------
+
+    """
     x, y = check_for_flip(x, y)
     if y_norm is None:
         y_norm = normalize_by_area(x, y)
@@ -257,6 +267,15 @@ def get_kurtosis_of_pdf(x: np.ndarray, y: np.ndarray = None, *,
                         mean: int | float = None,
                         standard_deviation: int | float = None
                         ) -> float:
+    """
+        kurtosis: float
+            kurtosis (Fisher) (Warning: highly sensitive to peak bounds)
+            negative: flatter peak; positive: sharp peak
+
+        Returns
+        -------
+
+    """
     x, y = check_for_flip(x, y)
     if y_norm is None:
         y_norm = normalize_by_area(x, y)
@@ -275,7 +294,16 @@ def get_full_width_at_height(x: np.ndarray, y: np.ndarray, height: float | int =
 
 
 def get_asymmetry_factor(x: np.ndarray, y: np.ndarray, height: float | int = 0.1) -> float:
-    """ Calculates asymmetry factor at height. """
+    """
+    asymmetry_factor: float
+    asymmetry factor; distance from the center line of the peak to the back slope divided by the distance from the
+    center line of the peak to the front slope;
+    >1 tailing to larger values; <1 tailing to smaller number
+
+    Returns
+    -------
+
+    """
     lower, high = get_width_at(x, y, height)
     middle = x[np.argmax(y)]
 

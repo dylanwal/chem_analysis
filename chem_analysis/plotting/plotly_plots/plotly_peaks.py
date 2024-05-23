@@ -4,7 +4,7 @@ import plotly.graph_objs as go
 
 from chem_analysis.plotting.plotly_plots.plotly_config import PlotlyConfig
 from chem_analysis.analysis.peak import PeakBounded
-from chem_analysis.analysis.peak_picking.picking_result import ResultPeaks
+from chem_analysis.analysis.picking_result import ResultPeaks
 
 
 def plotly_peaks(peaks: ResultPeaks, fig: go.Figure | None, config: PlotlyConfig | None) -> go.Figure:
