@@ -6,7 +6,7 @@ from chem_analysis.utils.printing_tables import StatsTable
 
 
 class ResultPeaks:
-    def __init__(self, peaks: list[Peak] = None) -> None:
+    def __init__(self, peaks: list[Peak] | None = None) -> None:
         self.peaks = peaks or []
 
     def __str__(self):

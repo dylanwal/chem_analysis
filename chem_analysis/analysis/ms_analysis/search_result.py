@@ -1,42 +1,54 @@
-from typing import Iterator, OrderedDict
+from typing import Iterator, Sequence
 
-from chem_analysis.analysis.peak import PeakParent
-from chem_analysis.analysis.integration.sec_peak import PeakIntegration
+import numpy as np
+
+from chem_analysis.analysis.peak import Peak
 from chem_analysis.analysis.peak_result import ResultPeaks
 from chem_analysis.gc_lc.library.compound import Compound
 
 
-class PeakCompound(PeakIntegration):
-    def __init__(self, parent: PeakParent, bounds: slice, compound: Compound, id_: int = None):
-        super().__init__(parent, bounds, id_)
+class PeakCompound:
+    def __init__(self,
+                 peak: Peak,
+                 compound: Compound | Sequence[Compound] | None,
+                 metric: int | float | np.ndarray | None,
+                 ):
+        self.peak = peak
         self.compound = compound
-
-
-class ResultCompoundSearch(ResultPeaks):
-    def __init__(self, peaks: list[PeakCompound] = None):
-        self.peaks = peaks or []
+        self.metric = metric
 
     def __str__(self):
-        return f"# of Peaks: {len(self)}"
+        return f"{len(self.compound)} compound for peak {self.peak}"
 
     def __repr__(self):
         return self.__str__()
 
-    def __iter__(self) -> Iterator[Peak]:
+    def __getattr__(self, name):
+        return getattr(self.peak, name)
+
+    def select_one(self, compound: int | Compound):
+        """ reducing multiple compounds to one """
+        if isinstance(compound, Compound):
+            if not isinstance(self.compound, Sequence):
+                raise ValueError(f"'{type(self).__name__}.select_one' is only for reducing multiple compounds to one.")
+            compound = self.compound.index(compound)
+
+        if isinstance(compound, int):
+            if 0 < compound < len(self.compound) - 1:
+                raise IndexError(f"Only {len(self.compound)} compounds. Index outside range.")
+            self.compound = self.compound[compound]
+            self.metric = self.metric[compound]
+            return
+
+        raise TypeError("Not valid type.")
+
+
+class ResultCompoundSearch(ResultPeaks):
+    def __init__(self, peaks: list[PeakCompound] | None = None):
+        super().__init__(peaks)
+
+    def __iter__(self) -> Iterator[PeakCompound]:
         return iter(self.peaks)
 
-    def __len__(self):
-        return len(self.peaks)
-
-    def __getitem__(self, item: int | slice):
-        return self.peaks[item]
-
-    def get_stats(self) -> list[OrderedDict]:
-        dicts_ = []
-        for peak in self.peaks:
-            dicts_.append(peak.get_stats())
-
-        return dicts_
-
-    def add_peak(self, peak: Peak):
+    def add_peak(self, peak: PeakCompound):
         self.peaks.append(peak)

@@ -1,4 +1,6 @@
 from __future__ import annotations
+from typing import Iterable
+import pathlib
 
 import plotly.graph_objs as go
 
@@ -57,3 +59,61 @@ class PlotlyConfig(PlotConfig):
         template.layout.hoverlabel.font.family = "Arial"
 
         return template
+
+    @classmethod
+    def merge_figures(cls,
+                      figs: list[go.Figure | str],
+                      filename: str | pathlib.Path = "merged_htmls.html",
+                      auto_open: bool = True,
+                      title: str | None = None,
+                      html_head: str | Iterable[str] | None = None,
+                      ):
+        """
+            Merges plotly figures into single html
+
+            Parameters
+            ----------
+            figs: list[go.Figure, str]
+                list of figures to append together or html divs
+            filename: str
+                file name
+            auto_open: bool
+                open html in browser after creating
+            title: str | None
+                title of the figure
+            html_head: str | Iterable[str] | None
+                headers to add to html
+        """
+        if not isinstance(filename, pathlib.Path):
+            filename = pathlib.Path(filename)
+        if filename.suffix != ".html":
+            filename = filename.with_suffix(".html")
+
+        head = '\n\t<meta charset="UTF-8">\n\t<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+        if title is not None:
+            head += f"\n\t<title>{title}</title>"
+        if html_head is not None:
+            if isinstance(html_head, str):
+                html_head = [html_head]
+            for header in html_head:
+                head += f"\n\t{header}"
+
+        body = ""
+        if title is not None:
+            body += f"\n\t<h1>{title}</h1>"
+        for fig in figs:
+            if isinstance(fig, str):
+                body += "\n\t" + fig
+                continue
+
+            inner_html = fig.to_html(include_plotlyjs="cdn").split('<body>')[1].split('</body>')[0]
+            body += inner_html
+
+        text = f'<!DOCTYPE html>\n<html lang="en">\n<head>{head}</head>\n<body>{body}</body>'
+
+        with open(filename, 'w') as file:
+            file.write(text)
+
+        if auto_open:
+            import os
+            os.system(fr"start {filename}")

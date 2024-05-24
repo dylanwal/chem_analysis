@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Sequence
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from chem_analysis.gc_lc.library.library import GCLibrary, Compound
 
 class PickingLibrary:
     def __init__(self,
-                 compounds: Iterable[Compound],
+                 compounds: Sequence[Compound],
                  retention_times: np.ndarray | None = None,
                  ms_mass: np.ndarray | None = None,
                  ms_intensity: np.ndarray | None = None,
@@ -39,6 +39,9 @@ class PickingLibrary:
     def __iter__(self):
         return iter(self.compounds)
 
+    def __getitem__(self, item: int | slice) -> Compound:
+        return self.compounds[item]
+
     @classmethod
     def from_library(cls,
                      library: GCLibrary,
@@ -53,14 +56,14 @@ class PickingLibrary:
             if method in compound.methods:
                 compounds.append(compound)
                 response = compound.get_response(method)
-                mass_specs.append(compound.mass_specs)
-                retention_times.append(response.retention_times)
+                mass_specs.append(response.mass_spectrum)
+                retention_times.append(response.retention_time)
             if grab_any_ms and mass_specs[-1] is None:
                 ms = compound.get_ms()
                 if ms is not None:
                     mass_specs[-1] = ms
 
-        count_None = mass_specs.count(None)
+        count_None = sum([1 for i in mass_specs if i is None])
         if count_None == len(mass_specs):
             mass_specs = None
         if all(retention_times) is None:
@@ -69,7 +72,7 @@ class PickingLibrary:
             raise ValueError("No mass_specs or retention_times found and thus no PickingLibrary was built.")
 
         # sort for ms to make algorithms efficient
-        if count_None > 0:
+        if count_None > 0 and mass_specs is not None:
             if None in mass_specs:
                 mass_specs, compounds, retention_times = move_nones_to_end(mass_specs, compounds, retention_times)
                 first_none = mass_specs.index(None)

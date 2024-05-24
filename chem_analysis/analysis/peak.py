@@ -11,12 +11,18 @@ import chem_analysis.utils.math as general_math
 from chem_analysis.utils.printing_tables import StatsTable
 
 
-#TODO: expand for 2D
 class PeakParent(Protocol):
     x: np.ndarray
     y: np.ndarray
 
 
+class PeakParent2D(Protocol):
+    x: np.ndarray
+    y: np.ndarray
+    z: np.ndarray
+
+
+# TODO: add Peak2D give PeakParent2D
 class Peak(abc.ABC):
     def __new__(cls, *args, **kwargs):
         if "parent" in kwargs:
@@ -24,9 +30,10 @@ class Peak(abc.ABC):
         else:
             parent = args[0]
         if hasattr(parent, "_" + cls.__name__):
-            return parent._peak_integration(*args, **kwargs)
+            return parent._peak_integration.__new__()
+            # return parent._peak_integration(*args, **kwargs)
 
-        return cls(*args, **kwargs)
+        return super().__new__(cls)
 
     def __init__(self, id_: int = None):
         self.id_ = id_
@@ -123,6 +130,11 @@ class PeakContinuous(Peak, abc.ABC):
     def max_y(self) -> float:
         return np.max(self.y)
 
+    def area(self, x: np.ndarray = None) -> float:
+        if x is None:
+            x = self.x
+        return np.trapz(x=x, y=self.y)
+
     def mean(self) -> float:
         return general_math.get_mean_of_pdf(self.x, y_norm=self._get_y_norm())
 
@@ -150,11 +162,6 @@ class PeakContinuous(Peak, abc.ABC):
         if not (0 < height < 1):
             raise ValueError('height must be between 0 and 1')
         return general_math.get_asymmetry_factor(x=self.x, y=self.y, height=height)
-
-    def area(self, x: np.ndarray = None) -> float:
-        if x is None:
-            x = self.x
-        return np.trapz(x=x, y=self.y)
 
 
 class PeakBounded(PeakContinuous):
