@@ -6,6 +6,7 @@ from chem_analysis.plotting.plotly_plots.plotly_config import PlotlyConfig
 from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.analysis.peak_result import ResultPeaks
 from chem_analysis.analysis.ms_analysis.search_result import PeakCompound
+from chem_analysis.plotting.utils import darken_color
 
 
 def plotly_peaks(peaks: ResultPeaks, fig: go.Figure | None, config: PlotlyConfig | None) -> go.Figure:
@@ -34,18 +35,27 @@ def plotly_peaks(peaks: ResultPeaks, fig: go.Figure | None, config: PlotlyConfig
 
 def plotly_add_peak_shade(fig: go.Figure, peak: PeakBounded, config: PlotlyConfig, label: str):
     """ Plots the shaded area for the peak. """
-    fig.add_trace(go.Scatter(
+    kwargs = {"line": {"width": 0}}
+    if hasattr(peak, "color"):
+        kwargs["fillcolor"] = peak.color
+        if "line" in kwargs:
+            line = kwargs["line"]
+            line["color"] = darken_color(peak.color)
+        else:
+            kwargs["line"] = {"color": darken_color(peak.color)}
+
+    fig.add_scatter(
         x=peak.x,
         y=peak.y,
         mode="lines",
         fill='tozeroy',
-        line={"width": 0},
         showlegend=True,
         legendgroup=label,
         hovertemplate='<b>%{customdata}</b>',
         customdata=[get_hover_stats(peak)]*len(peak.x),
-        name=label
-    ))
+        name=label,
+        **kwargs
+    )
 
 
 def get_hover_stats(peak: PeakBounded):

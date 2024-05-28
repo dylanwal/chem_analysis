@@ -9,8 +9,7 @@ picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "
 picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_ms")
 
 
-def main():
-    data_path = r"C:\Users\nicep\Desktop\11_23\DJW-11-23-90min-TMS.D"
+def main(data_path):
     ms, fid = ca.gc_lc.GCParser.from_Agilent_D_folder(data_path)
 
     # fid
@@ -51,4 +50,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    data_path_ = r"C:\Users\nicep\Desktop\11_23\DJW-11-23-90min-TMS.D"
+    main(data_path_)

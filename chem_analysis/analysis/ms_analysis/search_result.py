@@ -24,7 +24,10 @@ class PeakCompound:
         return self.__str__()
 
     def __getattr__(self, name):
-        return getattr(self.peak, name)
+        try:
+            return getattr(self.peak, name)
+        except AttributeError:
+            return getattr(self.compound, name)
 
     def select_one(self, compound: int | Compound):
         """ reducing multiple compounds to one """

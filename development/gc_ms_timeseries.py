@@ -1,53 +1,60 @@
-import glob
 import pathlib
 import re
 import shutil
 
+import numpy as np
 import plotly.graph_objs as go
 
 import chem_analysis as ca
+from time_series_support import ResultTimeSeries, plot_results
 
-lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library.json"
+lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json"
 LIBRARY = ca.mass_spec.GCLibrary.from_JSON(lib_path)
 INTERNAL_STANDARD = LIBRARY.find_by_label("TCB")
 picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_fid")
 picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_ms")
+PLOTTING_GROUPS = ["dicarboxylic acid", "hydroxy acids", "carboxylic acid", "alcohol", "methyl_ketone", "ketone", "peroxide", "alkane"]
 
 
-def process_one_signal(signal: ca.base_obj.Signal, type_: str, figure_folder, peak_mask) \
-        -> ca.analysis.peak_picking.ResultPeaks:
-    if type_ == "fid":
-        signal.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(1.3, 3.7), invert=True))
-    signal.processor.add(
-        ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True))
+def process_single(data_path):
+    ms, fid = ca.gc_lc.GCParser.from_Agilent_D_folder(data_path)
 
-    peak_locations = ca.analysis.peak_picking.find_peaks_scipy(signal,
-                                                               mask=peak_mask,
-                                                               scipy_kwargs={"height": 6000, "width": 0.1}
+    # fid
+    fid.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(1.3, 3.7), invert=True))
+    fid.processor.add(
+        ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True)
+    )
+    peak_locations = ca.analysis.peak_picking.find_peaks_scipy(fid,
+                                                               scipy_kwargs={"height": 8000, "width": 0.1}
                                                                )
-    peak_result = ca.analysis.boundary_detection.rolling_ball(peak_locations, n=5, min_height=0.002,
-                                                              n_points_with_pos_slope=2)
+    fid_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
+                                                     n_points_with_pos_slope=2)
+    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks)
+
+    fid_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    ca.plotting.signal(fid, fig=fid_fig)
+    ca.plotting.peaks(fid_compounds, fig=fid_fig)
+    fid_fig.layout.title = "FID"
+
+    # ms
+    ms.processor.add(
+        ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True)
+    )
+    peak_locations = ca.analysis.peak_picking.find_peaks_scipy(ms,
+                                                               scipy_kwargs={"prominence": 10000}
+                                                               )
+    ms_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
+                                                    n_points_with_pos_slope=2)
+    ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks)
 
     # plotting peak results
-    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
-    # ca.plotting.baseline(signal, fig=fig)
-    ca.plotting.signal(signal, fig=fig)
-    ca.plotting.peaks(peak_result, fig=fig)
+    ms_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    ca.plotting.signal(ms, fig=ms_fig)
+    ca.plotting.peaks(ms_compounds, fig=ms_fig)
+    ms_fig.layout.title = "MS"
 
-    fig.write_html(figure_folder / f"signal_{type_}_{signal.name}.html", include_plotlyjs='cdn')
-
-    return peak_result
-
-
-def peaks_to_compounds(
-        results: list[ca.analysis.peak_picking.ResultPeaks],
-        picking_library: ca.analysis.ms_analysis.PickingLibrary
-):
-    compounds = []
-    for result in results:
-        compounds.append(ca.analysis.ms_analysis.search_retention_time(picking_library, result))
-
-    return compounds
+    print("finished analyzing:", data_path.name)
+    return ms_fig, fid_fig, ms_compounds, fid_compounds
 
 
 def get_figure_path(root_folder: pathlib.Path) -> pathlib.Path:
@@ -59,45 +66,64 @@ def get_figure_path(root_folder: pathlib.Path) -> pathlib.Path:
     return figure_folder
 
 
-def get_data(data_path: pathlib.Path, pattern: str, sort_func=None):
-    if sort_func is None:
-        pattern_compile = re.compile(pattern.replace("*", "([0-9]+)"))
-        sort_func = lambda x: int(pattern_compile.match(x).groups()[0])
+def get_folders(data_path: pathlib.Path, pattern: str) -> tuple[list[pathlib.Path], np.ndarray]:
+    pattern_compile = re.compile(pattern.replace("*", "([0-9]+)"))
 
-    specific_folders = glob.glob(pattern, root_dir=data_path)
+    def sort_func(x: pathlib.Path) -> int:
+        return int(pattern_compile.match(x.name).groups()[0])
+
+    specific_folders = list(data_path.glob(pattern))
     print(len(specific_folders), "files found for analysis")
+
     specific_folders.sort(key=sort_func)
-    specific_folders = [data_path / file for file in specific_folders]
-    return [ca.gc_lc.GCParser.from_Agilent_D_folder(folder) for folder in specific_folders]
+    times_ = [sort_func(folder) for folder in specific_folders]
+
+    return [data_path / file for file in specific_folders], np.array(times_)
 
 
-def process_timeseries(data_path: str, pattern: str, peak_mask):
+def process_timeseries(data_path: str, pattern: str):
     if isinstance(data_path, str):
         data_path = pathlib.Path(data_path)
     figure_folder = get_figure_path(data_path)
-    data = get_data(data_path, pattern)
+    folders, times = get_folders(data_path, pattern)
 
     # process data
-    fid_peak_results = []
-    ms_peak_results = []
-    for ms, fid in data:
-        fid_peak_results.append(process_one_signal(fid, "fid", figure_folder, peak_mask))
-        ms_peak_results.append(process_one_signal(ms, "ms", figure_folder, peak_mask))
+    fid_compounds, ms_compounds, fid_figs, ms_figs = [], [], [], []
+    for folder in folders:
+        ms_fig_, fid_fig_, ms_comp, fid_comp = process_single(folder)
+        ms_figs.append(ms_fig_)
+        fid_figs.append(fid_fig_)
+        ms_compounds.append(ms_comp)
+        fid_compounds.append(fid_comp)
 
-    # peaks --> compounds
-    fid_compounds = peaks_to_compounds(fid_peak_results, picking_lib_fid)
-    ms_compounds = peaks_to_compounds(ms_peak_results, picking_lib_ms)
+    # process timeseries
+    fid_timeseries = ResultTimeSeries("decane_fid", INTERNAL_STANDARD, internal_standard_mmol=0.0109)
+    ms_timeseries = ResultTimeSeries("decane_ms", INTERNAL_STANDARD, internal_standard_mmol=0.0109)
+    for i in range(len(times)):
+        fid_timeseries.add_result(fid_compounds[i], times[i])
+        ms_timeseries.add_result(ms_compounds[i], times[i])
 
-    # plotting timeseries
+    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig)
+    fig.add_scatter(x=[0, 360], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig.layout.xaxis.title = "<b>time (min)<br>"
+    fig.layout.yaxis.title = "<b>mmol<br>"
+    fid_figs.append(fig)
+    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig)
+    fig.add_scatter(x=[0, 360], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig.layout.xaxis.title = "<b>time (min)<br>"
+    fig.layout.yaxis.title = "<b>mmol<br>"
+    ms_figs.append(fig)
 
+    ca.plotting.PlotlyConfig.merge_figures(fid_figs, filename=figure_folder / "fid")
+    ca.plotting.PlotlyConfig.merge_figures(ms_figs, filename=figure_folder / "ms")
 
 
 def main():
-    data_path = r"C:\Users\nicep\Desktop\10_13"
-    pattern = "DJW-10-13-*min-PPh3.D"
-    peak_mask = ca.processing.weigths.Spans([4, 31], invert=True)
-
-    process_timeseries(data_path, pattern, peak_mask)
+    data_path = r"C:\Users\nicep\Desktop\11_23"
+    pattern = "DJW-11-23-*min-TMS.D"
+    process_timeseries(data_path, pattern)
 
 
 if __name__ == "__main__":

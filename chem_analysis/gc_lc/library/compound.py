@@ -153,7 +153,7 @@ class CompoundResponse:
 
 class Compound:
     # Update version in GCLibrary if changes made
-    __slots__ = "label", "responses", "groups", "smiles", "name", "cas", "density", "boiling_temperature", "parent"
+    # __slots__ = "label", "responses", "groups", "smiles", "name", "cas", "density", "boiling_temperature", "parent"
 
     def __init__(self,
                  label: str,
@@ -164,7 +164,8 @@ class Compound:
                  cas: str | None = None,
                  density: int | float | None = None,
                  boiling_temperature: int | float | None = None,
-                 parent: str = None
+                 parent: str = None,
+                 **kwargs
                  ):
         """
 
@@ -198,6 +199,9 @@ class Compound:
         self.density = density
         self.boiling_temperature = boiling_temperature
         self.parent = parent
+        if kwargs:
+            for k, v in kwargs.items():
+                setattr(self, k, v)
 
     def __str__(self):
         text = f"{self.label}"
@@ -232,7 +236,7 @@ class Compound:
 
     def to_dict(self, sanitize: bool = False, binary: bool = False, optimize: bool = False) -> OrderedDict:
         dict_ = OrderedDict()
-        vars_ = self.__slots__
+        vars_ = [attr for attr in self.__dict__.keys() if not attr.startswith("_")]  # self.__slots__
         for k in vars_:
             attr = getattr(self, k)
 
@@ -248,7 +252,8 @@ class Compound:
                 if k == "boiling_temperature" and attr is not None and isinstance(attr, float):
                     attr = round(attr, global_config.sig_fig)
 
-                k = OPTIMIZATION_KEY[k]
+                if k in OPTIMIZATION_KEY:
+                    k = OPTIMIZATION_KEY[k]
 
             dict_[k] = attr
 

@@ -159,7 +159,7 @@ class GCLibrary:
 
         if json_kwargs is None:
             json_kwargs = {}
-        if 'indent' not in json_kwargs:
+        if 'indent' not in json_kwargs and not optimize:
             json_kwargs['indent'] = 2
 
         with open(file_path, 'w', encoding='UTF-8') as file:
