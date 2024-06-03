@@ -104,14 +104,14 @@ def process_timeseries(data_path: str, pattern: str):
         ms_timeseries.add_result(ms_compounds[i], times[i])
 
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
-    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig)
-    fig.add_scatter(x=[0, 360], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
+    fig.add_scatter(x=[0, 20], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
     fid_figs.append(fig)
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
-    plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig)
-    fig.add_scatter(x=[0, 360], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
+    fig.add_scatter(x=[0, 20], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
     ms_figs.append(fig)
@@ -122,9 +122,10 @@ def process_timeseries(data_path: str, pattern: str):
     data = ms_timeseries.to_csv_str()
     print(data)
 
+
 def main():
-    data_path = r"C:\Users\nicep\Desktop\11_23"
-    pattern = "DJW-11-23-*min-TMS.D"
+    data_path = r"C:\Users\nicep\Desktop\11_22"
+    pattern = "DJW-11-22-*min-TMS.D"
     process_timeseries(data_path, pattern)
 
 

@@ -48,6 +48,7 @@ def lighter_shades(color: str, n: int) -> list[str]:
 
     return shades
 
+
 def get_colors_from_scale(n: int = 10, color_scale: str = 'Jet') -> list[str]:
     import plotly.colors as colors
     color_scale = colors.get_colorscale(color_scale)
@@ -89,8 +90,8 @@ def main():
     # for color, compound in zip(colors, LIBRARY.compounds):
     #     compound.color = color
     #
-    LIBRARY.to_JSON(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json",
-                    binary=True, optimize=True, json_kwargs={"indent": 2}, overwrite=True)
+    # LIBRARY.to_JSON(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json",
+    #                 binary=True, optimize=True, json_kwargs={"indent": 2}, overwrite=True)
 
 
 if __name__ == "__main__":

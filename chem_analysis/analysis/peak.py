@@ -30,8 +30,8 @@ class Peak(abc.ABC):
         else:
             parent = args[0]
         if hasattr(parent, "_" + cls.__name__):
-            return parent._peak_integration.__new__()
-            # return parent._peak_integration(*args, **kwargs)
+            # intersect class instantiation and redirect it to another variant of peak integration, eg. SEC version
+            return super().__new__(parent._PeakIntegration)
 
         return super().__new__(cls)
 

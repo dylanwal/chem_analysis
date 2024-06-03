@@ -206,3 +206,10 @@ class GCLibrary:
         with open(file_path, 'r', encoding='UTF-8') as file:
             lib = cls.from_dict(json.load(file))
         return lib
+
+    def offset_times(self, shift: int | float):
+        for comp in self.compounds:
+            for resp in comp.responses:
+                if resp.retention_time is not None:
+                    resp.retention_time += shift
+

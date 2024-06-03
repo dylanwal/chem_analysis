@@ -52,11 +52,15 @@ def plot_signal_core(x: np.ndarray, y: np.ndarray, fig: go.Figure, name: str):
 
 def plotly_signal_sec(signal: SECSignal, fig: go.Figure):
     if signal.calibration is not None:
-        slice_ = get_slice(signal.x, *signal.calibration.x_bounds)
+        bounds = signal.calibration.x_bounds
+        if bounds[0] > bounds[1]:
+            bounds = bounds[1], bounds[0]
+        slice_ = get_slice(signal.x, bounds[0], bounds[1])
         max_ = np.max([2, np.max(signal.y[slice_])])
         min_ = np.min([0, np.min(signal.y[slice_])])
         span = (max_ - min_) * 0.05
         fig.layout.yaxis.range = [min_ - span, max_ + span]
+        fig.layout.xaxis.domain = [0, 0.95]  # avoid overlap of legend and right y-axis
 
 
 def plotly_signal_discrete_core(x: np.ndarray, y: np.ndarray, fig: go.Figure, name: str):

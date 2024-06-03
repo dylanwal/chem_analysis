@@ -27,7 +27,7 @@ class ResultPeaks:
     def get_stats(self) -> list[OrderedDict]:
         dicts_ = []
         for peak in self.peaks:
-            dicts_.append(peak.get_stats())
+            dicts_.append(peak.stats_dict())
 
         return dicts_
 

@@ -11,6 +11,7 @@ from time_series_support import ResultTimeSeries, plot_results
 lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json"
 LIBRARY = ca.mass_spec.GCLibrary.from_JSON(lib_path)
 INTERNAL_STANDARD = LIBRARY.find_by_label("TCB")
+LIBRARY.offset_times(0.2)
 picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_fid")
 picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_ms")
 PLOTTING_GROUPS = ["dicarboxylic acid", "hydroxy acids", "carboxylic acid", "alcohol", "methyl_ketone", "ketone", "peroxide", "alkane"]
@@ -29,7 +30,7 @@ def process_single(data_path):
                                                                )
     fid_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
                                                      n_points_with_pos_slope=2)
-    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks)
+    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks, a_tolerance=0.15)
 
     fid_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
     ca.plotting.signal(fid, fig=fid_fig)
@@ -45,7 +46,7 @@ def process_single(data_path):
                                                                )
     ms_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
                                                     n_points_with_pos_slope=2)
-    ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks)
+    ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks, a_tolerance=0.15)
 
     # plotting peak results
     ms_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
@@ -86,6 +87,7 @@ def process_timeseries(data_path: str, pattern: str):
         data_path = pathlib.Path(data_path)
     figure_folder = get_figure_path(data_path)
     folders, times = get_folders(data_path, pattern)
+    times = 60 * times
 
     # process data
     fid_compounds, ms_compounds, fid_figs, ms_figs = [], [], [], []
@@ -104,8 +106,8 @@ def process_timeseries(data_path: str, pattern: str):
         ms_timeseries.add_result(ms_compounds[i], times[i])
 
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
-    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig)
-    fig.add_scatter(x=[0, 360], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
+    fig.add_scatter(x=[0, 180], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
     fid_figs.append(fig)
@@ -119,12 +121,10 @@ def process_timeseries(data_path: str, pattern: str):
     ca.plotting.PlotlyConfig.merge_figures(fid_figs, filename=figure_folder / "fid")
     ca.plotting.PlotlyConfig.merge_figures(ms_figs, filename=figure_folder / "ms")
 
-    data = ms_timeseries.to_csv_str()
-    print(data)
 
 def main():
-    data_path = r"C:\Users\nicep\Desktop\11_23"
-    pattern = "DJW-11-23-*min-TMS.D"
+    data_path = r"C:\Users\nicep\Desktop\11_6"
+    pattern = "DJW-11-6-TMS-*h.D"
     process_timeseries(data_path, pattern)
 
 

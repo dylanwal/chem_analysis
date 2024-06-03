@@ -25,10 +25,10 @@ def plotly_peaks(peaks: ResultPeaks, fig: go.Figure | None, config: PlotlyConfig
             plotly_add_peak_shade(fig, peak, config, label)
         # if config.peak_show_trace:
         #     plotly_add_peak_trace()
-        if config.peak_show_bounds:
-            plotly_add_peak_bounds(fig, peak, config, label)
-        if config.peak_show_max:
-            plotly_add_peak_max(fig, peak, config, label)
+        # if config.peak_show_bounds:
+        #     plotly_add_peak_bounds(fig, peak, config, label)
+        # if config.peak_show_max:
+        #     plotly_add_peak_max(fig, peak, config, label)
 
     return fig
 

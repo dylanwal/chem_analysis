@@ -1,3 +1,4 @@
+import copy
 from collections import OrderedDict
 
 import numpy as np
@@ -107,6 +108,37 @@ class ResultTimeSeries:
 
         return comp
 
+    def to_numpy(self) -> tuple[list[str], np.ndarray, np.ndarray]:
+        times = set()
+        for comp in self.compounds:
+            for t in comp.times:
+                times.add(t)
+
+        times = np.array(list(times))
+        times.sort()
+
+        compounds = []
+        mmols = np.zeros((len(times), len(self.compounds)))
+        for i, comp in enumerate(self.compounds):
+            compounds.append(comp.compound.label)
+            for ii, t in enumerate(comp.times):
+                index = np.argmin(abs(times-t))
+                mmols[index, i] = comp.mmols[ii]
+
+        return compounds, times, mmols
+
+    def to_csv_str(self) -> str:
+        compounds, times, mmols = self.to_numpy()
+
+        text = ""
+        times = np.insert(times, 0, 0)
+        text = ",".join([str(i) for i in times]) + "\n"
+        mmols = mmols.T
+        for i in range(len(compounds)):
+            text += ",".join([compounds[i]] + [str(i_) for i_ in mmols[i, :]]) + "\n"
+
+        return text
+
 
 def map_with_fill_zeros(times: list[float], comp_times: list[float], values: list[float]) -> list[float]:
     out = []
@@ -119,11 +151,11 @@ def map_with_fill_zeros(times: list[float], comp_times: list[float], values: lis
     return out
 
 
-def plot_results(results: ResultTimeSeries, groups: list[str], *, fig: go.Figure = None) -> go.Figure:
+def plot_results(results: ResultTimeSeries, groups: list[str], *, fig: go.Figure = None, add_zero: bool = False) -> go.Figure:
     if fig is None:
         fig = go.Figure()
 
-    compounds = results.compounds
+    compounds = copy.copy(results.compounds)
 
     # sort
     groups.append("misc")
@@ -173,21 +205,20 @@ def plot_results(results: ResultTimeSeries, groups: list[str], *, fig: go.Figure
 
             # mmols = map_with_fill_zeros(results.times, compound.times, compound.mmols)
 
-            fig.add_trace(go.Scatter(x=compound.times, y=compound.mmols, **kwargs))
+            if add_zero:
+                if compound.times[0] == 0:
+                    x = compound.times
+                    y = compound.mmols
+                elif compound.compound.label == "C10":
+                    x = np.insert(compound.times, 0, 0)
+                    y = np.insert(compound.mmols, 0, 0.0658)
+                else:
+                    x = np.insert(compound.times, 0, 0)
+                    y = np.insert(compound.mmols, 0, 0)
+            else:
+                x = compound.times
+                y = compound.mmols
+
+            fig.add_trace(go.Scatter(x=x, y=y, **kwargs))
 
     return fig
-
-# def add_substrate(cls, fig: go.Figure, results: ResultTimeSeries, substrate_mmol: int | float = None):
-#     substrate = results.substrate
-#     fig.add_trace(go.Scatter(x=substrate.times, y=substrate.mmols, mode="lines", name=substrate.compound.name,
-#                              line=dict(color="black"), legendgroup=substrate.compound.name))
-#
-#     if substrate_mmol is not None:
-#         fig.add_trace(go.Scatter(
-#             x=[0, results.times[-1]],
-#             y=[substrate_mmol, substrate_mmol],
-#             mode="lines", line=dict(color="gray", dash="dash"), showlegend=False, legendgroup=substrate.compound.name))
-#
-#         fig.add_trace(go.Scatter(x=results.times, y=[result.total_mmol for result in results.results],
-#                              mode="lines", line=dict(color="gray"), name="mass balance", legendgroup="decane"))
-#

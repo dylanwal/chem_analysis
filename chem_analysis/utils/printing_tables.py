@@ -40,6 +40,14 @@ class StatsTable:
     def __repr__(self):
         return f"rows: {len(self.rows)}, cols: {len(self.headers)}"
 
+    def get(self, header: str) -> list[str]:
+        if header not in self.headers:
+            raise KeyError(f"'{header}' is not in {self.headers}")
+            #TODO: add fuzzy match suggetions
+
+        index = self.headers.index(header)
+        return [row[index] for row in self.rows]
+
     def join(self, table: StatsTable, include_empty: bool = True):
         headers = self.headers + table.headers
         # remove duplicates while maintaining order

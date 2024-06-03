@@ -29,7 +29,7 @@ def process_single(data_path):
                                                                )
     fid_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
                                                      n_points_with_pos_slope=2)
-    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks)
+    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks, a_tolerance=0.15)
 
     fid_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
     ca.plotting.signal(fid, fig=fid_fig)
@@ -45,7 +45,7 @@ def process_single(data_path):
                                                                )
     ms_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
                                                     n_points_with_pos_slope=2)
-    ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks)
+    ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks, a_tolerance=0.15)
 
     # plotting peak results
     ms_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
@@ -119,12 +119,10 @@ def process_timeseries(data_path: str, pattern: str):
     ca.plotting.PlotlyConfig.merge_figures(fid_figs, filename=figure_folder / "fid")
     ca.plotting.PlotlyConfig.merge_figures(ms_figs, filename=figure_folder / "ms")
 
-    data = ms_timeseries.to_csv_str()
-    print(data)
 
 def main():
-    data_path = r"C:\Users\nicep\Desktop\11_23"
-    pattern = "DJW-11-23-*min-TMS.D"
+    data_path = r"C:\Users\nicep\Desktop\11_13"
+    pattern = "DJW-11-13-t*_TMS.D"
     process_timeseries(data_path, pattern)
 
 

@@ -18,7 +18,7 @@ def main():
     data = data[1:, 1:]
 
     array_ = ca.ir.IRArray(x=wavenumber, y=times, z=data)
-    array_.processor.add(chem_analysis.processing.translations.Subtract(np.mean(array_.z[0:10, :], axis=0)))
+    array_.processor.add(ca.processing.translations.Subtract(np.mean(array_.z[0:10, :], axis=0)))
 
     print(time.time() - start)
     fig = ca.ir.plot_signal(array_.get_signal(0))

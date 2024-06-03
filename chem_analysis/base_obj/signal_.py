@@ -141,22 +141,22 @@ class Signal:
         headers = [self.x_label, self.y_label]
         numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
 
-    def to_parquet(self, path: str | pathlib.Path):
-        import pyarrow as pa
-        import pyarrow.parquet as pq
-        # TODO:
-        raise NotImplementedError()
-        arrays = [pa.array(self.x), pa.array(self.y)]
-        table = pa.Table().from_arrays(arrays=arrays, names=("x", "y"))
-        pq.write_table(table, path)
-
-    @classmethod
-    def from_parquet(cls, path: str | pathlib.Path, **kwargs):
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-
-        # TODO:
-        raise NotImplementedError()
+    # def to_parquet(self, path: str | pathlib.Path):
+    #     import pyarrow as pa
+    #     import pyarrow.parquet as pq
+    #     # TODO:
+    #     raise NotImplementedError()
+    #     arrays = [pa.array(self.x), pa.array(self.y)]
+    #     table = pa.Table().from_arrays(arrays=arrays, names=("x", "y"))
+    #     pq.write_table(table, path)
+    #
+    # @classmethod
+    # def from_parquet(cls, path: str | pathlib.Path, **kwargs):
+    #     if isinstance(path, str):
+    #         path = pathlib.Path(path)
+    #
+    #     # TODO:
+    #     raise NotImplementedError()
 
     @classmethod
     def from_json(cls, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
@@ -217,16 +217,32 @@ def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | N
 
         first_row = next(csv_reader, None)
         if len(first_row) != 2:
-            raise ValueError("Data not correct format.")
-        if any(cell.isalpha() for cell in first_row):
+            raise ValueError("Data not correct format. It should be in [n by 2] format.")
+        if any(not is_number(cell) for cell in first_row):
             # If the first row contains non-numeric values, consider it as column labels
             x_label, y_label = first_row
         else:
             # If the first row contains numbers, treat them as data and set labels to None
-            data.append([float(cell) for cell in first_row])
+            data.append([to_number(cell) for cell in first_row])
 
         for row in csv_reader:
-            data.append([float(cell) for cell in row])
+            data.append([to_number(cell) for cell in row])
 
     data_array = np.array(data)
     return data_array[:, 0], data_array[:, 1], x_label, y_label
+
+
+def is_number(s: str) -> bool:
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def to_number(s: str) -> float | int:
+    num = float(s)
+    if int(num) == num:
+        return int(s)
+    else:
+        return num

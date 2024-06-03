@@ -22,6 +22,7 @@ class PeakParentSEC(PeakParent):
 class PeakSEC(PeakIntegration):
     def __init__(self, parent: PeakParentSEC, bounds: slice, id_: int = None):
         super().__init__(parent, bounds, id_)
+        self.parent: PeakParentSEC = parent  # duplicate, but helps with type hinting
 
         self._mw_n = None
         self._mw_d = None
@@ -99,32 +100,32 @@ class PeakSEC(PeakIntegration):
 
     @property
     def mw_max(self) -> float:
-        return np.max(self.parent.mw_i)
+        return np.max(self.mw_i)
 
     @property
     def mw_mean(self) -> float:
-        return general_math.get_mean_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i)
+        return general_math.get_mean_of_pdf(self.mw_i, y_norm=self.x_i)
 
     @property
     def mw_std(self):
-        return general_math.get_standard_deviation_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean)
+        return general_math.get_standard_deviation_of_pdf(self.mw_i, y_norm=self.x_i, mean=self.mw_mean)
 
     @property
     def mw_skew(self):
-        return general_math.get_skew_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean,
+        return general_math.get_skew_of_pdf(self.mw_i, y_norm=self.x_i, mean=self.mw_mean,
                                             standard_deviation=self.mw_std)
 
     @property
     def mw_kurtosis(self):
-        return general_math.get_kurtosis_of_pdf(self.parent.mw_i, y_norm=self.parent.x_i, mean=self.mw_mean,
+        return general_math.get_kurtosis_of_pdf(self.mw_i, y_norm=self.x_i, mean=self.mw_mean,
                                                 standard_deviation=self.mw_std)
 
     @property
     def mw_fwhm(self):
         """mw_full_width_half_max"""
-        return general_math.get_full_width_at_height(x=self.parent.mw_i, y=self.parent.x_i, height=0.5)
+        return general_math.get_full_width_at_height(x=self.mw_i, y=self.x_i, height=0.5)
 
     @property
     def mw_asym(self):
         """mw_asymmetry_factor"""
-        return general_math.get_asymmetry_factor(x=self.parent.mw_i, y=self.parent.x_i, height=0.1)
+        return general_math.get_asymmetry_factor(x=self.mw_i, y=self.x_i, height=0.1)
