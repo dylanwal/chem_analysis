@@ -110,6 +110,7 @@ if __name__ == '__main__':
 |   peak | area | ...** |   mw_d  |   mw_n  |
 |--------|------|-------|--------|--------|
 |      0 | 2.7  | ...   | 1.218  |   7465  |
+
 **Only showing 4 of 28 stats calculated for SEC peak
 
 ![sec_data_analysis.png](https://github.com/dylanwal/chem_analysis/tree/develop/dev/sec_data_analysis.png)

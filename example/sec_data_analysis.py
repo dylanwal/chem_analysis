@@ -33,8 +33,8 @@ def main():
     ca.plotting.peaks(result, fig=fig)
     fig.data[0].line.color = "blue"
     fig.data[4].fillcolor = "gray"
-    fig.show()
-    # fig.write_image('figs/sec_data_analysis.png', width=fig.layout.template.layout.width, height=fig.layout.template.layout.height)
+    # fig.show()
+    fig.write_image('figs/sec_data_analysis.png', width=fig.layout.template.layout.width, height=fig.layout.template.layout.height)
 
     # print results
     print(result.stats_table().to_str())

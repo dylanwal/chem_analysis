@@ -4,13 +4,13 @@ import plotly.graph_objs as go
 import chem_analysis as ca
 
 lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library.json"
-# LIBRARY = ca.mass_spec.GCLibrary.from_JSON(lib_path)
-LIBRARY = ca.mass_spec.GCLibrary.from_JSON(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\nist20_1.json")
+LIBRARY = ca.gc_lc.GCLibrary.from_JSON(lib_path)
+# LIBRARY = ca.gc_lc.GCLibrary.from_JSON(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\nist20_1.json")
 
 
 def main():
-    # chem = LIBRARY.find_by_label("TCB")
-    # print(chem.methods)
+    chem = LIBRARY.find_by_label("TCB")
+    print(chem.methods)
     # ms = chem.get_ms()
     #
     # fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
