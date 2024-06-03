@@ -42,8 +42,11 @@ class StatsTable:
 
     def get(self, header: str) -> list[str]:
         if header not in self.headers:
-            raise KeyError(f"'{header}' is not in {self.headers}")
-            #TODO: add fuzzy match suggetions
+            from rapidfuzz import process
+            top_matches = process.extract(header, self.headers, limit=3)
+            top_matches = [m[0] for m in top_matches]
+            raise KeyError(f"{type(self).__name__}.get(): '{header}' is not in 'headers'."
+                           f"\n\tDid you mean: {' or '.join(top_matches)}")
 
         index = self.headers.index(header)
         return [row[index] for row in self.rows]
