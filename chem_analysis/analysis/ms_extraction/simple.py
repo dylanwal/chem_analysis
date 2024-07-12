@@ -5,6 +5,8 @@ import numpy as np
 from chem_analysis.gc_lc.gc_ms_signal import GCMSSignal
 from chem_analysis.mass_spec.ms_signal_2D import MSSignal2D
 from chem_analysis.mass_spec.ms_signal import MSSignal
+from chem_analysis.analysis.integration.result_integration import PeakIntegration
+
 
 import chem_analysis.utils.math as utils_math
 
@@ -63,3 +65,13 @@ def ms_extract_span(
         raise TypeError("'ms_extract_simple' unsupported type for 'span'.")
 
     return ms_extract_index(signal, index)
+
+
+def ms_extract_peak(
+        peak: PeakIntegration,
+) -> MSSignal:
+    signal: GCMSSignal = peak.parent
+    if not isinstance(signal, GCMSSignal):
+        raise ValueError(f"Invalid Peak to extract ms from.\n\tpeak type: {type(peak)}, signal type: {type(signal)}")
+
+    return ms_extract_index(signal, peak.bounds)

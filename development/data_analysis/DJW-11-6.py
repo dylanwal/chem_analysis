@@ -6,10 +6,10 @@ import numpy as np
 import plotly.graph_objs as go
 
 import chem_analysis as ca
-from time_series_support import ResultTimeSeries, plot_results
+from development.time_series_support import ResultTimeSeries, plot_results
 
 lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json"
-LIBRARY = ca.mass_spec.GCLibrary.from_JSON(lib_path)
+LIBRARY = ca.gc_lc.GCLibrary.from_JSON(lib_path)
 INTERNAL_STANDARD = LIBRARY.find_by_label("TCB")
 LIBRARY.offset_times(0.2)
 picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_fid")
@@ -107,15 +107,28 @@ def process_timeseries(data_path: str, pattern: str):
 
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
     plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
-    fig.add_scatter(x=[0, 180], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig.add_scatter(x=[0, times[-1]], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
     fid_figs.append(fig)
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
     plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig)
-    fig.add_scatter(x=[0, 360], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig.add_scatter(x=[0, times[-1]], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
+    ms_figs.append(fig)
+
+    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, carbon=True, add_zero=True)
+    fig.add_scatter(x=[0, times[-1]], y=[0.0658*10, 0.0658*10], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig.layout.xaxis.title = "<b>time (min)<br>"
+    fig.layout.yaxis.title = "<b>mmol of carbon<br>"
+    fid_figs.append(fig)
+    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig, carbon=True, add_zero=True)
+    fig.add_scatter(x=[0, times[-1]], y=[0.0658*10, 0.0658*10], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig.layout.xaxis.title = "<b>time (min)<br>"
+    fig.layout.yaxis.title = "<b>mmol of carbon<br>"
     ms_figs.append(fig)
 
     ca.plotting.PlotlyConfig.merge_figures(fid_figs, filename=figure_folder / "fid")

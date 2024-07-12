@@ -151,7 +151,14 @@ def map_with_fill_zeros(times: list[float], comp_times: list[float], values: lis
     return out
 
 
-def plot_results(results: ResultTimeSeries, groups: list[str], *, fig: go.Figure = None, add_zero: bool = False) -> go.Figure:
+def plot_results(
+        results: ResultTimeSeries,
+        groups: list[str],
+        *,
+        fig: go.Figure = None,
+        add_zero: bool = False,
+        carbon: bool = False
+) -> go.Figure:
     if fig is None:
         fig = go.Figure()
 
@@ -205,6 +212,7 @@ def plot_results(results: ResultTimeSeries, groups: list[str], *, fig: go.Figure
 
             # mmols = map_with_fill_zeros(results.times, compound.times, compound.mmols)
 
+
             if add_zero:
                 if compound.times[0] == 0:
                     x = compound.times
@@ -218,6 +226,9 @@ def plot_results(results: ResultTimeSeries, groups: list[str], *, fig: go.Figure
             else:
                 x = compound.times
                 y = compound.mmols
+
+            if carbon:
+                y = y * (str(compound.compound.smiles).count("C") - str(compound.compound.smiles).count("[Si]")*3)
 
             fig.add_trace(go.Scatter(x=x, y=y, **kwargs))
 

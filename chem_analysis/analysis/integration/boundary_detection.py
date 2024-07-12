@@ -2,8 +2,8 @@ import logging
 
 import numpy as np
 
-from chem_analysis.analysis.peak_picking.picking_result import ResultPicking
-from chem_analysis.analysis.integration.integration_result import PeakIntegration, ResultIntegration
+from chem_analysis.analysis.peak_picking.result_picking import ResultPicking
+from chem_analysis.analysis.integration.result_integration import PeakIntegration, ResultIntegration
 
 logger = logging.getLogger(__name__)
 

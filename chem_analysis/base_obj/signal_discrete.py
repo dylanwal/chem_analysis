@@ -102,9 +102,28 @@ class SignalDiscrete:
     def to_list(self, reduce: bool = False) -> list[float | int,  float | int]:
         return self.to_numpy(reduce).tolist()
 
-    def to_numpy(self, reduce: bool = False):
+    def to_numpy(self, reduce: bool = False, cutoff: float = None):
+        """
+
+        Parameters
+        ----------
+        reduce
+        cutoff:
+            [0, 1] the relative value of which values below this will be removed.
+
+        Returns
+        -------
+
+        """
         if reduce:
-            mask = np.nonzero(self.y)
+            y = np.copy(self.y)
+            if cutoff is not None:
+                if not (0 < cutoff < 1):
+                    raise ValueError(f"'{type(self).__name__}.to_numpy' cutoff value must be between 0 and 1. "
+                                     f"\n\tGiven: {cutoff}")
+                cutoff_value = np.max(y) * cutoff
+                y[y < cutoff_value] = 0
+            mask = np.nonzero(y)
             return np.column_stack([self.x[mask], self.y[mask]])
         return np.column_stack([self.x, self.y])
 

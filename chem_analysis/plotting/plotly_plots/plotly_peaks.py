@@ -5,7 +5,7 @@ import plotly.graph_objs as go
 from chem_analysis.plotting.plotly_plots.plotly_config import PlotlyConfig
 from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.analysis.peak_result import ResultPeaks
-from chem_analysis.analysis.ms_analysis.search_result import PeakCompound
+from chem_analysis.analysis.ms_analysis.result_search import PeakCompound
 from chem_analysis.plotting.utils import darken_color
 
 

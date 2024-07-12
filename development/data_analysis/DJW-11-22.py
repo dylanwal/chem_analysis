@@ -6,10 +6,10 @@ import numpy as np
 import plotly.graph_objs as go
 
 import chem_analysis as ca
-from time_series_support import ResultTimeSeries, plot_results
+from development.time_series_support import ResultTimeSeries, plot_results
 
 lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json"
-LIBRARY = ca.mass_spec.GCLibrary.from_JSON(lib_path)
+LIBRARY = ca.gc_lc.GCLibrary.from_JSON(lib_path)
 INTERNAL_STANDARD = LIBRARY.find_by_label("TCB")
 picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_fid")
 picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_ms")

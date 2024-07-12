@@ -5,7 +5,7 @@ from chem_analysis.utils.math import map_argmax_to_original
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.processing.weigths.weights import DataWeight
-from chem_analysis.analysis.peak_picking.picking_result import PeakPicking, ResultPicking, ResultPicking2D
+from chem_analysis.analysis.peak_picking.result_picking import PeakPicking, ResultPicking, ResultPicking2D
 
 
 def find_peak_largest(

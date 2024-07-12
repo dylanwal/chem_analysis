@@ -1,4 +1,4 @@
 from chem_analysis.analysis.ms_analysis.picking_library import PickingLibrary
-from chem_analysis.analysis.ms_analysis.search_result import ResultCompoundSearch, PeakCompound
+from chem_analysis.analysis.ms_analysis.result_search import ResultCompoundSearch, PeakCompound
 from chem_analysis.analysis.ms_analysis.search_by_time import search_by_retention_time, search_by_retention_time_single
 

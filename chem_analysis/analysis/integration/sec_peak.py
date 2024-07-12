@@ -7,7 +7,7 @@ import numpy as np
 import chem_analysis.utils.math as general_math
 from chem_analysis.sec.sec_math_functions import calculate_Mn_D_from_wi
 from chem_analysis.analysis.peak import PeakParent
-from chem_analysis.analysis.integration.integration_result import PeakIntegration
+from chem_analysis.analysis.integration.result_integration import PeakIntegration
 from chem_analysis.sec.sec_calibration import SECCalibration
 
 logger = logging.getLogger(__name__)

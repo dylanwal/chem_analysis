@@ -20,7 +20,7 @@ def process_single(data_path):
     ms, fid = ca.gc_lc.GCParser.from_Agilent_D_folder(data_path)
 
     # fid
-    fid.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(1.3, 3.7), invert=True))
+    fid.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(1.3, 3.75), invert=True))
     fid.processor.add(
         ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True)
     )
@@ -29,7 +29,7 @@ def process_single(data_path):
                                                                )
     fid_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
                                                      n_points_with_pos_slope=2)
-    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks, a_tolerance=0.15)
+    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks)
 
     fid_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
     ca.plotting.signal(fid, fig=fid_fig)
@@ -37,6 +37,7 @@ def process_single(data_path):
     fid_fig.layout.title = "FID"
 
     # ms
+    # ms.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(None, 4), invert=True))
     ms.processor.add(
         ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True)
     )
@@ -45,7 +46,7 @@ def process_single(data_path):
                                                                )
     ms_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
                                                     n_points_with_pos_slope=2)
-    ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks, a_tolerance=0.15)
+    ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks)
 
     # plotting peak results
     ms_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
@@ -103,28 +104,31 @@ def process_timeseries(data_path: str, pattern: str):
         fid_timeseries.add_result(fid_compounds[i], times[i])
         ms_timeseries.add_result(ms_compounds[i], times[i])
 
+
+    decane_conc = 0.024
+
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
-    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig)
-    fig.add_scatter(x=[0, 360], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
+    fig.add_scatter(x=[0, times[-1]], y=[decane_conc, decane_conc], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
     fid_figs.append(fig)
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
-    plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig)
-    fig.add_scatter(x=[0, 360], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
+    fig.add_scatter(x=[0, times[-1]], y=[decane_conc, decane_conc], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
     ms_figs.append(fig)
 
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
     plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, carbon=True)
-    fig.add_scatter(x=[0, 360], y=[0.0658*10, 0.0658*10], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig.add_scatter(x=[0, times[-1]], y=[decane_conc*10, decane_conc*10], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol of carbon<br>"
     fid_figs.append(fig)
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
     plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig, carbon=True)
-    fig.add_scatter(x=[0, 360], y=[0.0658*10, 0.0658*10], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig.add_scatter(x=[0, times[-1]], y=[decane_conc*10, decane_conc*10], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol of carbon<br>"
     ms_figs.append(fig)
@@ -132,10 +136,13 @@ def process_timeseries(data_path: str, pattern: str):
     ca.plotting.PlotlyConfig.merge_figures(fid_figs, filename=figure_folder / "fid")
     ca.plotting.PlotlyConfig.merge_figures(ms_figs, filename=figure_folder / "ms")
 
+    data = ms_timeseries.to_csv_str()
+    print(data)
+
 
 def main():
-    data_path = r"C:\Users\nicep\Desktop\11_13"
-    pattern = "DJW-11-13-t*_TMS.D"
+    data_path = r"C:\Users\nicep\Desktop\research_wis\data\11\11_31\GC_MS"
+    pattern = "DJW-11-31-*min.D"
     process_timeseries(data_path, pattern)
 
 

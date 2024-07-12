@@ -49,3 +49,12 @@ class MSSignal(SignalDiscrete):
     @property
     def total_count(self) -> int:
         return int(np.sum(self.y))
+
+    def get_intensity(self, mz: int | float) -> int | float:
+        if mz in self.mz:
+            index = np.where(self.mz == mz)[0][0]
+            return self.data[index]
+
+        #TODO: add approx option
+
+        return 0

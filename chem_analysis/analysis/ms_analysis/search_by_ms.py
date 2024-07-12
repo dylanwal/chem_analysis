@@ -3,7 +3,7 @@ import numpy as np
 
 from chem_analysis.analysis.peak import PeakContinuous
 from chem_analysis.analysis.peak_result import ResultPeaks
-from chem_analysis.analysis.ms_analysis.search_result import ResultCompoundSearch, PeakCompound
+from chem_analysis.analysis.ms_analysis.result_search import ResultCompoundSearch, PeakCompound
 from chem_analysis.analysis.ms_analysis.picking_library import PickingLibrary
 
 
