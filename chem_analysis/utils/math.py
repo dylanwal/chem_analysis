@@ -393,9 +393,29 @@ def map_discrete_x_axis(x_new: np.ndarray, x_old: np.ndarray, y_old: np.ndarray,
         -> np.ndarray:
     y_new = np.zeros_like(x_new, dtype=y_old.dtype)
     index = get_index_of_values_in_common(x_new, x_old)
-    if any(i is None for i in index) and ignore_issues:
-        raise ValueError("Mapping not.")
-    y_new[index] = y_old
+    if ignore_issues and any(i is None for i in index):
+        zip_list = ((y, i) for y, i in zip(y_old, index) if i is not None)
+        y_old, index = zip(*zip_list)
+    else:
+        if any(i is None for i in index):
+            raise ValueError("Mapping not.")
+    y_new[list(index)] = y_old
+
+    return y_new
+
+
+def map_discrete_x_axis_2D(x_new: np.ndarray, x_old: np.ndarray, y_old: np.ndarray, ignore_issues: bool = False) \
+        -> np.ndarray:
+    y_new = np.zeros((y_old.shape[0], len(x_new)), dtype=y_old.dtype)
+    index = get_index_of_values_in_common(x_new, x_old)
+
+    for i, index_ in enumerate(index):
+        if ignore_issues and index_ is None:
+            continue
+        else:
+            if index_ is None:
+                raise ValueError("Mapping not.")
+        y_new[:, index_] = y_old[:, i]
 
     return y_new
 

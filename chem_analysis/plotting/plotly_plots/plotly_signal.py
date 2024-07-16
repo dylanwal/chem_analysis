@@ -4,13 +4,12 @@ import plotly.graph_objs as go
 from chem_analysis.plotting.plotly_plots.plotly_config import PlotlyConfig
 from chem_analysis.plotting.plot_format import bold_in_html
 from chem_analysis.base_obj.signal_ import Signal
-from chem_analysis.base_obj.signal_discrete import SignalDiscrete
 from chem_analysis.utils.math import get_slice
 from chem_analysis.sec.sec_signal import SECSignal
 
 
 def plotly_signal(
-        signal: Signal | SignalDiscrete,
+        signal: Signal,
         fig: go.Figure | None,
         config: PlotlyConfig | None = None,
         raw: bool = True
@@ -29,7 +28,7 @@ def plotly_signal(
     if config.normalize is config.NORMALIZATION_OPTIONS.PEAK_HEIGHT:
         y = signal.y_normalized_by_max()
 
-    if isinstance(signal, SignalDiscrete):
+    if hasattr(signal, "_discrete"):
         plotly_signal_discrete_core(x, y, fig, name)
     else:
         plot_signal_core(x, y, fig, name)

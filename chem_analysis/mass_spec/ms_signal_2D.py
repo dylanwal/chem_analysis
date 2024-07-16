@@ -3,6 +3,7 @@ from typing import Sequence
 
 import numpy as np
 
+from chem_analysis.base_obj.unify_methods import UnifyMethod, UnifyMethodMS
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.mass_spec.ms_signal import MSSignal
@@ -13,9 +14,9 @@ class MSSignal2D(Signal2D):
     _signal = MSSignal
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
-                 z_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 z: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
@@ -26,7 +27,7 @@ class MSSignal2D(Signal2D):
         x_label = x_label or "mass-to-charge"
         y_label = y_label or "time"
         z_label = z_label or "counts"
-        super().__init__(x_raw, y_raw, z_raw, x_label, y_label, z_label, name, id_)
+        super().__init__(x, y, z, x_label, y_label, z_label, name, id_)
         self.parameters = parameters
 
     def get_signal(self, index: int, processed: bool = False) -> MSSignal:
@@ -36,22 +37,7 @@ class MSSignal2D(Signal2D):
     def from_signals(cls,
                      signals: Sequence[Signal],
                      y: np.ndarray = None,
-                     x_label: str = None,
                      y_label: str = None,
-                     z_label: str = None,
-                     min_x: int = None,
-                     max_x: int = None
+                     unify_method: UnifyMethod = UnifyMethodMS()
                      ) -> MSSignal2D:
-        return super().from_signals(signals, y, x_label, y_label, z_label, min_x, max_x)
-
-    @classmethod
-    def from_list(cls,
-                  data: Sequence[Sequence[np.ndarray]],
-                  y: np.ndarray = None,
-                  x_label: str = None,
-                  y_label: str = None,
-                  z_label: str = None,
-                  min_x: int = None,
-                  max_x: int = None,
-                  ) -> MSSignal2D:
-        return super().from_list(data, y, x_label, y_label, z_label, min_x, max_x)
+        return super().from_signals(signals, y, y_label, unify_method)

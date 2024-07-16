@@ -35,6 +35,8 @@ class UnifyMethodStrict(UnifyMethod):
         z = np.empty((len(signals), len(x)), dtype=signals[0].y.dtype)
         args = self.get_args()
         for i, sig in enumerate(signals):
+            if len(x) != len(sig.x):
+                raise ValueError("All 'x' must have same length.")
             if not np.all(np.isclose(sig.x, x, **args)):
                 raise ValueError(f"Signal {i} has a different x-axis than first signal.")
             z[i, :] = sig.y
@@ -180,43 +182,71 @@ class UnifyMethodExpandInterpolate(UnifyMethod):
         return x, z
 
 
-class MethodShrink(UnifyMethod):
+class UnifyMethodMS(UnifyMethod):
     """
-        Uses the largest min and smallest max
-        cuts values
+    ms values will be set as integers
     """
-    def __init__(self, min_: None | int | float = None, max_: None | int | float = None):
-        """
+    def __init__(self, ms_max: int | None = None, ms_min: int | None = None):
+        self.ms_max = ms_max
+        self.ms_min = ms_min
 
-        Parameters
-        ----------
-        min_:
-            set to override the largest min
-        max_:
-            set to override the smallest max
-        """
-        self.min_ = min_
-        self.max_ = max_
-
-    def run(self, data: Sequence[np.ndarray]) -> tuple[int | float, int | float]:
-        """
-
-        Parameters
-        ----------
-        data:
-            data must be sorted
-
-        Returns
-        -------
-
-        """
-        if self.max_ is None:
-            max_ = np.min([sig[-1] for sig in data])
+    def get_x(self, signals: Sequence[Signal]) -> np.ndarray:
+        if self.ms_max is None:
+            max_ = np.max([sig.x[-1] for sig in signals])
         else:
-            max_ = self.max_
-        if self.min_ is None:
-            min_ = np.max([sig[0] for sig in data])
+            max_ = self.ms_max
+        if self.ms_min is None:
+            min_ = np.min([sig.x[0] for sig in signals])
         else:
-            min_ = self.min_
+            min_ = self.ms_min
 
-        return min_, max_
+        return np.arange(min_, max_ + 1, dtype=ca_math.min_uint_dtype(max_))
+
+    def run(self, signals: Sequence[Signal]) -> tuple[np.ndarray, np.ndarray]:
+        x = self.get_x(signals)
+        z = np.zeros((len(signals), len(x)), dtype=signals[0].y.dtype)
+        for i, sig in enumerate(signals):
+            z[i, :] = ca_math.map_discrete_x_axis(x, sig.x.astype(x.dtype), sig.y)
+        return x, z
+
+
+# class MethodShrink(UnifyMethod):
+#     """
+#         Uses the largest min and smallest max
+#         cuts values
+#     """
+#     def __init__(self, min_: None | int | float = None, max_: None | int | float = None):
+#         """
+#
+#         Parameters
+#         ----------
+#         min_:
+#             set to override the largest min
+#         max_:
+#             set to override the smallest max
+#         """
+#         self.min_ = min_
+#         self.max_ = max_
+#
+#     def run(self, data: Sequence[np.ndarray]) -> tuple[int | float, int | float]:
+#         """
+#
+#         Parameters
+#         ----------
+#         data:
+#             data must be sorted
+#
+#         Returns
+#         -------
+#
+#         """
+#         if self.max_ is None:
+#             max_ = np.min([sig[-1] for sig in data])
+#         else:
+#             max_ = self.max_
+#         if self.min_ is None:
+#             min_ = np.max([sig[0] for sig in data])
+#         else:
+#             min_ = self.min_
+#
+#         return min_, max_

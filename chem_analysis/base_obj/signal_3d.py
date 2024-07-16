@@ -2,6 +2,7 @@ from typing import Sequence, Iterable
 
 import numpy as np
 
+from chem_analysis.base_obj.unify_methods_2d import UnifyMethod2D, UnifyMethodStrict2D
 from chem_analysis.processing.processor import Processor
 from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.base_obj.signal_2d import Signal2D
@@ -16,14 +17,14 @@ def validate_input(x_raw: np.ndarray, y_raw: np.ndarray, z_raw: np.ndarray, w_ra
         raise ValueError(f"'z_raw' must shape 1. \n\treceived: {z_raw.shape}")
     if len(w_raw.shape) != 3:
         raise ValueError(f"'w_raw' must shape 3. \n\treceived: {w_raw.shape}")
-    if x_raw.shape != w_raw.shape[2]:
-        raise ValueError(f"'x_raw' and 'y_raw[2]' must have same shape. \n\treceived: x_raw:{x_raw.shape} "
+    if x_raw.shape[0] != w_raw.shape[2]:
+        raise ValueError(f"'x_raw' and 'w_raw[2]' must have same shape. \n\treceived: x_raw:{x_raw.shape} "
                          f"|| w_raw.shape[2]: {w_raw.shape[2]}")
-    if y_raw.shape != w_raw.shape[1]:
-        raise ValueError(f"'y_raw' and 'y_raw[1]' must have same shape. \n\treceived: y_raw:{y_raw.shape} "
+    if y_raw.shape[0] != w_raw.shape[1]:
+        raise ValueError(f"'y_raw' and 'w_raw[1]' must have same shape. \n\treceived: y_raw:{y_raw.shape} "
                          f"|| w_raw.shape[1]: {w_raw.shape[1]}")
-    if z_raw.shape != w_raw.shape[0]:
-        raise ValueError(f"'z_raw' and 'y_raw[1]' must have same shape. \n\treceived: z_raw:{z_raw.shape} "
+    if z_raw.shape[0] != w_raw.shape[0]:
+        raise ValueError(f"'z_raw' and 'w_raw[0]' must have same shape. \n\treceived: z_raw:{z_raw.shape} "
                          f"|| w_raw.shape[0]: {w_raw.shape[0]}")
 
 
@@ -37,10 +38,10 @@ class Signal3D:
     _peak_type = PeakBounded
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
-                 z_raw: np.ndarray,
-                 w_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 z: np.ndarray,
+                 w: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
@@ -52,13 +53,13 @@ class Signal3D:
 
         Parameters
         ----------
-        x_raw: np.ndarray[i]
+        x: np.ndarray[i]
             raw x data, length i
-        y_raw: np.ndarray[j]
+        y: np.ndarray[j]
             raw y data, length j
-        z_raw: np.ndarray[k]
+        z: np.ndarray[k]
             raw z data, length k
-        w_raw: np.ndarray[k,j,i]
+        w: np.ndarray[k,j,i]
             raw z data, shape k,j,i
         x_label: str
             x-axis label
@@ -71,12 +72,12 @@ class Signal3D:
         name: str
             user defined name
         """
-        validate_input(x_raw, y_raw, z_raw, w_raw)
+        validate_input(x, y, z, w)
 
-        self.x_raw = x_raw
-        self.y_raw = y_raw
-        self.z_raw = z_raw
-        self.w_raw = w_raw
+        self.x_raw = x
+        self.y_raw = y
+        self.z_raw = z
+        self.w_raw = w
         self.id_ = id_ or Signal3D.__count
         Signal3D.__count += 1
         self.name = name or f"signal3D_{self.id_}"
@@ -152,32 +153,23 @@ class Signal3D:
     def from_signals(cls,
                      signals: Sequence[Signal2D],
                      z: np.ndarray = None,
-                     w_label: str = None
+                     z_label: str = None,
+                     unify_method: UnifyMethod2D = UnifyMethodStrict2D(),
                      ):  # -> Signal3D
         """ Turn Sequence of Signal2Ds into a Signal3D"""
-        if z and len(z.shape) != 1 and z.shape[0] == len(signals):
-            raise ValueError("The number of signals must be the same as the number of z points.\n"
-                             f"\tnumber of signals: {len(signals)}\n\tnumber of z points:{z.shape[0]}")
+        if z is None:
+            z = np.arange(len(signals))
+        else:
+            if len(z.shape) != 1 and z.shape[0] == len(signals):
+                raise ValueError("The number of signals must be the same as the number of z points.\n"
+                                 f"\tnumber of signals: {len(signals)}\n\tnumber of z points:{z.shape[0]}")
 
-        x = signals[0].x
-        y = signals[0].y
         x_label = signals[0].x_label
         y_label = signals[0].y_label
-        z_label = signals[0].z_label
+        w_label = signals[0].z_label
 
-        z = z or np.empty(len(signals))
-        w = np.empty((len(signals), len(x)), dtype=signals[0].y.dtype)
-        for i, sig in enumerate(signals):
-            if np.all(sig.x != x):
-                raise ValueError(f"Signal {i} has a different x-axis than first signal.")
-            w[i, :] = sig.y
-            if hasattr(sig, "time_"):
-                z[i] = sig.time_
-            else:
-                z[i] = i
-
-        return cls(x_raw=x, y_raw=y, z_raw=z, w_raw=w, x_label=x_label, y_label=y_label,
-                   z_label=z_label, w_label=w_label)
+        x, y, w = unify_method.run(signals)
+        return cls(x, y, z, w, x_label=x_label, y_label=y_label, z_label=z_label, w_label=w_label)
 
     ####################################################################################################################
     ## Save/Load from file #############################################################################################

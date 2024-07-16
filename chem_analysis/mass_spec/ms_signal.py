@@ -11,10 +11,11 @@ class MSSignal(Signal):
     """
     Mass spectrum Signal
     """
+    _discrete = True
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  parameters: MSParameters = None,
@@ -23,7 +24,7 @@ class MSSignal(Signal):
                  ):
         x_label = x_label or "mass-to-charge"
         y_label = y_label or "counts"
-        super().__init__(x_raw, y_raw, x_label, y_label, name, id_)
+        super().__init__(x, y, x_label, y_label, name, id_)
         self.parameters = parameters
 
     @property

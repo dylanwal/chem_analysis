@@ -9,9 +9,9 @@ class GCSignal2D(Signal2D):
     Gas Chromatogram Signal
     """
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
-                 z_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 z: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
@@ -22,6 +22,6 @@ class GCSignal2D(Signal2D):
         x_label = x_label or "retention time"
         y_label = y_label or "time"
         z_label = z_label or "intensity"
-        super().__init__(x_raw, y_raw, z_raw, x_label, y_label, z_label, name, id_)
+        super().__init__(x, y, z, x_label, y_label, z_label, name, id_)
         self.parameters = parameters
 

@@ -7,6 +7,7 @@ from chem_analysis.base_obj.unify_methods import UnifyMethod, UnifyMethodStrict
 from chem_analysis.processing.processor import Processor
 from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.utils.math import unpack_signal2D
 
 
 def validate_input(x_raw: np.ndarray, y_raw: np.ndarray, z_raw: np.ndarray):
@@ -35,9 +36,9 @@ class Signal2D:
     _signal = Signal
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
-                 z_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 z: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
@@ -48,11 +49,11 @@ class Signal2D:
 
         Parameters
         ----------
-        x_raw: np.ndarray[i]
+        x: np.ndarray[i]
             raw x data, length i
-        y_raw: np.ndarray[j]
+        y: np.ndarray[j]
             raw y data, length j
-        z_raw: np.ndarray[j,i]
+        z: np.ndarray[j,i]
             raw z data, shape j,i
         x_label: str
             x-axis label
@@ -63,11 +64,11 @@ class Signal2D:
         name: str
             user defined name
         """
-        validate_input(x_raw, y_raw, z_raw)
+        validate_input(x, y, z)
 
-        self.x_raw = x_raw
-        self.y_raw = y_raw
-        self.z_raw = z_raw
+        self.x_raw = x
+        self.y_raw = y
+        self.z_raw = z
         self.id_ = id_ or Signal2D.__count
         Signal2D.__count += 1
         self.name = name or f"signal_{self.id_}"
@@ -126,10 +127,10 @@ class Signal2D:
 
     def get_signal(self, y_index: int, processed: bool = False) -> Signal:
         if processed:
-            sig = self._signal(x_raw=self.x, y_raw=self.z[y_index, :], x_label=self.x_label,
+            sig = self._signal(x=self.x, y=self.z[y_index, :], x_label=self.x_label,
                                y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
         else:
-            sig = self._signal(x_raw=self.x_raw, y_raw=self.z_raw[y_index, :], x_label=self.x_label,
+            sig = self._signal(x=self.x_raw, y=self.z_raw[y_index, :], x_label=self.x_label,
                                y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
             sig.processor = self.processor.get_copy()
         sig.y_value = self.y[y_index]
@@ -144,7 +145,7 @@ class Signal2D:
                      ):  # -> Signal2D
         """ Turn Sequence of Signals into a Signal2D"""
         if y is None:
-            y = np.empty(len(signals))
+            y = np.arange(len(signals))
         else:
             if len(y.shape) != 1 and y.shape[0] == len(signals):
                 raise ValueError("The number of signals must be the same as the number of y points.\n"
@@ -153,44 +154,11 @@ class Signal2D:
         x_label = signals[0].x_label
         z_label = signals[0].y_label
         x, z = unify_method.run(signals)
-        return cls(x_raw=x, y_raw=y, z_raw=z, x_label=x_label, y_label=y_label, z_label=z_label)
+        return cls(x, y, z, x_label=x_label, y_label=y_label, z_label=z_label)
 
     ####################################################################################################################
     ## Save/Load from file #############################################################################################
     ####################################################################################################################
-
-    @classmethod
-    def from_file(cls, path: str | pathlib.Path):
-        from chem_analysis.utils.feather_format import feather_to_numpy
-        from chem_analysis.utils.math import unpack_signal2D
-
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-
-        if path.suffix == ".csv":
-            z = np.loadtxt(path, delimiter=",")
-            x, y, z = unpack_signal2D(z)
-            x_label = y_label = z_label = None
-
-        elif path.suffix == ".feather":
-            z, names = feather_to_numpy(path)
-            x, y, z = unpack_signal2D(z)
-            if names[0] != "0":
-                x_label = names[0]
-                y_label = names[1]
-                z_label = names[2]
-            else:
-                x_label = y_label = z_label = None
-
-        elif path.suffix == ".npy":
-            z = np.load(str(path))
-            x, y, z = unpack_signal2D(z)
-            x_label = y_label = z_label = None
-        else:
-            raise NotImplemented("File type currently not supported.")
-
-        return cls(x_raw=x, y_raw=y, z_raw=z, x_label=x_label, y_label=y_label, z_label=z_label)
-
     def to_feather(self, path: str | pathlib.Path):
         from chem_analysis.utils.feather_format import numpy_to_feather
         from chem_analysis.utils.math import pack_time_series
@@ -217,3 +185,41 @@ class Signal2D:
         from chem_analysis.utils.math import pack_time_series
 
         np.save(path, pack_time_series(self.x, self.y, self.z), **kwargs)
+
+    def to_npz(self, path: str | pathlib.Path, **kwargs):
+        """Save an array to a binary file in NumPy ``.npz`` format."""
+        np.savez(path, x=self.x, y=self.y, z=self.z, **kwargs)
+
+    @classmethod
+    def from_csv(cls, path: str | pathlib.Path):
+        z = np.loadtxt(path, delimiter=",")
+        x, y, z = unpack_signal2D(z)
+        x_label = y_label = z_label = None
+        return cls(x, y, z, x_label=x_label, y_label=y_label, z_label=z_label)
+
+    @classmethod
+    def from_feather(cls, path: str | pathlib.Path):
+        from chem_analysis.utils.feather_format import feather_to_numpy
+        z, names = feather_to_numpy(path)
+        x, y, z = unpack_signal2D(z)
+        if names[0] != "0":
+            x_label = names[0]
+            y_label = names[1]
+            z_label = names[2]
+        else:
+            x_label = y_label = z_label = None
+        return cls(x, y, z, x_label=x_label, y_label=y_label, z_label=z_label)
+
+    @classmethod
+    def from_npy(cls, path: str | pathlib.Path):
+        z = np.load(str(path))
+        x, y, z = unpack_signal2D(z)
+        x_label = y_label = z_label = None
+        return cls(x, y, z, x_label=x_label, y_label=y_label, z_label=z_label)
+
+    @classmethod
+    def from_npz(cls, path: str | pathlib.Path):
+        npzfile = np.load(str(path))
+        x, y, z = npzfile['x'], npzfile['y'], npzfile['z']
+        x_label = y_label = z_label = None
+        return cls(x, y, z, x_label=x_label, y_label=y_label, z_label=z_label)

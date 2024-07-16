@@ -4,6 +4,7 @@ import numpy as np
 
 from chem_analysis.gc_lc.gc_parameters import GCParameters
 from chem_analysis.gc_lc.gc_signal import GCSignal
+from chem_analysis.mass_spec.ms_signal import MSSignal
 from chem_analysis.mass_spec.ms_signal_2D import MSSignal2D
 from chem_analysis.gc_lc.gc_ms_signal import GCMSSignal
 
@@ -25,15 +26,16 @@ class GCParser:
                 if len(sig[0]) == 0:
                     data[i] = [np.array([0]), np.array([0])]
 
-            ms_data_2d = MSSignal2D.from_list(data=data, y=ms_data.pop('time'))
+            ms_list = [MSSignal(x=ms[0], y=ms[1]) for ms in data]
+            ms_data_2d = MSSignal2D.from_signals(ms_list, y=ms_data.pop('time'))
             ms_data_2d.name = ms_data.pop('sample_name')
             gc_signal = GCMSSignal(ms_raw=ms_data_2d)
             gc_signal.parameters = GCParameters(**(ini_data | ms_data))
 
         if fid_data is not None:
             fid_signal = GCSignal(
-                x_raw=fid_data.pop('time'),
-                data_raw=fid_data.pop('data'),
+                x=fid_data.pop('time'),
+                y=fid_data.pop('data'),
                 name=fid_data.pop('sample_name')
             )
             fid_signal.parameters = GCParameters(**(ini_data | fid_data))

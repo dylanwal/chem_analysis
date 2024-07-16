@@ -26,8 +26,8 @@ class Signal:
     __count = 0
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  name: str = None,
@@ -37,9 +37,9 @@ class Signal:
 
         Parameters
         ----------
-        x_raw: np.ndarray[i]
+        x: np.ndarray[i]
             raw x data, i length
-        y_raw: np.ndarray[i]
+        y: np.ndarray[i]
             raw y data, i length
         x_label: str
             x-axis label
@@ -48,10 +48,10 @@ class Signal:
         name: str
             user defined name
         """
-        validate_input(x_raw, y_raw)
+        validate_input(x, y)
 
-        self.x_raw = x_raw
-        self.y_raw = y_raw
+        self.x_raw = x
+        self.y_raw = y
         self.id_ = id_ or Signal.__count
         Signal.__count += 1
         self.name = name or f"signal_{self.id_}"

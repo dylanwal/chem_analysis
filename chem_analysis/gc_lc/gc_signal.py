@@ -9,8 +9,8 @@ class GCSignal(Signal):
     Gas Chromatogram Signal
     """
     def __init__(self,
-                 x_raw: np.ndarray,
-                 data_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  parameters: MSParameters = None,
@@ -19,7 +19,7 @@ class GCSignal(Signal):
                  ):
         x_label = x_label or "retention time"
         y_label = y_label or "intensity"
-        super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
+        super().__init__(x, y, x_label, y_label, name, id_)
         self.parameters = parameters
 
 

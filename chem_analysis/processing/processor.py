@@ -45,7 +45,7 @@ class Processor:
         for method in self._methods:
             if z is None:
                 x, y = method.run(x, y)
-            if w is None:
+            elif w is None:
                 x, y, z = method.run2D(x, y, z)
             else:
                 x, y, z, w = method.run3D(x, y, z, w)
