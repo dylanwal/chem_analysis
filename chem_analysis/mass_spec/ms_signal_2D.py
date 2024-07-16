@@ -3,19 +3,19 @@ from typing import Sequence
 
 import numpy as np
 
-from chem_analysis.base_obj.signal_discrete import SignalDiscrete
-from chem_analysis.base_obj.signal_discrete_2d import SignalDiscrete2D
+from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.mass_spec.ms_signal import MSSignal
 from chem_analysis.mass_spec.ms_parameters import MSParameters
 
 
-class MSSignal2D(SignalDiscrete2D):
+class MSSignal2D(Signal2D):
     _signal = MSSignal
 
     def __init__(self,
                  x_raw: np.ndarray,
                  y_raw: np.ndarray,
-                 data_raw: np.ndarray,
+                 z_raw: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
@@ -26,7 +26,7 @@ class MSSignal2D(SignalDiscrete2D):
         x_label = x_label or "mass-to-charge"
         y_label = y_label or "time"
         z_label = z_label or "counts"
-        super().__init__(x_raw, y_raw, data_raw, x_label, y_label, z_label, name, id_)
+        super().__init__(x_raw, y_raw, z_raw, x_label, y_label, z_label, name, id_)
         self.parameters = parameters
 
     def get_signal(self, index: int, processed: bool = False) -> MSSignal:
@@ -34,7 +34,7 @@ class MSSignal2D(SignalDiscrete2D):
 
     @classmethod
     def from_signals(cls,
-                     signals: Sequence[SignalDiscrete],
+                     signals: Sequence[Signal],
                      y: np.ndarray = None,
                      x_label: str = None,
                      y_label: str = None,

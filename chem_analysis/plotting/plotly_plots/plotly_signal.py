@@ -20,7 +20,7 @@ def plotly_signal(
     if raw:
         name = signal.name + "_raw"
         x = signal.x_raw
-        y = signal.data_raw
+        y = signal.y_raw
     else:
         x = signal.x
         y = signal.y

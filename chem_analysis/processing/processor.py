@@ -39,18 +39,23 @@ class Processor:
             self._methods.pop(method)
         self.processed = False
 
-    def run(self, x: np.ndarray, y: np.ndarray, z: np.ndarray | None = None) \
-            -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def run(self, x: np.ndarray, y: np.ndarray, z: np.ndarray | None = None, w: np.ndarray | None = None) \
+            -> (tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]
+                | tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]):
         for method in self._methods:
             if z is None:
                 x, y = method.run(x, y)
-            else:
+            if w is None:
                 x, y, z = method.run2D(x, y, z)
+            else:
+                x, y, z, w = method.run3D(x, y, z, w)
 
         self.processed = True
         if z is None:
             return x, y
-        return x, y, z
+        if w is None:
+            return x, y, z
+        return x, y, z, w
 
     def get_copy(self) -> Processor:
         copy_ = copy.deepcopy(self)

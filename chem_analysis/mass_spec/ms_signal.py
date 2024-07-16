@@ -1,20 +1,20 @@
 import logging
 import numpy as np
 
-from chem_analysis.base_obj.signal_discrete import SignalDiscrete
+from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.mass_spec.ms_parameters import MSParameters
 
 logger = logging.getLogger(__name__)
 
 
-class MSSignal(SignalDiscrete):
+class MSSignal(Signal):
     """
     Mass spectrum Signal
     """
 
     def __init__(self,
                  x_raw: np.ndarray,
-                 data_raw: np.ndarray,
+                 y_raw: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  parameters: MSParameters = None,
@@ -23,7 +23,7 @@ class MSSignal(SignalDiscrete):
                  ):
         x_label = x_label or "mass-to-charge"
         y_label = y_label or "counts"
-        super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
+        super().__init__(x_raw, y_raw, x_label, y_label, name, id_)
         self.parameters = parameters
 
     @property
@@ -53,7 +53,7 @@ class MSSignal(SignalDiscrete):
     def get_intensity(self, mz: int | float) -> int | float:
         if mz in self.mz:
             index = np.where(self.mz == mz)[0][0]
-            return self.data[index]
+            return self.y[index]
 
         #TODO: add approx option
 

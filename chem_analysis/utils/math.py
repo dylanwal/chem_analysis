@@ -398,3 +398,18 @@ def map_discrete_x_axis(x_new: np.ndarray, x_old: np.ndarray, y_old: np.ndarray,
     y_new[index] = y_old
 
     return y_new
+
+
+def get_all_unique_values_within_tolerance(arrays: Sequence[np.ndarray], **kwargs) -> np.ndarray:
+    if len(kwargs) == 0:
+        kwargs = {"rtol": 0.01}
+    combined_array = np.concatenate(arrays)
+    sorted_array = np.sort(combined_array)
+
+    # Compare each value to the last added unique value
+    unique_values = [sorted_array[0]]
+    for value in sorted_array[1:]:
+        if not np.isclose(value, unique_values[-1], **kwargs):
+            unique_values.append(value)
+
+    return np.array(unique_values)

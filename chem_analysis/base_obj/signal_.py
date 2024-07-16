@@ -7,14 +7,14 @@ import chem_analysis.utils.math as general_math
 from chem_analysis.processing.processor import Processor
 
 
-def validate_input(x_raw: np.ndarray, data_raw: np.ndarray):
+def validate_input(x_raw: np.ndarray, y_raw: np.ndarray):
     if len(x_raw.shape) != 1:
         raise ValueError(f"'x_raw' must shape 1. \n\treceived: {x_raw.shape}")
-    if len(data_raw.shape) != 1:
-        raise ValueError(f"'data_raw' must shape 1. \n\treceived: {data_raw.shape}")
-    if x_raw.shape != data_raw.shape:
-        raise ValueError(f"'x_raw' and 'data_raw' must have same shape. \n\treceived: x_raw:{x_raw.shape} || data_raw: "
-                         f"{data_raw.shape}")
+    if len(y_raw.shape) != 1:
+        raise ValueError(f"'y_raw' must shape 1. \n\treceived: {y_raw.shape}")
+    if x_raw.shape != y_raw.shape:
+        raise ValueError(f"'x_raw' and 'y_raw' must have same shape. \n\treceived: x_raw:{x_raw.shape} || y_raw: "
+                         f"{y_raw.shape}")
 
 
 class Signal:
@@ -27,7 +27,7 @@ class Signal:
 
     def __init__(self,
                  x_raw: np.ndarray,
-                 data_raw: np.ndarray,
+                 y_raw: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  name: str = None,
@@ -39,7 +39,7 @@ class Signal:
         ----------
         x_raw: np.ndarray[i]
             raw x data, i length
-        data_raw: np.ndarray[i]
+        y_raw: np.ndarray[i]
             raw y data, i length
         x_label: str
             x-axis label
@@ -48,10 +48,10 @@ class Signal:
         name: str
             user defined name
         """
-        validate_input(x_raw, data_raw)
+        validate_input(x_raw, y_raw)
 
         self.x_raw = x_raw
-        self.data_raw = data_raw
+        self.y_raw = y_raw
         self.id_ = id_ or Signal.__count
         Signal.__count += 1
         self.name = name or f"signal_{self.id_}"
@@ -60,41 +60,32 @@ class Signal:
 
         self.processor = Processor()
         self._x = None
-        self._data = None
+        self._y = None
 
     def __repr__(self):
         text = f"{self.name}: "
         text += f"{self.x_label} vs {self.y_label}"
-        text += f" (pts: {len(self)})"
+        text += f" (pts: {len(self.x)})"
         return text
 
-    def __len__(self) -> int:
-        return len(self.x)
-
     def _process(self):
-        self._x, self._data = self.processor.run(self.x_raw, self.data_raw)
+        self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
 
     @property
     def x(self) -> np.ndarray:
         if not self.processor.processed:
             self._process()
-
         return self._x
 
     @property
-    def data(self) -> np.ndarray:
+    def y(self) -> np.ndarray:
         if not self.processor.processed:
             self._process()
-
-        return self._data
-
-    @property
-    def y(self) -> np.ndarray:
-        return self.data
+        return self._y
 
     def y_normalized_by_max(self, x_range: Sequence[int | float] = None) -> np.ndarray:
         if x_range is None:
-            return self.y/np.max(self.y)
+            return self.y / np.max(self.y)
         return general_math.normalize_by_max_with_x_range(x=self.x, y=self.y, x_range=x_range)
 
     def y_normalized_by_area(self, x_range: Sequence[int | float] = None) -> np.ndarray:
@@ -102,17 +93,17 @@ class Signal:
             return general_math.normalize_by_area(x=self.x, y=self.y)
         return general_math.y_normalized_by_area_with_x_range(x=self.x, y=self.y, x_range=x_range)
 
-    def to_dict(self, sanitize: bool = False) -> dict:
+    def to_dict(self, data_as_list: bool = False) -> dict:
         dict_ = {
             "name": self.name,
             "x_label": self.x_label,
             "y_label": self.y_label,
             "id_": self.id_
         }
-        if sanitize:
-            dict_["data"] = np.column_stack([self.x, self.y]).tolist()
+        if data_as_list:
+            dict_["y"] = np.column_stack([self.x, self.y]).tolist()
         else:
-            dict_["data"] = np.column_stack([self.x, self.y])
+            dict_["y"] = np.column_stack([self.x, self.y])
 
         return dict_
 
@@ -124,7 +115,7 @@ class Signal:
 
         kwargs = kwargs or dict()
         with open(path, 'w', encoding=encoding) as file:
-            json.dump(self.to_dict(sanitize=True), file, **kwargs)
+            json.dump(self.to_dict(data_as_list=True), file, **kwargs)
 
     def to_csv(self, path: str | pathlib.Path, headers: bool = False, encoding: str = "utf-8"):
         kwargs = {"encoding": encoding}
@@ -167,7 +158,7 @@ class Signal:
         with open(path, 'r', encoding=encoding) as file:
             data = json.load(file)
 
-        signal = np.array(data['data'])
+        signal = np.array(data['y'])
         x = signal[:, 0]
         y = signal[:, 1]
         return cls(x, y, x_label=data['x_label'], y_label=data['y_label'], id_=data['id_'])
