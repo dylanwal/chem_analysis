@@ -12,9 +12,9 @@ class ReplaceSlices(Edit):
                  x_slices: slice | Iterable[slice] = None,  # TODO: generalize to n dimensions
                  y_slices: slice | Iterable[slice] = None,
                  invert: bool = False,
-                 non_temporal_processing: bool = False
+                 temporal_processing: int = 1
                  ):
-        super().__init__(non_temporal_processing)
+        super().__init__(temporal_processing)
         if x_slices is None and y_slices is None:
             raise ValueError(f"Both '{type(self).__name__}.x_step' and '{type(self).__name__}.y_step' can't be None.")
         self.x_slices = x_slices
@@ -49,7 +49,7 @@ class ReplaceSlices(Edit):
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError("this should never be called as 'run2D' is overloaded")
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()
 
@@ -60,9 +60,9 @@ class ReplaceSpans(Edit):
                  x_spans: Sequence[float] | Iterable[Sequence[float]] = None,  # Sequence of length 2  # TODO: generalize to n dimensions
                  y_spans: Sequence[float] | Iterable[Sequence[float]] = None,  # Sequence of length 2
                  invert: bool = False,
-                 non_temporal_processing: bool = False
+                 temporal_processing: int = 1
                  ):
-        super().__init__(non_temporal_processing)
+        super().__init__(temporal_processing)
         if x_spans is None and y_spans is None:
             raise ValueError("Both 'EveryN.x_step' and 'EveryN.y_step' can't be None.")
         self.x_spans = x_spans
@@ -97,7 +97,7 @@ class ReplaceSpans(Edit):
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError("this should never be called as 'run2D' is overloaded")
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()
 

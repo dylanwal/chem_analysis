@@ -11,9 +11,9 @@ class ScaleMax(Translation):
                  range_index: slice = None,
                  new_max_value: int | float = None,
                  wrap: bool = True,
-                 non_temporal_processing: bool = False
+                 temporal_processing: int = 1
                  ):
-        super().__init__(non_temporal_processing)
+        super().__init__(temporal_processing)
         self.range_ = range_
         self.range_index = range_index
         self.new_max_value = new_max_value
@@ -44,6 +44,6 @@ class ScaleMax(Translation):
         self.scale = self.new_max_value / np.max(z[:, self.range_index], axis=1)
         return x, y, z * self.scale.reshape(-1, 1)
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def __run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()

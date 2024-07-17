@@ -10,10 +10,10 @@ class Subtract(Baseline):
                  y: np.ndarray,
                  x: np.ndarray = None,
                  multiplier: float = 1,
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.y_sub = y
         self.x_sub = x
         self.multiplier = multiplier
@@ -30,10 +30,10 @@ class SubtractOptimize(Baseline):
                  y: np.ndarray,
                  x: np.ndarray = None,
                  bounds: tuple[float, float] = (-2, 2),
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.y_sub = y
         self.x_sub = x
         self.bounds = bounds

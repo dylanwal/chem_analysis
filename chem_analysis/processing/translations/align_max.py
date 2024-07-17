@@ -1,12 +1,20 @@
 
+import numpy as np
 
-class AlignMax(Translations):
+from chem_analysis.processing.processing_method import Translation
+from chem_analysis.utils.math import get_slice
+from chem_analysis.processing.translations.horizontal_shift import HorizontalShift
+
+
+class AlignMax(Translation):
     def __init__(self,
                  range_: tuple[float, float] = None,
                  range_index: slice = None,
                  x_value: int | float = None,
-                 wrap: bool = True
+                 wrap: bool = True,
+                 temporal_processing: int = 1
                  ):
+        super().__init__(temporal_processing)
         self.range_ = range_
         self.range_index = range_index
         self.x_value = x_value
@@ -27,7 +35,7 @@ class AlignMax(Translations):
         self.x_value_index = np.argmin(np.abs(x - self.x_value))
         self.shift_index = self.x_value_index - max_indices
 
-        translation = Horizontal(shift_index=self.shift_index, wrap=self.wrap)
+        translation = HorizontalShift(shift_index=self.shift_index, wrap=self.wrap)
         return translation.run(x, y)
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -46,9 +54,9 @@ class AlignMax(Translations):
         max_indices = np.argmax(z[:, self.range_index], axis=1) + self.range_index.start
         self.shift_index = self.x_value_index - max_indices
 
-        translation = Horizontal(shift_index=self.shift_index, wrap=self.wrap)
+        translation = HorizontalShift(shift_index=self.shift_index, wrap=self.wrap)
         return translation._run2D(x, y, z)
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def __run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()

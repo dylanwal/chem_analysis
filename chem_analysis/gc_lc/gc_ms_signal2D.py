@@ -1,4 +1,5 @@
 import logging
+import pathlib
 from typing import Sequence
 
 import numpy as np
@@ -28,6 +29,12 @@ class GCMSSignal2D(Signal2D):
         super().__init__(ms.y_raw, ms.z_raw, z_raw, x_label, y_label, z_label, name)
         self.ms = ms
 
+    def recompute_from_ms(self):
+        self.x_raw = self.ms.y_raw
+        self.y_raw = self.ms.z_raw
+        self.z_raw = np.sum(self.ms.w_raw, axis=2)
+        self.processor.processed = False
+
     def get_signal(self, y_index: int, processed: bool = False) -> GCMSSignal:
         return super().get_signal(y_index, processed)
 
@@ -50,3 +57,11 @@ class GCMSSignal2D(Signal2D):
         ms = MSSignal3D.from_signals([sig.ms_raw for sig in signals], y, y_label, unify_method)
         return cls(ms=ms, x_label=x_label, y_label=y_label, z_label=z_label)
 
+    def to_npz(self, path: str | pathlib.Path, sparse: bool = True, **kwargs):
+        """Save an array to a binary file in NumPy ``.npz`` format."""
+        self.ms.to_npz(path, sparse=sparse, **kwargs)
+
+    @classmethod
+    def from_npz(cls, path: str | pathlib.Path):
+        ms = MSSignal3D.from_npz(path)
+        return cls(ms)

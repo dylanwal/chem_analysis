@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from chem_analysis.processing.smoothing.savitzky_golay import Smoothing
@@ -27,13 +26,13 @@ def rolling_window_main(window: float, m: float, y):
 
     if window % 2 != 0:
         window += 1
-    
+
     span = int(window / 2)
     for i in range(len(y)):
         if i < span:  # left edge
             out[i] = window_calc(y[:window], i, m)
         elif i > len(y) - span:  # right edge
-            out[i] = window_calc(y[window:], i - (len(y) - window), m)
+            out[i] = window_calc(y[window:], int(i - (len(y) - window)), m)
         else:  # middle
             out[i] = window_calc(y[i - span:i + span], span, m)
 
@@ -41,8 +40,8 @@ def rolling_window_main(window: float, m: float, y):
 
 
 class RollingWindow(Smoothing):
-    def __init__(self, window: int = 20, m: float = 2, non_temporal_processing: bool = False):
-        super().__init__(non_temporal_processing)
+    def __init__(self, window: int = 20, m: float = 2, temporal_processing: int = 1):
+        super().__init__(temporal_processing)
         self.window = window
         self.m = m
 
@@ -53,6 +52,6 @@ class RollingWindow(Smoothing):
             -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()

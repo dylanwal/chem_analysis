@@ -5,16 +5,16 @@ from chem_analysis.processing.processing_method import Smoothing
 
 
 class Uniform(Smoothing):
-    def __init__(self, size: float | int = 10, non_temporal_processing: bool = False):
+    def __init__(self, size: float | int = 10, temporal_processing: int = 1):
         """
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.uniform_filter1d.html#scipy.ndimage.uniform_filter1d
 
         Parameters
         ----------
-        size
+        size:
             Size of filter window
         """
-        super().__init__(non_temporal_processing)
+        super().__init__(temporal_processing)
         self.size = size
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -23,13 +23,13 @@ class Uniform(Smoothing):
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         return x, y, uniform_filter(z, size=self.size)
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()
 
 
 class Gaussian(Smoothing):
-    def __init__(self, sigma: float | int = 10, non_temporal_processing: bool = False):
+    def __init__(self, sigma: float | int = 10, temporal_processing: int = 1):
         """
 
         Parameters
@@ -37,7 +37,7 @@ class Gaussian(Smoothing):
         sigma
             Standard deviation for Gaussian kernel.
         """
-        super().__init__(non_temporal_processing)
+        super().__init__(temporal_processing)
         self.sigma = sigma
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -46,6 +46,6 @@ class Gaussian(Smoothing):
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         return x, y, gaussian_filter(z, self.sigma)
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()

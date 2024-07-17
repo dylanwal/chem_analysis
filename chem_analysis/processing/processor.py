@@ -48,7 +48,7 @@ class Processor:
             elif w is None:
                 x, y, z = method.run2D(x, y, z)
             else:
-                x, y, z, w = method.run3D(x, y, z, w)
+                x, y, z, w = method._run3D(x, y, z, w)
 
         self.processed = True
         if z is None:

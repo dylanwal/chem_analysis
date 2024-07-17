@@ -10,10 +10,10 @@ class Polynomial(Baseline):
     def __init__(self,
                  degree: int = 1,
                  weights: DataWeight | Iterable[DataWeight] = None,
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.weights = weights
         self.degree = degree
 

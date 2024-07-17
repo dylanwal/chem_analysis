@@ -9,7 +9,7 @@ class SavitzkyGolay(Smoothing):
     """
 
     """
-    def __init__(self, window_length: int = 10, order: int = 3, non_temporal_processing: bool = False):
+    def __init__(self, window_length: int = 10, order: int = 3, temporal_processing: int = 1):
         """
         The Savitzky Golay filter is a particular type of low-pass filter, well adapted for data smoothing.
         The Savitzky-Golay filter removes high frequency noise from data.
@@ -26,7 +26,7 @@ class SavitzkyGolay(Smoothing):
             The order of the polynomial used to fit the samples.
             order must be less than window_length.
         """
-        super().__init__(non_temporal_processing)
+        super().__init__(temporal_processing)
         if order > window_length:
             raise ValueError(f"'SavitzkyGolay.order'({order}) must be less than window_length ({window_length}).")
         self.window_length = window_length
@@ -39,12 +39,12 @@ class SavitzkyGolay(Smoothing):
         return x, savgol_filter(y, self.window_length, self.order)
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        if self.window_length > len(z.shape[0]):
+        if self.window_length > z.shape[0]:
             raise ValueError(f"'SavitzkyGolay.window_length'({self.window_length}) must be less than or "
-                             f"equal to the first dimension of z ({len(z.shape[0])}).")
+                             f"equal to the first dimension of z ({z.shape[0]}).")
         return x, y, savgol_filter(z, self.window_length, self.order, axis=0)
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()
 

@@ -10,10 +10,10 @@ class BaselineWithMask(Baseline):
     def __init__(self,
                  baseline_method: Baseline,
                  mask: DataWeight | Iterable[DataWeight],
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.baseline_method = baseline_method
         if mask is not None and isinstance(mask, Iterable):
             mask = DataWeightChain(mask)

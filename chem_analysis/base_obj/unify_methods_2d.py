@@ -70,7 +70,7 @@ class UnifyMethodMS2D(UnifyMethod2D):
     def run(self, signals: Sequence[Signal2D]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         x = self.get_x(signals)
         y = self.get_y(signals)
-        z = np.zeros((len(signals), len(y), len(x)), dtype=signals[0].y.dtype)
+        z = np.zeros((len(signals), len(y), len(x)), dtype=signals[0].z.dtype)
         for i, sig in enumerate(signals):
             z[i, :, :] = ca_math.map_discrete_x_axis_2D(x, sig.x.astype(x.dtype), sig.z[:, :len(y)])
         return x, y, z

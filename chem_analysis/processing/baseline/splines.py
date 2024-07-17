@@ -12,10 +12,10 @@ class Spline(Baseline):
                  degree: int = 3,
                  smoothing_factor: float = None,
                  weights: DataWeight | Iterable[DataWeight] = None,
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.weights = weights
         if not (1 <= degree <= 5):
             raise ValueError('Spline.degree must be 1<=degree<=5')

@@ -4,7 +4,7 @@ from chem_analysis.processing.processing_method import PhaseCorrection
 
 
 class Phase0D(PhaseCorrection):
-    def __init__(self, phase, degree=True, domain="F"):
+    def __init__(self, phase, degree=True, domain="F", temporal_processing: int = 1):
         """
 
         Parameters
@@ -14,6 +14,7 @@ class Phase0D(PhaseCorrection):
         degree
         domain
         """
+        super().__init__(temporal_processing)
         self.phase = phase
         self.degree = degree
         self.domain = domain

@@ -64,10 +64,10 @@ def convex_hull_removal(U, wavelengths):
 #     def __init__(self,
 #                  degree: int = 1,
 #                  mask: DataWeight | Iterable[DataWeight] = None,
-#                  non_temporal_processing: bool = False,
+#                  temporal_processing: int = 1,
 #                  save_result: bool = False
 #                  ):
-#         super().__init__(mask, non_temporal_processing, save_result)
+#         super().__init__(mask, temporal_processing, save_result)
 #         self.degree = degree
 #
 #     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:

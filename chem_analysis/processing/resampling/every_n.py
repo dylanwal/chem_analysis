@@ -2,14 +2,14 @@ from typing import Sequence
 
 import numpy as np
 
-from chem_analysis.processing.processing_method import ReSampling
+from chem_analysis.processing.processing_method import Resampling
 
 
-class EveryN(ReSampling):
+class EveryN(Resampling):
     def __init__(self,
                  step: Sequence[int],
                  start_index: Sequence[int] = None,
-                 non_temporal_processing: bool = False
+                 temporal_processing: int = 1
                  ):
         """
 
@@ -22,7 +22,7 @@ class EveryN(ReSampling):
             starting index
             each position in the sequence corresponds to a dimension
         """
-        super().__init__(non_temporal_processing)
+        super().__init__(temporal_processing)
         if not any(isinstance(i, int) and i >= 0 for i in step):
             raise ValueError(f"'{type(self).__name__}.step' must be be positive(>=0) integers.")
         if start_index is not None:
@@ -67,7 +67,7 @@ class EveryN(ReSampling):
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError("this should never be called as 'run2D' is overloaded")
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         if len(self.step) != 3:
             raise ValueError(f"'{type(self).__name__}.step' needs to length 3.")

@@ -1,7 +1,9 @@
 from typing import Sequence, Iterable
+import pathlib
 
 import numpy as np
 
+import chem_analysis.utils.math as math_utils
 from chem_analysis.base_obj.unify_methods_2d import UnifyMethod2D, UnifyMethodStrict2D
 from chem_analysis.processing.processor import Processor
 from chem_analysis.analysis.peak import PeakBounded
@@ -140,10 +142,10 @@ class Signal3D:
 
     def get_signal(self, z_index: int, processed: bool = False) -> Signal2D:
         if processed:
-            sig = Signal2D(x_raw=self.x, y_raw=self.y, z_raw=self.w[z_index, :, :], x_label=self.x_label,
+            sig = Signal2D(x=self.x, y=self.y, z=self.w[z_index, :, :], x_label=self.x_label,
                            y_label=self.y_label, name=f"slice_{self.z_label}: {self.z[z_index]}", id_=z_index)
         else:
-            sig = Signal2D(x_raw=self.x_raw, y_raw=self.y_raw, z_raw=self.w_raw[z_index, :, :], x_label=self.x_label,
+            sig = Signal2D(x=self.x_raw, y=self.y_raw, z=self.w_raw[z_index, :, :], x_label=self.x_label,
                            y_label=self.y_label, name=f"slice_{self.z_label}: {self.z[z_index]}", id_=z_index)
             sig.processor = self.processor.get_copy()
         sig.z_value = self.y[z_index]
@@ -174,46 +176,30 @@ class Signal3D:
     ####################################################################################################################
     ## Save/Load from file #############################################################################################
     ####################################################################################################################
+    def to_npz(self, path: str | pathlib.Path, sparse: bool = False, **kwargs):
+        """Save an array to a binary file in NumPy ``.npz`` format."""
+        if sparse:
+            from chem_analysis.utils.sparse_data import numpy_to_sparse
+            coords, data, shape = numpy_to_sparse(self.w)
+            coords.astype(math_utils.min_uint_dtype(np.max(coords)))
+            np.savez(path, x=self.x, y=self.y, z=self.z, coords=coords, data=data, shape=shape, **kwargs)
+        else:
+            np.savez(path, x=self.x, y=self.y, z=self.z, w=self.w, **kwargs)
 
-    # @classmethod
-    # def from_file(cls, path: str | pathlib.Path):
-    #     from chem_analysis.utils.feather_format import feather_to_numpy
-    #     from chem_analysis.utils.math import unpack_signal2D
-    #
-    #     if isinstance(path, str):
-    #         path = pathlib.Path(path)
-    #
-    #     elif path.suffix == ".npy":
-    #         data = np.load(str(path))
-    #         x, y, z, data = unpack_signal2D(data)
-    #         x_label = y_label = z_label = None
-    #     else:
-    #         raise NotImplemented("File type currently not supported.")
-    #
-    #     return cls(x_raw=x, y_raw=y, y_raw=data, x_label=x_label, y_label=y_label, z_label=z_label)
-    #
-    # def to_feather(self, path: str | pathlib.Path):
-    #     from chem_analysis.utils.feather_format import numpy_to_feather
-    #     from chem_analysis.utils.math import pack_time_series
-    #
-    #     headers = list(str(0) for i in range(len(self.y)+1))
-    #     headers[0] = self.x_label
-    #     headers[1] = self.y_label
-    #     headers[2] = self.z_label
-    #
-    #     numpy_to_feather(pack_time_series(self.x, self.y, self.data), path, headers=headers)
-    #
-    # def to_csv(self, path: str | pathlib.Path, **kwargs):
-    #     from chem_analysis.utils.math import pack_time_series
-    #
-    #     if "encodings" not in kwargs:
-    #         kwargs["encoding"] = "utf-8"
-    #     if "delimiter" not in kwargs:
-    #         kwargs["delimiter"] = ","
-    #
-    #     np.savetxt(path, pack_time_series(self.x, self.time, self.data), **kwargs)  # noqa
-    #
-    # def to_npy(self, path: str | pathlib.Path, **kwargs):
-    #     from chem_analysis.utils.math import pack_time_series
-    #
-    #     np.save(path, pack_time_series(self.x, self.y, self.data), **kwargs)
+    @classmethod
+    def from_npz(cls, path: str | pathlib.Path):
+        npzfile = np.load(str(path))
+        if 'coords' in npzfile.files:
+            # sparse array
+            from chem_analysis.utils.sparse_data import sparse_to_numpy
+            coords = npzfile['coords']
+            data = npzfile['data']
+            shape = npzfile['shape']
+            w = sparse_to_numpy(coords, data, shape)
+        else:
+            w = npzfile['w']
+
+        x, y, z = npzfile['x'], npzfile['y'], npzfile['z']
+        x_label = y_label = z_label = w_label = None
+        return cls(x, y, z, w, x_label=x_label, y_label=y_label, z_label=z_label, w_label=w_label)
+

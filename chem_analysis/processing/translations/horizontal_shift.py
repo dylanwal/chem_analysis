@@ -10,9 +10,9 @@ class HorizontalShift(Translation):
                  shift_x: float | Sequence[float] = None,
                  shift_index: int | Sequence[int] = None,
                  wrap: bool = True,
-                 non_temporal_processing: bool = False
+                 temporal_processing: int = 1
                  ):
-        super().__init__(non_temporal_processing)
+        super().__init__(temporal_processing)
         if (shift_index is None) == (shift_x is None):
             raise ValueError("Provide only one: shift_x or shift_index")
         self.shift_x = shift_x
@@ -86,6 +86,6 @@ class HorizontalShift(Translation):
 
         return x, y, z
 
-    def run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()

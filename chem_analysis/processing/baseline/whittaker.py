@@ -99,10 +99,10 @@ class AsymmetricLeastSquared(Baseline):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.lambda_ = lambda_
         self.p = p
         self.diff_order = diff_order
@@ -216,10 +216,10 @@ class ImprovedAsymmetricLeastSquared(Baseline):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.lambda_ = lambda_
         self.lambda_1 = lambda_1
         self.p = p
@@ -328,10 +328,10 @@ class ReweightedImprovedAsymmetricLeastSquared(Baseline):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.lambda_ = lambda_
         self.diff_order = diff_order
         self.max_iter = max_iter
@@ -437,10 +437,10 @@ class AdaptiveAsymmetricLeastSquared(Baseline):
                  diff_order: int = 2,
                  max_iter: int = 50,
                  tol: float = 1e-3,
-                 non_temporal_processing: bool = False,
+                 temporal_processing: int = 1,
                  save_result: bool = False
                  ):
-        super().__init__(non_temporal_processing, save_result)
+        super().__init__(temporal_processing, save_result)
         self.lambda_ = lambda_
         self.diff_order = diff_order
         self.max_iter = max_iter
