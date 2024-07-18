@@ -6,7 +6,7 @@ import numpy as np
 import chem_analysis.utils.math as math_utils
 from chem_analysis.base_obj.unify_methods_2d import UnifyMethod2D, UnifyMethodStrict2D
 from chem_analysis.processing.processor import Processor
-from chem_analysis.analysis.peak import PeakBounded
+from chem_analysis.analysis.peak import PeakParent2D
 from chem_analysis.base_obj.signal_2d import Signal2D
 
 
@@ -36,8 +36,9 @@ class Signal3D:
     A signal is any x-y-z-w data.
 
     """
+    _signal = Signal2D
     __count = 0
-    _peak_type = PeakBounded
+    _peak_type = PeakParent2D  # TODO: upgrade to 2D bounded
 
     def __init__(self,
                  x: np.ndarray,
@@ -140,15 +141,40 @@ class Signal3D:
             self.w_raw = np.delete(self.w_raw, i, axis=0)
             self.z_raw = np.delete(self.z_raw, i)
 
-    def get_signal(self, z_index: int, processed: bool = False) -> Signal2D:
+    def get_signal(self, z_index: int, processed: bool = False, copy_: bool = False) -> Signal2D:
+        """
+
+        Parameters
+        ----------
+        z_index
+        processed:
+            True: get x, y, w
+            False: get x_raw, y_raw, w_raw
+        copy_:
+            True: data will be a copy.
+            False: data will be a view (until edited)
+
+        Returns
+        -------
+
+        Should return a 'view' and not 'copy'. But will become a copy if edited.
+        https://numpy.org/doc/stable/user/basics.copies.html
+
+        """
         if processed:
-            sig = Signal2D(x=self.x, y=self.y, z=self.w[z_index, :, :], x_label=self.x_label,
-                           y_label=self.y_label, name=f"slice_{self.z_label}: {self.z[z_index]}", id_=z_index)
+            x, y, z = self.x, self.y, self.w[z_index, :]
         else:
-            sig = Signal2D(x=self.x_raw, y=self.y_raw, z=self.w_raw[z_index, :, :], x_label=self.x_label,
-                           y_label=self.y_label, name=f"slice_{self.z_label}: {self.z[z_index]}", id_=z_index)
+            x, y, z = self.x_raw, self.y_raw, self.w_raw[z_index, :]
+
+        if copy_:
+            x, y, z = x.copy(), y.copy(), z.copy()
+
+        sig = self._signal(x=x, y=y, z=z, x_label=self.x_label, y_label=self.y_label,  z_label=self.z_label,
+                           name=f"slice_{self.z_label}: {self.z[z_index]}", id_=z_index)
+        sig.z_value = self.z[z_index]
+        if not processed:
             sig.processor = self.processor.get_copy()
-        sig.z_value = self.y[z_index]
+
         return sig
 
     @classmethod

@@ -125,15 +125,39 @@ class Signal2D:
             self.z_raw = np.delete(self.z_raw, i, axis=0)
             self.y_raw = np.delete(self.y_raw, i)
 
-    def get_signal(self, y_index: int, processed: bool = False) -> Signal:
+    def get_signal(self, y_index: int, processed: bool = False, copy_: bool = False) -> Signal:
+        """
+
+        Parameters
+        ----------
+        y_index
+        processed:
+            True: get x, z
+            False: get x_raw, z_raw
+        copy_:
+            True: data will be a copy.
+            False: data will be a view (until edited)
+
+        Returns
+        -------
+
+        Should return a 'view' and not 'copy'. But will become a copy if edited.
+        https://numpy.org/doc/stable/user/basics.copies.html
+
+        """
         if processed:
-            sig = self._signal(x=self.x, y=self.z[y_index, :], x_label=self.x_label,
-                               y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
+            x, y = self.x, self.z[y_index, :]
         else:
-            sig = self._signal(x=self.x_raw, y=self.z_raw[y_index, :], x_label=self.x_label,
-                               y_label=self.y_label, name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
-            sig.processor = self.processor.get_copy()
+            x, y = self.x_raw, self.z_raw[y_index, :]
+
+        if copy_:
+            x, y = x.copy(), y.copy()
+
+        sig = self._signal(x=x, y=y, x_label=self.x_label, y_label=self.y_label,
+                           name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
         sig.y_value = self.y[y_index]
+        if not processed:
+            sig.processor = self.processor.get_copy()
         return sig
 
     @classmethod

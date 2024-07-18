@@ -25,16 +25,21 @@ def apply_limits(signal, result: ResultPicking):
 def find_peaks_scipy(
         signal: Signal | Signal2D,
         mask: DataWeight = None,
-        scipy_kwargs: dict = None
+        scipy_kwargs: dict = None,
+        timeseries: bool = True,
 ) -> ResultPicking | ResultPicking2D:
     if isinstance(signal, Signal):
         return find_peaks_scipy_single(signal, mask, scipy_kwargs)
-    elif isinstance(signal, Signal2D):
+    elif isinstance(signal, Signal2D) and timeseries:
         results = ResultPicking2D(signal=signal)
-        for i in range(len(signal)):
+        for i in range(len(signal.y)):
             result = find_peaks_scipy_single(signal.get_signal(i, processed=True), mask, scipy_kwargs)
             results.add_result(result)
         return results
+
+    else:
+        #TODO: implement 2d peak detection
+        raise NotImplementedError()
 
 
 def find_peaks_scipy_single(signal: Signal, mask: DataWeight = None, scipy_kwargs: dict = None) -> ResultPicking:

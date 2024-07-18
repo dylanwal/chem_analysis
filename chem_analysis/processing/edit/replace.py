@@ -82,16 +82,13 @@ class ReplaceSpans(Edit):
         if self.x_spans is not None:
             slice_x = Spans(self.x_spans, invert=self.invert)
             mask_x = slice_x.get_mask(x, z)
-        else:
-            mask_x = np.ones_like(x, dtype=np.bool_)
+            z[:, mask_x] = self.value
 
         if self.y_spans is not None:
             slice_y = Spans(self.y_spans, invert=self.invert)
             mask_y = slice_y.get_mask(y, z)
-        else:
-            mask_y = np.ones_like(y, dtype=np.bool_)
+            z[mask_y, :] = self.value
 
-        z[mask_y, mask_x] = self.value
         return x, y, z
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

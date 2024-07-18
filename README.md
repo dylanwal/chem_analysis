@@ -2,14 +2,14 @@
 
 Your one-stop shop for analyzing chemistry data.
 
-This package was developed general, but special attention was paid to analyze large data sets 
-(example: analyzing 1000 NMR at once). 
+This package was developed for general chemistry data analysis, but special attention was paid to analyze large data sets 
+(example: analyzing 1000 NMR at once).  
 
 Design Philosophy:
 * Handle large data sets 
   * Support analyzing 1000s of NMR at once. (like those generated from kinetic analysis)
 * Modular 
-  * be able to turn on or off or switch out methods with minimal code change
+  * Be able to turn on or off or switch out processing or analysis methods with minimal code change
 * Explict
   * Alot of analytic software automatically perform data transforms and hide this from the user making it hard to 
   truly know what's going on with your data. Here everything needs to be called explicitly, but typical processing
@@ -20,15 +20,26 @@ Design Philosophy:
 * IR
 * NMR (Bruker, Spinsolve) - 1D only
 * SEC (GPC)
-* HPLC (coming soon)
-* GC (coming soon)
+* GC and LC/HPLC/UPLC
+* Mass Spec. and GC-MS
 * UV-Vis (coming soon)
-* Mass Spec. (coming soon)
+
 
 ## Installation
 [pypi page](https://pypi.org/project/chem-analysis/)
 
 `pip install chem_analysis`
+
+### Dependencies
+#### Required
+* [numpy](https://github.com/numpy/numpy) (for math)
+* [scipy](https://github.com/scipy/scipy) (for math)
+* [tabulate](https://github.com/astanin/python-tabulate) (for pretty table outputs)
+* [bigsmiles](https://github.com/dylanwal/BigSMILES) (for chemistry (molar weights, SMILES))
+#### Optional
+* [matplotlib](https://github.com/matplotlib/matplotlib) (for plotting)
+* [plotly](https://github.com/plotly/plotly.py) (for plotting)
+* [pyqtgraph](https://github.com/pyqtgraph/pyqtgraph) (for plotting)
 
 ## Capabilities
 ### Processing Methods:
@@ -39,11 +50,15 @@ Design Philosophy:
 * Smoothing
 * Phase correction (NMR)
 * Referencing (NMR)
+* Chromatogram Library Matching (GC, LC/HPLC/UPLC)
+* Mass Spec Library Matching (MS, GC-MS)
 * And more ...
 
 ### Analysis Methods:
+* Peak picking
 * Integration
 * Peak fitting
+* Deconvolution (peaks and MS spectra)
 * Multi-component analysis (MCA)
 * And more ...
 
@@ -52,12 +67,13 @@ Design Philosophy:
   * Popular Python Plotting Library
 * Plotly
   * Provides interactive plots (html)
-  * Zoom in/out a game changer
+  * Zoom in/out is a game changer
 * PyQt
+  * Uses GPU for rendering.
   * Good for lots of data!!
 
 
-## Examples
+## Quick Examples
 
 See [Examples folder] for a large list.
 
@@ -117,5 +133,9 @@ if __name__ == '__main__':
 
 ## Contributing
 
-Contributions are welcomed! Best practice is to open an issue with your idea, and I will let you know if it
+Let's be honest, that are bugs in the code! Pointing them out are much appreciated, and solutions are double appreciated! 
+
+Got a new data type, new algorithm, analysis, etc.? New contributions are welcomed!  
+Best practice is to open an issue with your idea, and I will let you know if it
 is a good fit for the project. If you are interested in helping code the addition please mention that as well. 
+

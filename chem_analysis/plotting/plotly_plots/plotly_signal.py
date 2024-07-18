@@ -12,7 +12,8 @@ def plotly_signal(
         signal: Signal,
         fig: go.Figure | None,
         config: PlotlyConfig | None = None,
-        raw: bool = True
+        raw: bool = True,
+        plot_kwargs: dict | None = None,
 ) -> go.Figure:
     fig, config = PlotlyConfig.input_check(fig, config)
 
@@ -29,9 +30,9 @@ def plotly_signal(
         y = signal.y_normalized_by_max()
 
     if hasattr(signal, "_discrete"):
-        plotly_signal_discrete_core(x, y, fig, name)
+        plotly_signal_discrete_core(x, y, fig, name, **plot_kwargs)
     else:
-        plot_signal_core(x, y, fig, name)
+        plot_signal_core(x, y, fig, name, **plot_kwargs)
 
     fig.layout.xaxis.title = bold_in_html(signal.x_label)
     fig.layout.yaxis.title = bold_in_html(signal.y_label)
@@ -40,12 +41,13 @@ def plotly_signal(
     return fig
 
 
-def plot_signal_core(x: np.ndarray, y: np.ndarray, fig: go.Figure, name: str):
+def plot_signal_core(x: np.ndarray, y: np.ndarray, fig: go.Figure, name: str, **kwargs):
     fig.add_scatter(
         x=x,
         y=y,
         mode="lines",
         name=name,
+        **kwargs
     )
 
 

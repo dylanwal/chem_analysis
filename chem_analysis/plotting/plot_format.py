@@ -3,7 +3,7 @@ import re
 import numpy as np
 
 
-def bold_in_html(text: str):
+def bold_in_html(text: str) -> str:
     return f"<b>{text}</b>"
 
 

@@ -9,7 +9,7 @@ flowchart LR
     Signal2D --multiple--> Signal3D
     Signal3D --extract--> Signal2D
 ```
-
+* `unify_method` is used to convert mutiple signals into a 1D higher dimension. If the singals are all similar than the `unify_method` may only combine the data. However, if signals are all not uniform (same exactly the axis, data point for data point) then the `unify_method` may need to expand or cut or linearly interpolate to make a uniform axis. 
 
 
 ```mermaid
