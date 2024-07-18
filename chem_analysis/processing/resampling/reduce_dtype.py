@@ -20,7 +20,10 @@ class ResampleDtypeNormalize(Resampling):
 
     @property
     def dtype_max(self):
-        return np.iinfo(self.dtype).max
+        try:
+            return np.iinfo(self.dtype).max
+        except ValueError:
+            return np.finfo(self.dtype).max
 
     @property
     def dtype_min(self):

@@ -14,6 +14,7 @@ from chem_analysis.utils.printing_tables import StatsTable
 class PeakParent(Protocol):
     x: np.ndarray
     y: np.ndarray
+    name: str
 
 
 class PeakParent2D(Protocol):

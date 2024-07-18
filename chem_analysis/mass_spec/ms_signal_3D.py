@@ -14,10 +14,10 @@ class MSSignal3D(Signal3D):
     _signal = MSSignal2D
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
-                 t_raw: np.ndarray,
-                 data_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 z: np.ndarray,
+                 w: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
@@ -30,11 +30,11 @@ class MSSignal3D(Signal3D):
         y_label = y_label or "retention time"
         z_label = z_label or "time"
         w_label = w_label or "counts"
-        super().__init__(x_raw, y_raw, t_raw, data_raw, x_label, y_label, z_label, w_label, name, id_)
+        super().__init__(x, y, z, w, x_label, y_label, z_label, w_label, name, id_)
         self.parameters = parameters
 
-    def get_signal(self, index: int, processed: bool = False) -> MSSignal2D:
-        return super().get_signal(index, processed)
+    def get_signal(self, z_index: int, processed: bool = True, copy_: bool = False) -> MSSignal2D:
+        return super().get_signal(z_index, processed, copy_)
 
     @classmethod
     def from_signals(cls,

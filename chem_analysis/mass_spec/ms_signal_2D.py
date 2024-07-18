@@ -30,7 +30,7 @@ class MSSignal2D(Signal2D):
         super().__init__(x, y, z, x_label, y_label, z_label, name, id_)
         self.parameters = parameters
 
-    def get_signal(self, index: int, processed: bool = False) -> MSSignal:
+    def get_signal(self, index: int, processed: bool = True) -> MSSignal:
         return super().get_signal(index, processed)
 
     @classmethod

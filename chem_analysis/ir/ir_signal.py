@@ -7,8 +7,8 @@ class IRSignal(Signal):
     """ IR Signal
     """
     def __init__(self,
-                 x_raw: np.ndarray,
-                 data_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  name: str = None,
@@ -16,7 +16,7 @@ class IRSignal(Signal):
                  ):
         x_label = x_label or "wave_number"
         y_label = y_label or "absorbance"
-        super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
+        super().__init__(x, y, x_label, y_label, name, id_)
 
     @property
     def cm_1(self) -> np.ndarray:

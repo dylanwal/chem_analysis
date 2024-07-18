@@ -20,7 +20,7 @@ def plotly_peaks(
         mode = [mode]
     fig = input_check(fig)
 
-    if len(peaks.peaks) > 0 and not isinstance(peaks.peaks[0], PeakBounded):
+    if len(peaks.peaks) > 0 and (not hasattr(peaks.peaks[0], "parent") or not hasattr(peaks.peaks[0], "max_x")):
         raise ValueError(f"Not supported peak type.\n\tpeak type received: {type(peaks[0])}")
 
     if normalize == 1:

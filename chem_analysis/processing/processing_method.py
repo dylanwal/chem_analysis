@@ -100,6 +100,7 @@ class Baseline(ProcessingMethod, abc.ABC):
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         baseline = self.get_baseline(x, y)
         data = y - baseline
+        data[y==0] = 0
 
         if self.save_result:
             self.baseline = baseline

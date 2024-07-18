@@ -62,6 +62,8 @@ class Signal:
         self._x = None
         self._y = None
 
+        self.extract_value = None
+
     def __repr__(self):
         text = f"{self.name}: "
         text += f"{self.x_label} vs {self.y_label}"

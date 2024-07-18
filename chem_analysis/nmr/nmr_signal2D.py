@@ -8,9 +8,9 @@ class NMRSignalArray(Signal2D):
     _signal = NMRSignal
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 time_raw: np.ndarray,
-                 z_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 z: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
@@ -19,7 +19,7 @@ class NMRSignalArray(Signal2D):
         x_label = x_label or "ppm"
         y_label = y_label or "time"
         z_label = z_label or "signal"
-        super().__init__(x_raw, time_raw, z_raw, x_label, y_label, z_label, name)
+        super().__init__(x, y, z, x_label, y_label, z_label, name)
 
     def get_signal(self, index: int, processed: bool = True) -> NMRSignal:
         if processed:

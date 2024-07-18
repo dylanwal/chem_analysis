@@ -14,9 +14,9 @@ class SECSignalArray(Signal2D):
     _peak_type = PeakSEC
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
-                 z_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 z: np.ndarray,
                  calibration: SECCalibration = None,
                  type_: SECTypes = SECTypes.UNKNOWN,
                  x_label: str = None,
@@ -27,16 +27,16 @@ class SECSignalArray(Signal2D):
         x_label = x_label or "retention_time"
         y_label = y_label or "time"
         z_label = z_label or "signal"
-        super().__init__(x_raw, y_raw, z_raw, x_label, y_label, z_label, name)
+        super().__init__(x, y, z, x_label, y_label, z_label, name)
         self.calibration = calibration
         self.type_ = type_
 
-    def get_signal(self, index: int, processed: bool = False) -> SECSignal:
+    def get_signal(self, index: int, processed: bool = True) -> SECSignal:
         return super().get_signal(index, processed)
 
-    @classmethod
-    def from_file(cls, path: str | pathlib.Path, calibration: SECCalibration = None) -> SECSignalArray:
-        class_ = super().from_file(path)
-        class_.calibration = calibration
-
-        return class_
+    # @classmethod
+    # def from_file(cls, path: str | pathlib.Path, calibration: SECCalibration = None) -> SECSignalArray:
+    #     class_ = super().from_file(path)
+    #     class_.calibration = calibration
+    #
+    #     return class_

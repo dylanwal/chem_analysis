@@ -50,8 +50,8 @@ def load_from_raw_FID_data(data: np.ndarray, parameters: NMRParameters):
 
 class NMRSignal(Signal):
     def __init__(self,
-                 x_raw: np.ndarray,
-                 data_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
                  parameters: NMRParameters = None,
                  x_label: str = None,
                  y_label: str = None,
@@ -60,7 +60,7 @@ class NMRSignal(Signal):
                  ):
         x_label = x_label or "ppm"
         y_label = y_label or "signal"
-        super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
+        super().__init__(x, y, x_label, y_label, name, id_)
 
         self.fid: NMRFID | None = None
         self.parameters = parameters

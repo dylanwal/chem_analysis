@@ -47,8 +47,6 @@ def build_timeseries(folders: list[pathlib.Path], times: np.ndarray) \
 
     fid_timeseries = ca.gc_lc.GCSignal2D.from_signals(fids, times)
     ms_timeseries = ca.gc_lc.GCMSSignal2D.from_signals(mss, times)
-    ms_timeseries.ms.processor.add(ca.processing.resampling.ResampleDtypeNormalize(dtype=np.uint16))
-    ms_timeseries.recompute_from_ms()
     return fid_timeseries, ms_timeseries
 
 

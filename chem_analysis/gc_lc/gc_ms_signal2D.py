@@ -35,8 +35,40 @@ class GCMSSignal2D(Signal2D):
         self.z_raw = np.sum(self.ms.w_raw, axis=2)
         self.processor.processed = False
 
-    def get_signal(self, y_index: int, processed: bool = False) -> GCMSSignal:
-        return super().get_signal(y_index, processed)
+    def get_signal(self, y_index: int, processed: bool = True, copy_: bool = False) -> GCMSSignal:
+        """
+
+        Parameters
+        ----------
+        y_index
+        processed:
+            True: get x, z
+            False: get x_raw, z_raw
+        copy_:
+            True: data will be a copy.
+            False: data will be a view (until edited)
+
+        Returns
+        -------
+
+        Should return a 'view' and not 'copy'. But will become a copy if edited.
+        https://numpy.org/doc/stable/user/basics.copies.html
+
+        """
+        if processed:
+            x, y, ms = self.x, self.z[y_index, :], self.ms.get_signal(y_index, processed=processed)
+        else:
+            x, y, ms = self.x_raw, self.z_raw[y_index, :], self.ms.get_signal(y_index, processed=processed)
+
+        if copy_:
+            x, y, ms = None, None, self.ms.get_signal(y_index, copy_=True)
+
+        sig = self._signal(x=x, y=y, ms=ms, x_label=self.x_label, y_label=self.y_label,
+                           name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
+        sig.extract_value = self.y[y_index]
+        if not processed:
+            sig.processor = self.processor.get_copy()
+        return sig
 
     @classmethod
     def from_signals(cls,

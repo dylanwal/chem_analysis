@@ -24,6 +24,12 @@ class ResultPeaks:
     def __getitem__(self, item: int | slice):
         return self.peaks[item]
 
+    @property
+    def name(self) -> str | None:
+        if self.peaks:
+            return str(self.peaks[0].parent.name)
+        return None
+
     def get_stats(self) -> list[OrderedDict]:
         dicts_ = []
         for peak in self.peaks:

@@ -56,6 +56,4 @@ class MSSignal(Signal):
             index = np.where(self.mz == mz)[0][0]
             return self.y[index]
 
-        #TODO: add approx option
-
         return 0

@@ -24,8 +24,8 @@ class SECSignal(Signal):
     TYPES_ = SECTypes
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 data_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
                  calibration: SECCalibration = None,
                  type_: SECTypes = SECTypes.UNKNOWN,
                  x_label: str = "retention time",
@@ -33,7 +33,7 @@ class SECSignal(Signal):
                  name: str = None,
                  id_: int = None
                  ):
-        super().__init__(x_raw, data_raw, x_label, y_label, name, id_)
+        super().__init__(x, y, x_label, y_label, name, id_)
         self.calibration = calibration
         self.type_ = type_
 

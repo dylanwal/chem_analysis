@@ -1,5 +1,5 @@
 import pathlib
-from typing import Sequence, Iterable
+from typing import Sequence, Iterable, Iterator
 
 import numpy as np
 
@@ -81,6 +81,8 @@ class Signal2D:
         self._y = None
         self._z = None
 
+        self.extract_value = None  # value
+
     def __repr__(self):
         text = f"{self.name}: "
         text += f"{self.x_label} vs. {self.y_label} vs. {self.z_label}"
@@ -125,7 +127,7 @@ class Signal2D:
             self.z_raw = np.delete(self.z_raw, i, axis=0)
             self.y_raw = np.delete(self.y_raw, i)
 
-    def get_signal(self, y_index: int, processed: bool = False, copy_: bool = False) -> Signal:
+    def get_signal(self, y_index: int, processed: bool = True, copy_: bool = False) -> Signal:
         """
 
         Parameters
@@ -155,10 +157,14 @@ class Signal2D:
 
         sig = self._signal(x=x, y=y, x_label=self.x_label, y_label=self.y_label,
                            name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
-        sig.y_value = self.y[y_index]
+        sig.extract_value = self.y[y_index]
         if not processed:
             sig.processor = self.processor.get_copy()
         return sig
+
+    def signal_iter(self) -> Iterator[Signal]:
+        for i in range(self.number_of_signals):
+            yield self.get_signal(i, processed=True)
 
     @classmethod
     def from_signals(cls,

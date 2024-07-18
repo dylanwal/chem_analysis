@@ -9,9 +9,9 @@ class IRSignalArray(Signal2D):
     _signal = IRSignal
 
     def __init__(self,
-                 x_raw: np.ndarray,
-                 y_raw: np.ndarray,
-                 z_raw: np.ndarray,
+                 x: np.ndarray,
+                 y: np.ndarray,
+                 z: np.ndarray,
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
@@ -21,7 +21,7 @@ class IRSignalArray(Signal2D):
         x_label = x_label or "wave_number"
         y_label = y_label or "time"
         z_label = z_label or "absorbance"
-        super().__init__(x_raw, y_raw, z_raw, x_label, y_label, z_label, name, id_)
+        super().__init__(x, y, z, x_label, y_label, z_label, name, id_)
 
     @property
     def cm_1(self) -> np.ndarray:
@@ -39,5 +39,5 @@ class IRSignalArray(Signal2D):
     def transmittance(self) -> np.ndarray:
         return np.exp(-self.data)
 
-    def get_signal(self, index: int, processed: bool = False) -> IRSignal:
+    def get_signal(self, index: int, processed: bool = True) -> IRSignal:
         return super().get_signal(index, processed)

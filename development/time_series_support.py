@@ -1,3 +1,4 @@
+import logging
 import copy
 from collections import OrderedDict
 
@@ -5,6 +6,8 @@ import numpy as np
 import plotly.graph_objs as go
 
 import chem_analysis as ca
+
+logger = logging.getLogger(__name__)
 
 
 class CompoundTimeSeries:
@@ -76,7 +79,8 @@ class ResultTimeSeries:
                 internal_standard = comp
                 break
         else:
-            raise ValueError("Internal standard not found in result.")
+            logger.error(f"Internal standard not found in result ({result.name}). Results dropped")
+            return
 
         comp_for_time_ = []
         for comp in result.peaks:

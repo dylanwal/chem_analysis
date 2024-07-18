@@ -33,7 +33,7 @@ def baseline_section_std(y,
                          ):
     mask = sectioned_std(y, window, sections, number_of_deviations, smoother)
     x = np.arange(len(y))
-    mask[0], mask[-1] = True, True
+    mask[0], mask[-1] = True, True  # include ends
     x_mask = x[mask]
     y_mask = y[mask]
     return gaussian_filter(np.interp(x, x_mask, y_mask), 100)

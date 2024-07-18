@@ -23,11 +23,18 @@ def divide_array(array: np.ndarray, num_sections: int) -> list[slice]:
     return slices
 
 
+def std_by_section(array: np.ndarray, num_sections: int) -> np.ndarray:
+    non_zero_array = array[array != 0]
+    slices = divide_array(non_zero_array, num_sections)
+    return np.array([np.std(non_zero_array[slice_]) for slice_ in slices])
+
+
 def sectioned_std(y,
                   window: int = 3,
                   sections: int = 32,
                   number_of_deviations: int | float = 2,
                   smoother: Smoothing = None,
+                  ignore_zeros: bool = True,
                   ):
     """
     This algorithm assumes the y data contains at least one region with no signals.
@@ -54,31 +61,42 @@ def sectioned_std(y,
         1 where the baseline is
         0 where peaks are
     """
+    if not y.any():  # check if y is all zeros
+        raise ValueError("y must have non-zero elements")
     if smoother is None:
         from chem_analysis.processing.smoothing.convolution import Gaussian
         smoother = Gaussian()
 
     window = max(window, 1)
     # compute noise level by breaking the data into sections and find section with min sigma
-    slices = divide_array(y, sections)
-    min_sigma = np.max(y) - abs(np.min(y))
-    for slice_ in slices:
-        std_ = np.std(y[slice_])
-        if std_ == 0:
-            continue
-        min_sigma = min(min_sigma, std_)
+    stds = std_by_section(y, sections)
+    min_sigma = np.percentile(stds, 5)  # min(stds)
 
-    # smooth specta with convolution
+    # smooth spectra with convolution
     _, smoothed_y = smoother.run(np.empty(0), y)
 
     # evaluate if point is outside min_sigma
     # (max(y_i) - min(y_i)) < n*sigma
     half_window = int(window / 2)
-    padded_smoothed_y = pad_edges_polynomial(smoothed_y, pad_amount=half_window)
+    padded_smoothed_y = pad_edges_polynomial(smoothed_y, degree=2, pad_amount=half_window)
     sliding_window = sliding_window_view(padded_smoothed_y, 2 * half_window + 1)
     mask = np.max(sliding_window, axis=1) - np.min(sliding_window, axis=1) < number_of_deviations * min_sigma
 
+    if ignore_zeros:
+        # added as other processing methods may set values to zero and should be ignored
+        mask[y == 0] = False
+
     return mask
+
+
+
+    min_sigma = np.percentile(y, 5 * number_of_deviations)
+    # min_sigma = np.max(y) - abs(np.min(y))
+    # for slice_ in slices:
+    #     std_ = np.std(y[slice_])
+    #     if std_ == 0:
+    #         continue
+    #     min_sigma = min(min_sigma, std_)
 
 
 class MaxMinSigma(DataWeight):

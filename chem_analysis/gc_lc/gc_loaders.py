@@ -29,7 +29,7 @@ class GCParser:
             ms_list = [MSSignal(x=ms[0], y=ms[1]) for ms in data]
             ms_data_2d = MSSignal2D.from_signals(ms_list, y=ms_data.pop('time'))
             ms_data_2d.name = ms_data.pop('sample_name')
-            gc_signal = GCMSSignal(ms_raw=ms_data_2d)
+            gc_signal = GCMSSignal(ms=ms_data_2d)
             gc_signal.parameters = GCParameters(**(ini_data | ms_data))
 
         if fid_data is not None:

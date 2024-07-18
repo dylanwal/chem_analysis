@@ -95,6 +95,8 @@ class Signal3D:
         self._z = None
         self._w = None
 
+        self.extract_value = None
+
     def __repr__(self):
         text = f"{self.name}: "
         text += f"{self.x_label} vs {self.y_label} vs {self.z_label} vs {self.w_label}"
@@ -141,7 +143,7 @@ class Signal3D:
             self.w_raw = np.delete(self.w_raw, i, axis=0)
             self.z_raw = np.delete(self.z_raw, i)
 
-    def get_signal(self, z_index: int, processed: bool = False, copy_: bool = False) -> Signal2D:
+    def get_signal(self, z_index: int, processed: bool = True, copy_: bool = False) -> Signal2D:
         """
 
         Parameters
@@ -171,7 +173,7 @@ class Signal3D:
 
         sig = self._signal(x=x, y=y, z=z, x_label=self.x_label, y_label=self.y_label,  z_label=self.z_label,
                            name=f"slice_{self.z_label}: {self.z[z_index]}", id_=z_index)
-        sig.z_value = self.z[z_index]
+        sig.extract_value = self.z[z_index]
         if not processed:
             sig.processor = self.processor.get_copy()
 
