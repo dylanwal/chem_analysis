@@ -1,121 +1,144 @@
+from typing import Sequence
 
 import numpy as np
 import plotly.graph_objs as go
 
-from chem_analysis.plotting.plotly_plots.plotly_config import PlotlyConfig
+from chem_analysis.plotting.plotly_plots.plotly_utils import input_check
 from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.analysis.peak_result import ResultPeaks
 from chem_analysis.analysis.ms_analysis.result_search import PeakCompound
-from chem_analysis.plotting.utils import darken_color
 
 
-def plotly_peaks(peaks: ResultPeaks, fig: go.Figure | None, config: PlotlyConfig | None) -> go.Figure:
-    fig, config = PlotlyConfig.input_check(fig, config)
+def plotly_peaks(
+        peaks: ResultPeaks,
+        plot_kwargs: dict,
+        fig: go.Figure | None,
+        mode: int | Sequence[int] = 0,
+        normalize: int = 0,
+) -> go.Figure:
+    if isinstance(mode, int):
+        mode = [mode]
+    fig = input_check(fig)
 
-    # if not isinstance(peaks.peaks[0], PeakBounded):
-    #     raise ValueError(f"Not supported peak type.\n\tpeak type received: {type(peaks[0])}")
+    if len(peaks.peaks) > 0 and not isinstance(peaks.peaks[0], PeakBounded):
+        raise ValueError(f"Not supported peak type.\n\tpeak type received: {type(peaks[0])}")
 
+    if normalize == 1:
+        y_max = np.max(peaks.peaks[0].parent.y_normalized_by_max())
+    if normalize == 2:
+        y_max = np.max(peaks.peaks[0].parent.y_normalized_by_area())
+
+    plot_kwargs["showlegend"] = plot_kwargs.get("showlegend", True)  # show in legend first peak only
+    plot_kwargs["legendgroup"] = plot_kwargs.get("legendgroup", f"peaks ({peaks.peaks[0].parent.name})")
+    plot_kwargs["name"] = plot_kwargs.get("name", plot_kwargs["legendgroup"])
     for peak in peaks.peaks:
-        if isinstance(peak, PeakCompound) and peak.compound is not None:
-            label = peak.compound.label
-        else:
-            label = f"peak {peak.id_}"
+        y = peak.y
+        if normalize > 0:
+            y = y / y_max
 
-        if config.peak_show_shade:
-            plotly_add_peak_shade(fig, peak, config, label)
-        # if config.peak_show_trace:
-        #     plotly_add_peak_trace()
-        # if config.peak_show_bounds:
-        #     plotly_add_peak_bounds(fig, peak, config, label)
-        # if config.peak_show_max:
-        #     plotly_add_peak_max(fig, peak, config, label)
+        if 0 in mode or 1 in mode:
+            plotly_add_peak_trace(fig, peak.x, y, get_hover_stats(peak), mode, plot_kwargs)
+        if 2 in mode:
+            peak_height = np.max(y)
+            plotly_add_peak_bounds(fig, peak.min_x, peak.max_x, peak_height, plot_kwargs)
+        if 3 in mode:
+            peak_height = np.max(y)
+            if isinstance(peak, PeakCompound) and peak.compound is not None:
+                text = peak.compound.label
+            else:
+                text = f"peak {peak.id_}"
+            plotly_add_peak_max(fig, peak.max_x, peak_height, text, plot_kwargs)
+
+        plot_kwargs["showlegend"] = False
 
     return fig
 
 
-def plotly_add_peak_shade(fig: go.Figure, peak: PeakBounded, config: PlotlyConfig, label: str):
-    """ Plots the shaded area for the peak. """
-    kwargs = {"line": {"width": 0}}
-    if hasattr(peak, "color"):
-        kwargs["fillcolor"] = peak.color
-        if "line" in kwargs:
-            line = kwargs["line"]
-            line["color"] = darken_color(peak.color)
-        else:
-            kwargs["line"] = {"color": darken_color(peak.color)}
-
-    fig.add_scatter(
-        x=peak.x,
-        y=peak.y,
-        mode="lines",
-        fill='tozeroy',
-        showlegend=True,
-        legendgroup=label,
-        hovertemplate='<b>%{customdata}</b>',
-        customdata=[get_hover_stats(peak)]*len(peak.x),
-        name=label,
-        **kwargs
-    )
-
-
 def get_hover_stats(peak: PeakBounded):
-    text = [
-        f"id: {peak.id_}",
+    text = []
+    if isinstance(peak, PeakCompound) and peak.compound is not None:
+        text.append(f"compound: {peak.compound.label}")
+    else:
+        text.append(f"label: {peak.id_}")
+    text += [
         f"span: [{peak.low_bound_x:.2f}, {peak.high_bound_x:.2f}]",
         f"max: {peak.max_y:,.2f} at {peak.max_x:.2f}",
         f"area: {peak.area():,.2f}"
     ]
-    if isinstance(peak, PeakCompound) and peak.compound is not None:
-        text.append(f"compound: {peak.compound.label}")
-
     return "<br>".join(text)
 
 
-def plotly_add_peak_max(fig: go.Figure, peak: PeakBounded, config: PlotlyConfig, label: str):
+def plotly_add_peak_trace(
+        fig: go.Figure,
+        x: np.ndarray,
+        y: np.ndarray,
+        hover_stats: str,
+        mode: Sequence[int],
+        plot_kwargs: dict
+):
+    """ Plots the shaded area for the peak. """
+    kwargs = dict(
+        x=x,
+        y=y,
+        mode="lines",
+        hovertemplate='<b>%{customdata}</b>',
+        customdata=[hover_stats] * len(x),
+    )
+    plot_kwargs2 = kwargs | plot_kwargs  # plot_kwargs overwrite kwargs
+    if 0 in mode:
+        plot_kwargs2["fill"] = plot_kwargs2.get("fill", 'tozeroy')
+        plot_kwargs2["line"] = {"width": 0} | plot_kwargs2.get("line", dict())
+    if 2 in mode:
+        width = plot_kwargs2.get("line", dict()).get("width", 2)
+        plot_kwargs2["line"]["width"] = width if width != 0 else 2
+
+    fig.add_scatter(**plot_kwargs2)
+
+
+def plotly_add_peak_max(fig: go.Figure, max_x: int | float, max_y: int | float, text: str, plot_kwargs: dict):
     """ Plots peak name at max. """
-    fig.add_trace(go.Scatter(
-        x=[peak.max_x],
-        y=[peak.max_y],
+    kwargs = dict(
+        x=[max_x],
+        y=[max_y],
         mode="text",
-        marker={"size": config.peak_marker_size},
-        text=[f"{peak.id_}"],
+        marker={"size": 3},
+        text=[text],
         textposition="top center",
-        showlegend=False,
-        legendgroup=label
-    ))
+    )
+    fig.add_scatter(**(kwargs | plot_kwargs))
 
 
-def plotly_add_peak_bounds(fig: go.Figure, peak: PeakBounded, config: PlotlyConfig, label: str):
+def plotly_add_peak_bounds(
+        fig: go.Figure,
+        min_x: int | float,
+        max_x: int | float,
+        peak_height: int | float,
+        plot_kwargs: dict
+):
     """ Adds bounds at the bottom of the plot_add_on for peak area. """
-    if config.normalize == config.NORMALIZATION_OPTIONS.AREA:
-        bound_height = np.max(peak.max_y) * config.peak_bound_height
-    elif config.normalize == config.NORMALIZATION_OPTIONS.PEAK_HEIGHT:
-        bound_height = config.peak_bound_height
-    else:
-        bound_height = np.max(peak.max_y) * config.peak_bound_height
+    line = {"width": 1, "color": 'rgb(0,0,0)'},
+    bound_height = peak_height * 0.06
 
-    # bounds
-    fig.add_trace(go.Scatter(
-        x=[peak.min_x, peak.min_x],
+    # side vertical lines
+    fig.add_scatter(
+        x=[min_x, max_x],
         y=[-bound_height / 2, bound_height / 2],
         mode="lines",
-        line={"width": config.peak_bound_line_width, "color": 'rgb(0,0,0)'},
-        showlegend=False,
-        legendgroup=label
-    ))
-    fig.add_trace(go.Scatter(
-        x=[peak.max_x, peak.max_x],
+        line=line,
+        **plot_kwargs
+    )
+    fig.add_scatter(
+        x=[min_x, max_x],
         y=[-bound_height / 2, bound_height / 2],
         mode="lines",
-        line={"width": config.peak_bound_line_width, "color": 'rgb(0,0,0)'},
-        showlegend=False,
-        legendgroup=label
-    ))
-    fig.add_trace(go.Scatter(
-        x=[peak.min_x, peak.max_x],
+        line=line,
+        **plot_kwargs
+    )
+    # horizontal line
+    fig.add_scatter(
+        x=[min_x, max_x],
         y=[0, 0],
         mode="lines",
-        line={"width": config.peak_bound_line_width, "color": 'rgb(0,0,0)'},
-        showlegend=False,
-        legendgroup=label
-    ))
+        line=line,
+        **plot_kwargs
+    )

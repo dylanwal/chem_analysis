@@ -72,6 +72,10 @@ Design Philosophy:
   * Uses GPU for rendering.
   * Good for lots of data!!
 
+Plotting is hard and everyone has their preferences. The goal of plotting in this package if to 
+provide quick and useful views of the data with useful defaults. 
+It does not strive for perfect looks or full customization.  
+
 
 ## Quick Examples
 

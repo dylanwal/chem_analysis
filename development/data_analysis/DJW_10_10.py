@@ -17,7 +17,12 @@ PLOTTING_GROUPS = ["dicarboxylic acid", "hydroxy acids", "carboxylic acid", "alc
 def process_fid(fid: ca.gc_lc.GCSignal2D):
     # processing
     fid.processor.add(
-        ca.processing.edit.ReplaceSpans(value=0, x_spans=((1.3, 3.7), (9, 9.9)), invert=True),
+        ca.processing.edit.ReplaceSpans(value=0,
+                                        x_spans=(
+                                            (1.3, 3.7),  # solvent
+                                            (8.7, 10),  # decane
+                                            (44.15, 44.85)  # PPh3
+                                        ), invert=True),
         ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True)
     )
 
@@ -33,9 +38,10 @@ def process_fid(fid: ca.gc_lc.GCSignal2D):
 
     # plotting
     figs = []
-    figs_ = ca.plotting.signal2D_slices(fid, seperate=True)
-    ca.plotting.signal2D_peaks(fid_peaks, fig=figs_, seperate=True)
-    ca.plotting.PlotlyConfig.merge_figures(figs_, auto_open=True)
+    fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
+    figs_ = ca.plotting.signal2D_slices_separate(fid, fig=fig)
+    ca.plotting.signal2D_slices_peaks(fid_peaks, fig=figs_)
+    ca.plotting.plotly_utils.merge_figures(figs_, auto_open=True)
     exit()
     figs.append(fig)
 

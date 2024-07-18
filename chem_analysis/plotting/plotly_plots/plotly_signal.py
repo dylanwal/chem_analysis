@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objs as go
 
-from chem_analysis.plotting.plotly_plots.plotly_config import PlotlyConfig
+from chem_analysis.plotting.plotly_plots.plotly_utils import input_check
 from chem_analysis.plotting.plot_format import bold_in_html
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.utils.math import get_slice
@@ -10,12 +10,12 @@ from chem_analysis.sec.sec_signal import SECSignal
 
 def plotly_signal(
         signal: Signal,
+        plot_kwargs: dict,
         fig: go.Figure | None,
-        config: PlotlyConfig | None = None,
         raw: bool = True,
-        plot_kwargs: dict | None = None,
+        normalize: int = 0,
 ) -> go.Figure:
-    fig, config = PlotlyConfig.input_check(fig, config)
+    fig = input_check(fig)
 
     if raw:
         name = signal.name + "_raw"
@@ -26,13 +26,15 @@ def plotly_signal(
         y = signal.y
         name = signal.name
 
-    if config.normalize is config.NORMALIZATION_OPTIONS.PEAK_HEIGHT:
+    if normalize == 1:
         y = signal.y_normalized_by_max()
+    if normalize == 2:
+        y = signal.y_normalized_by_area()
 
     if hasattr(signal, "_discrete"):
-        plotly_signal_discrete_core(x, y, fig, name, **plot_kwargs)
+        plotly_signal_discrete_core(x, y, fig, name, plot_kwargs)
     else:
-        plot_signal_core(x, y, fig, name, **plot_kwargs)
+        plot_signal_core(x, y, fig, name, plot_kwargs)
 
     fig.layout.xaxis.title = bold_in_html(signal.x_label)
     fig.layout.yaxis.title = bold_in_html(signal.y_label)
@@ -41,14 +43,10 @@ def plotly_signal(
     return fig
 
 
-def plot_signal_core(x: np.ndarray, y: np.ndarray, fig: go.Figure, name: str, **kwargs):
-    fig.add_scatter(
-        x=x,
-        y=y,
-        mode="lines",
-        name=name,
-        **kwargs
-    )
+def plot_signal_core(x: np.ndarray, y: np.ndarray, fig: go.Figure, name: str, plot_kwargs: dict):
+    kwargs = dict(x=x, y=y, mode="lines", name=name)
+    plot_kwargs = kwargs | plot_kwargs  # plot_kwargs overwrite kwargs
+    fig.add_scatter(**plot_kwargs)
 
 
 def plotly_signal_sec(signal: SECSignal, fig: go.Figure):
@@ -64,9 +62,7 @@ def plotly_signal_sec(signal: SECSignal, fig: go.Figure):
         fig.layout.xaxis.domain = [0, 0.95]  # avoid overlap of legend and right y-axis
 
 
-def plotly_signal_discrete_core(x: np.ndarray, y: np.ndarray, fig: go.Figure, name: str):
-    fig.add_bar(
-        x=x,
-        y=y,
-        name=name,
-    )
+def plotly_signal_discrete_core(x: np.ndarray, y: np.ndarray, fig: go.Figure, name: str, plot_kwargs: dict):
+    kwargs = dict(x=x, y=y, name=name)
+    plot_kwargs = kwargs | plot_kwargs  # plot_kwargs overwrite kwargs
+    fig.add_bar(**plot_kwargs)
