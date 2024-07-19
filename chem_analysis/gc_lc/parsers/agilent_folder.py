@@ -31,24 +31,32 @@ DATA_TYPE_SIZE = {
 
 
 def parse_D_folder(folder_path: pathlib.Path) -> tuple[dict | None, dict | None, dict | None]:
-    try:
+    return parse_D_files(folder_path / 'pre_post.ini', folder_path / 'data.ms', folder_path / 'FID1A.ch')
+
+
+def parse_D_files(
+        ini_path: pathlib.Path | None = None,
+        ms_path: pathlib.Path | None = None,
+        fid_path: pathlib.Path | None = None,
+) -> tuple[dict | None, dict | None, dict | None]:
         ini_dict, ms_dict, fid_dict = None, None, None
-
-        ini_path = folder_path / 'pre_post.ini'
-        if ini_path.exists():
-            ini_dict = parse_pre_post_ini(ini_path)
-
-        ms_path = folder_path / 'data.ms'
-        if ms_path.exists():
-            ms_dict = parse_gcms(ms_path)
-
-        fid_path = folder_path / 'FID1A.ch'
-        if fid_path.exists():
-            fid_dict = parse_fid(fid_path)
+        if ini_path is not None:
+            try:
+                ini_dict = parse_pre_post_ini(ini_path)
+            except Exception as e:
+                raise ValueError(f"Error parsing: {ini_path}\n") from e
+        if ms_path is not None:
+            try:
+                ms_dict = parse_gcms(ms_path)
+            except Exception as e:
+                raise ValueError(f"Error parsing: {ms_path}\n") from e
+        if fid_path is not None:
+            try:
+                fid_dict = parse_fid(fid_path)
+            except Exception as e:
+                raise ValueError(f"Error parsing: {fid_dict}\n") from e
 
         return ini_dict, ms_dict, fid_dict
-    except Exception as e:
-        raise ValueError(f"Error parsing: {folder_path}\n") from e
 
 
 def parse_pre_post_ini(file_path: str | pathlib.Path) -> dict[str, Any]:
