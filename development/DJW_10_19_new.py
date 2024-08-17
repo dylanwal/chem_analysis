@@ -1,6 +1,4 @@
 import pathlib
-import re
-import shutil
 
 import numpy as np
 import plotly.graph_objs as go
@@ -16,49 +14,55 @@ picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "d
 PLOTTING_GROUPS = ["dicarboxylic acid", "hydroxy acids", "carboxylic acid", "alcohol", "methyl_ketone", "ketone", "peroxide", "alkane"]
 
 
-def process_single(data_path):
-    ms, fid = ca.gc_lc.GCParser.from_Agilent_D_folder(data_path)
+def process_single(data_path: pathlib.Path, label: str):
+    ms_file = data_path / f"{label}_data.ms"
+    fid_file = data_path / f"{label}_FID1A.ch"
+    ini_file = data_path / f"{label}_pre_post.ini"
+    ms, fid = ca.gc_lc.GCParser.from_Agilent_D_files(ini_file, ms_file, fid_file)
 
     # fid
-    fid.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(1.3, 5.5), invert=True))
     fid.processor.add(
-        ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True)
+        ca.p.edit.ReplaceSpans(value=0,
+                               x_spans=(
+                                   (1.3, 3.7),  # solvent
+                                   (8.7, 10),  # decane
+                                   (44.15, 44.85)  # PPh3
+                               ), invert=True),
+        ca.p.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4)
     )
-    peak_locations = ca.analysis.peak_picking.find_peaks_scipy(fid,
-                                                               scipy_kwargs={"height": 8000, "width": 0.1}
-                                                               )
-    fid_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
-                                                     n_points_with_pos_slope=2)
-    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks)
-
+    peak_locations = ca.a.peak_picking.find_peaks_scipy(fid, scipy_kwargs={"height": 8000, "width": 0.1})
+    peaks = ca.a.integration.rolling_ball(peak_locations, n=5, min_height=0.002, n_points_with_pos_slope=2)
+    fid_compounds = ca.a.ms_analysis.search_by_retention_time(picking_lib_fid, peaks)
+    
     fid_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     ca.plotting.signal(fid, fig=fid_fig)
     ca.plotting.peaks(fid_compounds, fig=fid_fig)
     fid_fig.layout.title = "FID"
 
     # ms
-    ms.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(None, 5.5), invert=True))
     ms.processor.add(
-        ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True)
+        ca.p.edit.ReplaceSpans(value=0,
+                               x_spans=(
+                                   (8.9, 10),  # decane
+                                   (44.1, 45.1)  # PPh3
+                               ), invert=True),
+        ca.p.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4)
     )
-    peak_locations = ca.analysis.peak_picking.find_peaks_scipy(ms,
-                                                               scipy_kwargs={"prominence": 10000}
-                                                               )
-    ms_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
-                                                    n_points_with_pos_slope=2)
-    ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks)
-
-    # plotting peak results
+    peak_locations = ca.a.peak_picking.find_peaks_scipy(ms, scipy_kwargs={"height": 8000, "width": 0.1})
+    peaks = ca.a.integration.rolling_ball(peak_locations, n=5, min_height=0.002, n_points_with_pos_slope=2)
+    ms_compounds = ca.a.ms_analysis.search_by_retention_time(picking_lib_ms, peaks, a_tolerance=0.12)
+    
     ms_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     ca.plotting.signal(ms, fig=ms_fig)
     ca.plotting.peaks(ms_compounds, fig=ms_fig)
     ms_fig.layout.title = "MS"
 
-    print("finished analyzing:", data_path.name)
+    print("finished analyzing:", label)
     return ms_fig, fid_fig, ms_compounds, fid_compounds
 
 
 def get_figure_path(root_folder: pathlib.Path) -> pathlib.Path:
+    import shutil
     figure_folder = root_folder / "figs"
     if figure_folder.exists():
         shutil.rmtree(figure_folder)
@@ -67,34 +71,13 @@ def get_figure_path(root_folder: pathlib.Path) -> pathlib.Path:
     return figure_folder
 
 
-def get_folders(data_path: pathlib.Path, pattern: str) -> tuple[list[pathlib.Path], np.ndarray]:
-    pattern_compile = re.compile(pattern.replace("*", "([0-9]+)"))
-
-    def sort_func(x: pathlib.Path) -> int:
-        return int(pattern_compile.match(x.name).groups()[0])
-
-    specific_folders = list(data_path.glob(pattern))
-    print(len(specific_folders), "files found for analysis")
-
-    specific_folders.sort(key=sort_func)
-    times_ = [sort_func(folder) for folder in specific_folders]
-
-    if len(specific_folders) == 0:
-        raise RuntimeError("No folders found for analysis")
-
-    return [data_path / file for file in specific_folders], np.array(times_)
-
-
-def process_timeseries(data_path: str, pattern: str):
-    if isinstance(data_path, str):
-        data_path = pathlib.Path(data_path)
+def process_timeseries(data_path: pathlib.Path, labels: list[str], times: np.ndarray):
     figure_folder = get_figure_path(data_path)
-    folders, times = get_folders(data_path, pattern)
 
     # process data
     fid_compounds, ms_compounds, fid_figs, ms_figs = [], [], [], []
-    for folder in folders:
-        ms_fig_, fid_fig_, ms_comp, fid_comp = process_single(folder)
+    for label in labels:
+        ms_fig_, fid_fig_, ms_comp, fid_comp = process_single(data_path, label)
         ms_figs.append(ms_fig_)
         fid_figs.append(fid_fig_)
         ms_compounds.append(ms_comp)
@@ -107,15 +90,22 @@ def process_timeseries(data_path: str, pattern: str):
         fid_timeseries.add_result(fid_compounds[i], times[i])
         ms_timeseries.add_result(ms_compounds[i], times[i])
 
+
+    decane_conc = 0.092
+
     fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
+    for d in fig.data:
+        d.y = d.y * 200
     fid_figs.append(fig)
     fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
+    for d in fig.data:
+        d.y = d.y * 200
     ms_figs.append(fig)
 
     ca.plotting.plotly_utils.merge_figures(fid_figs, filename=figure_folder / "fid")
@@ -126,9 +116,10 @@ def process_timeseries(data_path: str, pattern: str):
 
 
 def main():
-    data_path = r"C:\Users\nicep\Desktop\research_wis\data\10\10_19\GC_MS"
-    pattern = ("DJW-19-*h_TMS.D")
-    process_timeseries(data_path, pattern)
+    data_path = pathlib.Path(r"C:\Users\nicep\Desktop\research_wis\data\10\10_19\10_19_reduce")
+    times = np.arange(1, 13)
+    labels = [f"DJW-19-{i}h_PPh3" for i in times]
+    process_timeseries(data_path, labels, times)
 
 
 if __name__ == "__main__":

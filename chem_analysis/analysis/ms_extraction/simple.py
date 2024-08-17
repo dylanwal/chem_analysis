@@ -32,9 +32,9 @@ def ms_extract_index(
         signal = signal.ms_raw
 
     if isinstance(index, int):
-        return MSSignal(signal.x, signal.data_raw[index, :])
+        return MSSignal(signal.x, signal.z[index, :])
 
-    return MSSignal(signal.x, np.sum(signal.data_raw[index, :], axis=0))
+    return MSSignal(signal.x, np.sum(signal.z_raw[index, :], axis=0))
 
 
 def ms_extract_span(

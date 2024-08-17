@@ -127,7 +127,7 @@ def process_timeseries(data_path: pathlib.Path, labels: list[str], times: np.nda
 
 
 def main():
-    data_path = pathlib.Path(r"C:\Users\nicep\Desktop\10_10_reduce")
+    data_path = pathlib.Path(r"C:\Users\nicep\Desktop\research_wis\data\10\10_10\10_10_reduce")
     times = np.arange(1, 12)
     labels = [f"DJW-10-10-{i}h-TMS" for i in times]
     process_timeseries(data_path, labels, times)

@@ -20,7 +20,7 @@ def process_single(data_path: pathlib.Path):
                                                     n_points_with_pos_slope=2)
 
     # plotting peak results
-    gc_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    gc_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     ca.plotting.signal(ms, fig=gc_fig)
     ca.plotting.peaks(ms_peaks, fig=gc_fig)
     gc_fig.layout.title = data_path.stem
@@ -48,11 +48,11 @@ def get_folders(data_path: pathlib.Path, pattern: str) -> list[pathlib.Path]:
     return [data_path / file for file in specific_folders]
 
 
-def intensity_to_mmol(CO2: int| float, Ar: int | float) -> int | float:
+def intensity_to_mmol(CO2: int | float, Ar: int | float) -> int | float:
     area_ratio = CO2/Ar
-    molar_ratio = 44.6*area_ratio**0.767
+    molar_ratio = 0.446*(area_ratio)**0.767
 
-    return molar_ratio*0.33  # mmol/min
+    return molar_ratio*0.0316  # mmol/min
 
 
 def process_timeseries(data_path: pathlib.Path | str, pattern: str):
@@ -71,7 +71,7 @@ def process_timeseries(data_path: pathlib.Path | str, pattern: str):
         times[i] = ms_.parameters.time_start_run.timestamp()
         if i == int(len(folders)/2):
             figs.append(fig)
-            ms_ms_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+            ms_ms_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
             ms_ms_fig.layout.title = data_path.stem
             ms_ms_fig.layout.xaxis.range = (10, 60)
             ca.plotting.signal(ms_ms_, fig=ms_ms_fig)
@@ -86,7 +86,8 @@ def process_timeseries(data_path: pathlib.Path | str, pattern: str):
         CO2 = ms_ms[i].get_intensity(44)
         Ar = ms_ms[i].get_intensity(40)
         y[i] = intensity_to_mmol(CO2, Ar)
-    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    y = y - np.mean(y[:3])
+    fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     fig.add_scatter(x=times, y=y)
     fig.layout.xaxis.title = "<b>time (min) </b>"
     fig.layout.yaxis.title = "<b>mmol/min </b>"
@@ -95,7 +96,7 @@ def process_timeseries(data_path: pathlib.Path | str, pattern: str):
     paper_bgcolor='rgba(0,0,0,0)'
 )
     figs.append(fig)
-    ca.plotting.PlotlyConfig.merge_figures(figs, filename=data_path / "GAS_analysis", auto_open=True)
+    ca.plotting.plotly_utils.merge_figures(figs, filename=data_path / "GAS_analysis", auto_open=True)
     print("total CO2 mmol:", np.trapz(x=times, y=y))
 
 
