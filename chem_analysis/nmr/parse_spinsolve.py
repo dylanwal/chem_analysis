@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 
-from chem_analysis.nmr.parameters import NMRParameters, NMRExperiments
+from chem_analysis.nmr.NMR_parameters import NMRParameters, NMRExperiments
 
 
 @dataclass(slots=True)

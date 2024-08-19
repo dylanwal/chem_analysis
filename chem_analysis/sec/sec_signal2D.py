@@ -1,5 +1,4 @@
 from __future__ import annotations
-import pathlib
 
 import numpy as np
 
@@ -11,6 +10,7 @@ from chem_analysis.analysis.integration.sec_peak import PeakSEC
 
 class SECSignalArray(Signal2D):
     TYPES_ = SECTypes
+    _signal = SECSignal
     _peak_type = PeakSEC
 
     def __init__(self,
@@ -32,7 +32,9 @@ class SECSignalArray(Signal2D):
         self.type_ = type_
 
     def get_signal(self, index: int, processed: bool = True) -> SECSignal:
-        return super().get_signal(index, processed)
+        sig = super().get_signal(index, processed)
+        sig.calibration = self.calibration
+        return sig
 
     # @classmethod
     # def from_file(cls, path: str | pathlib.Path, calibration: SECCalibration = None) -> SECSignalArray:

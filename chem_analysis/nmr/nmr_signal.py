@@ -3,7 +3,7 @@ import pathlib
 
 import numpy as np
 
-from chem_analysis.nmr.parameters import NMRParameters
+from chem_analysis.nmr.NMR_parameters import NMRParameters
 from chem_analysis.base_obj.signal_ import Signal
 
 

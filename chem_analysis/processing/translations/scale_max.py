@@ -44,6 +44,6 @@ class ScaleMax(Translation):
         self.scale = self.new_max_value / np.max(z[:, self.range_index], axis=1)
         return x, y, z * self.scale.reshape(-1, 1)
 
-    def __run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()

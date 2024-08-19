@@ -141,6 +141,11 @@ def rolling_ball_single(
         logger.warning("No peaks to do boundary detection for.")
         return result
 
+    if hasattr(picking_result.signal, "_PeakIntegration"):
+        peak_type = picking_result.signal._PeakIntegration
+    else:
+        peak_type = PeakIntegration
+
     for i, peak in enumerate(picking_result.peaks):
         lb_index, ub_index = rolling_ball_n_points(peak.index, result.signal.x, result.signal.y, n, poly_degree,
                                                    deriv_degree, max_derivative, n_points_with_pos_slope, min_height)
@@ -150,7 +155,7 @@ def rolling_ball_single(
             continue
 
         result.add_peak(
-            PeakIntegration(
+            peak_type(
                 parent=picking_result.signal,
                 bounds=slice(lb_index, ub_index),
                 id_=i

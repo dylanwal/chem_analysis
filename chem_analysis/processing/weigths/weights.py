@@ -53,7 +53,7 @@ class DataWeight(MixinSubClassList, abc.ABC):
         else:
             weights = self.get_weights(x, y)
 
-        return weights <= self.threshold
+        return weights >= self.threshold
 
     # def apply_as_mask(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     #     indexes = self.get_weights(x, y)

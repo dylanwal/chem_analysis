@@ -558,6 +558,10 @@ class ConstraintConv(Constraint):
                 A = np.copy(A)
             selected_columns = A[:, self.index]
             row_sums = selected_columns.sum(axis=1)
+            if np.nonzero(row_sums == 0)[0].shape[0] != 0:
+                index = np.squeeze(np.nonzero(row_sums == 0))
+                A[index, 0] = 1
+                row_sums[index] = 1
             selected_columns /= row_sums[:, np.newaxis]
             A[:, self.index] = selected_columns
             return A

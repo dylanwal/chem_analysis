@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class MCAResult:
     """
+    MultiComponent Analysis or Multivariate Curve Resolution
 
     err: list
         List of calculated errors (from error_function) after each least squares (ie
@@ -85,33 +86,33 @@ class MultiComponentAnalysis:
                  max_iters: int = 50,
                  error_function: MetricType = mean_square_error,
                  tolerance_increase: float = 0.0,
-                 tolerance_error_change: float = None,
+                 tolerance_error_change: float = 10-8,
                  iters_above_min: int = 10
                  ):
         """
         Parameters
         ----------
-        c_regressor: LinearRegressor
+        c_regressor:
             Regressor for calculating the C matrix
-        st_regressor: LinearRegressor
+        st_regressor:
             Regressor for calculating the S^T matrix
-        c_constraints: list
+        c_constraints:
             List of constraints applied to calculation of C matrix
-        st_constraints: list
+        st_constraints:
             List of constraints applied to calculation of S^T matrix
-        max_iters: int
+        max_iters:
             Maximum number of iters. One iter calculates both C and S^T
         error_function: 
             Function to calculate error/differences after each least squares
-            calculation (ie twice per iter). Outputs to err attribute.
-        tolerance_increase: float
-            Factor increases to allow in err attribute. Set to 0 for no increase
-            allowed. E.g., setting to 1.0 means the err can double per iter.
-        tolerance_error_change: float
-            If err changes less than tolerance_error_change, per iter, break.
-        iters_above_min: int
+            calculation (ie twice per iter). Outputs to error attribute.
+        tolerance_increase:
+            Factor increases to allow in error attribute. Set to 0 for no increase
+            allowed. E.g., setting to 1.0 means the error can double per iter.
+        tolerance_error_change:
+            If error changes less than tolerance_error_change, per iter, break.
+        iters_above_min:
             Number of half-iters that can be performed without reaching a
-            new error-minimu
+            new error-min
 
         Notes
         -----
@@ -167,7 +168,11 @@ class MultiComponentAnalysis:
             Function to perform after half-iter_
 
         """
-        logger.setLevel(logging.DEBUG) if verbose else logger.setLevel(logging.INFO)
+        if verbose:
+            current_log_level = logging.getLogger().getEffectiveLevel()
+            logging.getLogger().setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
 
         # Ensure only C or ST provided
         if C is None and (ST is None):
@@ -238,23 +243,25 @@ class MultiComponentAnalysis:
                     callback(C, ST, D, D_calc)
 
             if self._check_stopping(iter_, result):
-                return result
+                break  # exit solver
         else:
-            logger.info('Max iters reached ({}).'.format(self.max_iters + 1))
+            logger.warning('MCR has reached max iters({}).'.format(self.max_iters + 1))
             result.exit_max_iters_reached = True
 
         result.total_iters = iter_
+        if verbose:
+            # set root logger back to what it was originally set to
+            logging.getLogger().setLevel(current_log_level)
         return result
 
     def _check_stopping(self, current_error_index: int, result: MCAResult):
-        # Check if err changed (absolute value), per iter, less than abs(tolerance_error_change)
+        # Check if error changed (absolute value), per iter, less than abs(tolerance_error_change)
         if self.tolerance_error_change is not None and current_error_index > 2:
             error_differ = np.abs(result.error[current_error_index - 1] - result.error[current_error_index - 3])
             if error_differ < self.tolerance_error_change:
-                logger.info(f'Change in err below tolerance_error_change({error_differ:.4e}). Exiting.')
+                logger.info(f'Change in error below tolerance_error_change({error_differ:.4e}). Exiting.')
                 result.exit_tolerance_error_change = True
                 return True
-
         return False
 
     def _check_stopping_half_iter(self,
@@ -270,6 +277,7 @@ class MultiComponentAnalysis:
         error = self.error_function(D, D_calc)
         result.error[iter_] = error
 
+        logger.debug(f"iter: {iter_} || error: {error}")
         # check for tolerance increase
         if iter_ == 0 or error < np.min(result.error[:iter_]):
             result.C = C

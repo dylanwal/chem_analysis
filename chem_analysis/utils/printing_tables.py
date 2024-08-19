@@ -1,8 +1,12 @@
 from __future__ import annotations
+from typing import Sequence
+from logging import getLogger
 
 from tabulate import tabulate
 
 from chem_analysis.config import global_config
+
+logger = getLogger(__name__)
 
 
 def apply_sig_figs(number: float | int | None, sig_digit: int = 3) -> int | float | None:
@@ -63,16 +67,42 @@ class StatsTable:
             if include_empty:
                 self.rows += [[None] * len(self.headers)]
 
-    def to_str(self, sig_figs: int = global_config.sig_fig, **kwargs):
+    def to_str(self,
+               limit_to: Sequence[str] = None,
+               exclude: Sequence[str] = None,
+               sig_figs: int = global_config.sig_fig,
+               **kwargs
+               ):
         if "tablefmt" not in kwargs:
             kwargs["tablefmt"] = global_config.table_format
         rows = process_rows_to_str(self.rows, sig_figs)
-        return tabulate(rows, self.headers, **kwargs)
 
-    def to_csv_str(self, with_headers: bool = True, sig_figs: int = global_config.sig_fig) -> str:
+        if limit_to is not None:
+            headers, rows = do_limit_to(self.headers, rows, limit_to)
+        elif exclude is not None:
+            headers, rows = do_exclude(self.headers, rows, limit_to)
+        else:
+            headers = self.headers
+
+        return tabulate(rows, headers, **kwargs)
+
+    def to_csv_str(self,
+                   limit_to: Sequence[str] = None,
+                   exclude: Sequence[str] = None,
+                   with_headers: bool = True,
+                   sig_figs: int = global_config.sig_fig
+                   ) -> str:
         rows = process_rows_to_str(self.rows, sig_figs)
+
+        if limit_to is not None:
+            headers, rows = do_limit_to(self.headers, rows, limit_to)
+        elif exclude is not None:
+            headers, rows = do_exclude(self.headers, rows, limit_to)
+        else:
+            headers = self.headers
+
         if with_headers:
-            inner_strings = [",".join(self.headers)]
+            inner_strings = [",".join(headers)]
         else:
             inner_strings = []
 
@@ -139,3 +169,38 @@ def values_from_list_of_dict(list_: list[dict], headers: list[str]) -> list:
         rows.append(values_from_dict(dict_, headers, i))
 
     return rows
+
+
+def do_limit_to(headers: Sequence[str], rows: list[list[str]], limit_to: Sequence[str]) \
+        -> tuple[list[str], list[list[str]]]:
+    index = []
+    for limit in limit_to:
+        if limit not in headers:
+            logger.warning(f"'{limit}' is not in headers: {headers}")
+            continue
+        index.append(headers.index(limit))
+
+    headers_ = [headers[i] for i in index]
+    rows_ = []
+    for i in range(len(rows)):
+        rows_.append([v for ii, v in enumerate(rows[i]) if ii in index])
+
+    return headers_, rows_
+
+
+def do_exclude(headers: Sequence[str], rows: list[list[str]], exclude: Sequence[str]) \
+        -> tuple[list[str], list[list[str]]]:
+    rows_ = []
+    headers_ = []
+    exclude = list(set(exclude))
+    for i in range(len(headers)):
+        if headers[i] in exclude:
+            exclude.remove(headers[i])
+            continue
+        rows_.append(rows[i])
+        headers_.append(headers[i])
+
+    if len(exclude) != 0:
+        logger.warning(f"'{exclude}' is not in headers: {headers}")
+
+    return headers_, rows_

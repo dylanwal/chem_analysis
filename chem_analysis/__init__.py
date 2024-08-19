@@ -2,6 +2,7 @@ from chem_analysis.config import global_config
 import logging
 
 logger = logging.getLogger("chem_analysis")
+logger.addHandler(logging.StreamHandler())
 
 import chem_analysis.processing as processing
 p = proc = processing

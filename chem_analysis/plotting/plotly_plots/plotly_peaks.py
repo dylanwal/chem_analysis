@@ -1,4 +1,5 @@
 from typing import Sequence
+from logging import getLogger
 
 import numpy as np
 import plotly.graph_objs as go
@@ -7,6 +8,8 @@ from chem_analysis.plotting.plotly_plots.plotly_utils import input_check
 from chem_analysis.analysis.peak import PeakBounded
 from chem_analysis.analysis.peak_result import ResultPeaks
 from chem_analysis.analysis.ms_analysis.result_search import PeakCompound
+
+logger = getLogger(__name__)
 
 
 def plotly_peaks(
@@ -19,6 +22,9 @@ def plotly_peaks(
     if isinstance(mode, int):
         mode = [mode]
     fig = input_check(fig)
+    if len(peaks.peaks) == 0:
+        logger.warning('No peaks to added to figure.')
+        return fig
 
     if len(peaks.peaks) > 0 and (not hasattr(peaks.peaks[0], "parent") or not hasattr(peaks.peaks[0], "max_x")):
         raise ValueError(f"Not supported peak type.\n\tpeak type received: {type(peaks[0])}")

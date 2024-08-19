@@ -49,6 +49,7 @@ class Signal:
             user defined name
         """
         validate_input(x, y)
+        x, y = general_math.check_for_flip(x, y)
 
         self.x_raw = x
         self.y_raw = y
@@ -236,6 +237,6 @@ def is_number(s: str) -> bool:
 def to_number(s: str) -> float | int:
     num = float(s)
     if int(num) == num:
-        return int(s)
+        return int(num)
     else:
         return num

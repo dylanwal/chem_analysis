@@ -56,7 +56,7 @@ class IRArrayView(ArrayView):
                                                      initialFilter="feather"
                                                      )
         print(path)
-        self.data = ca.ir.IRSignal2D.from_file(path[0])
+        self.data = ca.ir.IRSignal2D.from_feather(path[0])
         self.update()
 
     def save(self):

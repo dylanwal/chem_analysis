@@ -57,6 +57,6 @@ class AlignMax(Translation):
         translation = HorizontalShift(shift_index=self.shift_index, wrap=self.wrap)
         return translation._run2D(x, y, z)
 
-    def __run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         raise NotImplementedError()

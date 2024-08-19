@@ -19,10 +19,14 @@ class Subtract(Baseline):
         self.multiplier = multiplier
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if len(self.y_sub) == len(y):
-            return self.multiplier * self.y_sub
+        if len(self.y_sub) != len(y):
+            if self.x_sub is None:
+                raise ValueError(f"Provide 'x' to {type(self).__name__} so the mismatch between x-axis can be resolved.")
+            y_sub = np.interp(x, self.x_sub, self.y_sub)
+        else:
+            y_sub = self.y_sub
 
-        raise NotImplementedError()  # TODO: x-interpolation
+        return self.multiplier * y_sub
 
 
 class SubtractOptimize(Baseline):
@@ -42,17 +46,21 @@ class SubtractOptimize(Baseline):
         self.multiplier = 1
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        self.multiplier = self._get_multiplier(x, y, self.x_sub, self.y_sub)
-        return self.multiplier * self.y_sub
+        if len(self.y_sub) != len(y):
+            if self.x_sub is None:
+                raise ValueError(f"Provide 'x' to {type(self).__name__} so the mismatch between x-axis can be resolved.")
+            y_sub = np.interp(x, self.x_sub, self.y_sub)
+        else:
+            y_sub = self.y_sub
 
-    def _get_multiplier(self, x: np.ndarray, y: np.ndarray, x_sub: np.ndarray, y_sub: np.ndarray) -> float:
-        if len(self.y_sub) == len(y):
-            def func(m) -> float:
-                return float(np.sum(np.abs(y-m*y_sub)))
+        self.multiplier = self._get_multiplier(y, y_sub)
+        return self.multiplier * y_sub
 
-            result = minimize_scalar(func, bounds=self.bounds)
-            if not result.success:
-                raise ValueError(f"'{type(self).__name__}' has not converged.")
-            return result.x
+    def _get_multiplier(self, y: np.ndarray, y_sub: np.ndarray) -> float:
+        def func(m) -> float:
+            return float(np.sum(np.abs(y-m*y_sub)))
 
-        raise NotImplementedError()  # TODO: x-interpolation
+        result = minimize_scalar(func, bounds=self.bounds)
+        if not result.success:
+            raise ValueError(f"'{type(self).__name__}' has not converged.")
+        return result.x

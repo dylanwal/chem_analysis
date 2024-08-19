@@ -2,9 +2,10 @@ import numpy as np
 
 from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.nmr.nmr_signal import NMRSignal
+from chem_analysis.nmr.NMR_parameters import NMRParameters
 
 
-class NMRSignalArray(Signal2D):
+class NMRSignal2D(Signal2D):
     _signal = NMRSignal
 
     def __init__(self,
@@ -14,21 +15,15 @@ class NMRSignalArray(Signal2D):
                  x_label: str = None,
                  y_label: str = None,
                  z_label: str = None,
-                 name: str = None
+                 parameters: NMRParameters = None,
+                 name: str = None,
+                 id_: int = None
                  ):
         x_label = x_label or "ppm"
         y_label = y_label or "time"
         z_label = z_label or "signal"
-        super().__init__(x, y, z, x_label, y_label, z_label, name)
+        super().__init__(x, y, z, x_label, y_label, z_label, name, id_)
+        self.parameters = parameters
 
     def get_signal(self, index: int, processed: bool = True) -> NMRSignal:
-        if processed:
-            sig = NMRSignal(x_raw=self.x, data_raw=self.data[index, :], x_label=self.x_label, y_label=self.y_label,
-                            name=f"time: {self.y[index]}", id_=index)
-        else:
-            sig = NMRSignal(x_raw=self.x_raw, data_raw=self.z_raw[index, :], x_label=self.x_label, y_label=self.y_label,
-                            name=f"time: {self.y[index]}", id_=index)
-            sig.processor = self.processor.get_copy()
-
-        sig.time = self.y[index]
-        return sig
+        return super().get_signal(index, processed)

@@ -200,3 +200,8 @@ class PeakBounded(PeakContinuous):
     @property
     def high_bound_x(self) -> float:
         return self.parent.x[self.bounds.stop]
+
+    # @property
+    # def area(self) -> float:
+    #     return np.trapz(x=self.x, y=self.y)
+    #

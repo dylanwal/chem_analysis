@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from chem_analysis.nmr.parameters import NMRParameters
+from chem_analysis.nmr.NMR_parameters import NMRParameters
 
 
 @dataclass(slots=True)

@@ -61,3 +61,4 @@ def plotly_calibration(calibration: SECCalibration, plot_kwargs: dict, fig: go.F
             range=[2, 6]
         ),
     )
+    return fig

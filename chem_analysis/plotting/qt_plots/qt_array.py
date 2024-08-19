@@ -11,7 +11,7 @@ from pyqtgraph.dockarea.DockArea import DockArea
 from pyqtgraph.Qt import QtCore
 
 from chem_analysis.plotting.qt_plots.qt_helpers import CustomViewBox
-from chem_analysis.base_obj.signal_array import SignalArray
+from chem_analysis.base_obj.signal_2d import Signal2D
 
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
@@ -36,7 +36,7 @@ def qt_array(array_):
 
 
 class ArrayView(QtWidgets.QWidget):
-    def __init__(self, data: SignalArray | None = None, *args, **kwargs):
+    def __init__(self, data: Signal2D | None = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = data
 
@@ -99,14 +99,14 @@ class ArrayView(QtWidgets.QWidget):
 
         num_curves = self._num_curves.value()
         time_line_pos = self._time_line.value()
-        index = np.argmin(np.abs(self.data.time_zeroed - time_line_pos))
+        index = np.argmin(np.abs(self.data.y-self.data.y[0] - time_line_pos))
 
-        if index + num_curves <= len(self.data.time):
+        if index + num_curves <= len(self.data.y):
             start = index
             end = index + num_curves
         else:
-            start = len(self.data.time) - num_curves
-            end = len(self.data.time)
+            start = len(self.data.y) - num_curves
+            end = len(self.data.y)
 
         self._plot_index = start
         self._tree_spectra_index.setValue(start)
@@ -114,7 +114,7 @@ class ArrayView(QtWidgets.QWidget):
         self.main_plot.clearPlots()
         for i in range(start, end):
             color = pg.intColor(i, num_curves)
-            self.main_plot.plot(self.data.x, self.data.data[i, :], pen=color, name=f"Curve {i}")
+            self.main_plot.plot(self.data.x, self.data.z[i, :], pen=color, name=f"Curve {i}")
 
         if self._main_plot_line is None:
             self._main_plot_line = pg.InfiniteLine(pos=np.mean(self.data.x), movable=True)
@@ -135,7 +135,7 @@ class ArrayView(QtWidgets.QWidget):
         x = self._main_plot_line.value()
         self._tree_x.setValue(x)
         index = np.argmin(np.abs(self.data.x - x))
-        y = self.data.data[self._plot_index, index]
+        y = self.data.z[self._plot_index, index]
         self._tree_y.setValue(y)
 
     def update_time_plot(self):
@@ -146,8 +146,8 @@ class ArrayView(QtWidgets.QWidget):
         self.update_main_plot()
 
     def create_time_plot(self):
-        x = self.data.time_zeroed
-        y = np.trapz(y=self.data.data, axis=1)
+        x = self.data.y - self.data.y[0]
+        y = np.trapz(y=self.data.z, axis=1)
         self.time_plot.plot(x, y, pen=(255, 0, 255, 200))
         self._time_line = pg.InfiniteLine(201, movable=True, bounds=(0, np.max(x)), label='x={value:0.2f}',
                                           labelOpts={
