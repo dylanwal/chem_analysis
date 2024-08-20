@@ -11,6 +11,9 @@ class PeaksMultiple:
     def __init__(self, peaks: Sequence[PeakModel]):
         self.peaks = peaks
 
+    def __str__(self):
+        return " | ".join(map(str, self.peaks))
+
     def __call__(self, x: np.ndarray, *args) -> np.ndarray:
         self.set_args(args)
 
@@ -40,6 +43,7 @@ class PeaksMultiple:
         for peak in self.peaks:
             bounds += peak.get_bounds()
 
+        bounds = [[i[0] for i in bounds], [i[1] for i in bounds]]
         return bounds
 
 
@@ -47,6 +51,9 @@ class ResultPeakFitting:
     def __init__(self):
         self.multipeak: PeaksMultiple | None = None
         self.covariance = None
+
+    def __str__(self):
+        return f"multipeak: {self.multipeak}"
 
     @property
     def peaks(self) -> Sequence:

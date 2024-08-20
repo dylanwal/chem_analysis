@@ -35,6 +35,48 @@ def qt_array(array_):
     app.exec()
 
 
+class Range_:
+    def __init__(self, top, bottom):
+        self._top = top
+        self._bottom = bottom
+
+    def top(self):
+        return self._top
+
+    def bottom(self):
+        return self._bottom
+
+
+class CustomPlotWidget(pg.PlotWidget):
+    def wheelEvent(self, ev):
+        view_range = self.viewRange()
+        y_min, y_max = view_range[1]
+
+        # Calculate the scale factor based on the scroll direction
+        delta = ev.angleDelta().y()
+        factor = 1.001 ** delta  # TODO: improve negative feel
+
+        # Calculate the new range
+        y_center = (y_max + y_min) / 2
+        y_range = (y_max - y_min) * factor
+        new_y_min = y_center - y_range / 2
+        new_y_max = y_center + y_range / 2
+
+        # Set the new range for the y-axis
+        self.setYRange(new_y_min, new_y_max)
+
+        # Mark the event as handled to prevent further propagation
+        ev.accept()
+    # def wheelEvent(self, event):
+    #     # Ignore the horizontal scroll
+    #     delta = event.angleDelta().y() / 120  # one step on most mice is 120 units
+    #     if delta != 0:
+    #         self.scaleBy(y=(1.1 if delta < 0 else 0.9))
+    #
+    #     # Mark the event as handled to prevent further propagation
+    #     event.accept()
+
+
 class ArrayView(QtWidgets.QWidget):
     def __init__(self, data: Signal2D | None = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -67,7 +109,7 @@ class ArrayView(QtWidgets.QWidget):
         self.layout().addWidget(area)
 
         vb = CustomViewBox()
-        self.main_plot = pg.PlotWidget(viewBox=vb)
+        self.main_plot = CustomPlotWidget(viewBox=vb)
         self.main_plot.setLabels(left='absorption', bottom='wavenumber (cm-1)')
         d1.addWidget(self.main_plot)
 

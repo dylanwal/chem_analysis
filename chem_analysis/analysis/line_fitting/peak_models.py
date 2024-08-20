@@ -15,13 +15,17 @@ class PeakModel(abc.ABC):
     def __init__(self):
         ...
 
+    def __str__(self):
+        args_text = ','.join([arg + f": {getattr(self, arg):0.3f}" for arg in self._args])
+        return f"{type(self).__name__}({args_text})"
+
     @abc.abstractmethod
     def __call__(self, x: np.ndarray) -> np.ndarray:
         ...
 
     @property
     def number_args(self) -> int:
-        return len(self.__slots__)
+        return len(self._args)
 
     def get_args(self) -> tuple:
         return tuple(getattr(self, arg) for arg in self._args)

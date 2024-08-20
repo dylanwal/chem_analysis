@@ -198,54 +198,26 @@ def main():
     #         )
     #     )
     # )
-    # data.to_feather(r"C:\Users\nicep\Desktop\post_doc_2022\Data\polymerizations\DW2-14\DW2_14_IR_proc.feather")
 
     # signal = data.get_signal(300)
     # fig = ca.plot.signal(signal)
     # fig.add_trace(go.Scatter(x=signal.x_raw, y=signal.y_raw))
     # fig.write_html("temp.html", auto_open=True)
 
-    # data.processor.add(ca.processing.re_sampling.CutOffValue(x_span=529, cut_off_value=0.015))
-    # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
-    # data.processor.add(ca.processing.smoothing.GaussianTime(sigma=3))
-    # data.processor.add(ca.processing.smoothing.ExponentialTime(a=0.7))
-    # data.processor.add(ca.processing.baselines.Polynomial(
-    #         degree=1,
-    #         weights=ca.processing.weigths.AdaptiveDistanceMedian(threshold=0.2)
-    # ))
-    # data.processor.add(
-    #     ca.processing.baselines.Polynomial(
-    #         degree=1,
-    #         weights=ca.processing.weigths.Spans(x_spans=(1900, 2000), invert=True)
-    #     )
-    # )
-    # data.processor.add(ca.processing.smoothing.Gaussian(sigma=2))
-    # data.processor.add(ca.processing.translations.ScaleMax(range_=(1700, 1800)))
-
     ## get conversion
     mca_result_1 = mca_4(*mca_pre(data))
     np.savetxt("mca_result.csv", mca_result_1, delimiter=',')
-
-    ## making gifs
-    # create_gif(data)
-    # create_gif_surface(data)
     print("done")
 
 
 def mca_pre(data: ca.ir.IRSignal2D):
     pure = Pure()
     t_slice = slice(48, None)
-    mask = ca.processing.weigths.Slices(
-        # [
-        #     ca.utils.math.get_slice(data.x, start=None, end=760),
-        #     ca.utils.math.get_slice(data.x, start=875, end=1100),
-        #     ca.utils.math.get_slice(data.x, start=1350, end=1600),
-        #     ca.utils.math.get_slice(data.x, start=1900, end=None),
-        # ],
+    mask = ca.p.weights.Spans(
         [
-            ca.utils.math.get_slice(data.x, start=760, end=875),
-            ca.utils.math.get_slice(data.x, start=1100, end=1350),
-            ca.utils.math.get_slice(data.x, start=1600, end=1900),
+            [760, 875],
+            [1100, 1350],
+            [1600, 1900]
         ],
     )
     mask = mask.get_mask(data.x, data.y)
