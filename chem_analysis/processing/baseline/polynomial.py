@@ -18,6 +18,9 @@ class Polynomial(Baseline):
         self.degree = degree
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        params = np.polyfit(x, y, self.degree, w=self.weights.get_weights(x, y))
+        if self.weights is None:
+            params = np.polyfit(x, y, self.degree)
+        else:
+            params = np.polyfit(x, y, self.degree, w=self.weights.get_weights(x, y))
         func_baseline = np.poly1d(params)
         return func_baseline(x)

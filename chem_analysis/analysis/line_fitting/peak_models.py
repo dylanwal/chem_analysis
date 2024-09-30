@@ -95,7 +95,6 @@ class DistributionNormalPeak(DistributionNormal, PeakContinuous):
         return self._x
 
 
-
 # from scipy.stats import cauchy
 class DistributionCauchy(PeakModel):
     _args = ("scale", "mean", "gamma")

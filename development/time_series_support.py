@@ -1,6 +1,7 @@
 import logging
 import copy
 from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
 import plotly.graph_objs as go
@@ -131,7 +132,7 @@ class ResultTimeSeries:
 
         return compounds, times, mmols
 
-    def to_csv_str(self) -> str:
+    def to_csv(self, filename: str | Path = None) -> str:
         compounds, times, mmols = self.to_numpy()
 
         text = ""
@@ -141,6 +142,10 @@ class ResultTimeSeries:
         for i in range(len(compounds)):
             text += ",".join([compounds[i]] + [str(i_) for i_ in mmols[i, :]]) + "\n"
 
+        if filename is not None:
+            # TODO: improve file handling/naming
+            with open(filename, "w") as f:
+                f.write(text)
         return text
 
 

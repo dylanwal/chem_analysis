@@ -39,7 +39,7 @@ def copy_and_rename_files(src_dir, dst_dir, files: list[str], max_depth: int = 0
 
 def main():
     # Usage
-    src_directory = pathlib.Path(r"C:\Users\nicep\Desktop\research_wis\data\10\10_19\GC_MS")
+    src_directory = pathlib.Path(r"C:\Users\nicep\Downloads\11_49\11_49")
     dst_directory = src_directory.with_stem(src_directory.stem + "_reduce")
     files = ['data.ms', 'FID1A.ch', 'pre_post.ini']
     copy_and_rename_files(src_directory, dst_directory, files)
