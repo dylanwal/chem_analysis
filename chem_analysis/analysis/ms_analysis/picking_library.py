@@ -3,7 +3,7 @@ from typing import Sequence
 import numpy as np
 
 import chem_analysis.utils.math as utils_math
-from chem_analysis.gc_lc.library.library import GCLibrary, Compound
+from chem_analysis.library import Library, Compound
 
 
 class PickingLibrary:
@@ -44,7 +44,7 @@ class PickingLibrary:
 
     @classmethod
     def from_library(cls,
-                     library: GCLibrary,
+                     library: Library,
                      method: str,
                      grab_any_ms: bool | str | tuple[str] = False,
                      ms_dtype: str | np.dtype = np.uint16,

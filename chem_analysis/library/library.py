@@ -6,12 +6,12 @@ import pathlib
 from collections import OrderedDict, defaultdict
 from typing import Any
 
-from chem_analysis.gc_lc.library.compound import Compound, OPTIMIZATION_KEY, OPTIMIZATION_KEY_REVERSE, is_optimized
+from chem_analysis.library.compound import Compound, OPTIMIZATION_KEY, OPTIMIZATION_KEY_REVERSE, is_optimized
 
 logger = logging.getLogger(__name__)
 
 
-class GCLibrary:
+class Library:
     VERSION = 1  # update if anything changes here or in Compound
 
     def __init__(self,
@@ -89,7 +89,7 @@ class GCLibrary:
 
         self._compounds.remove(compound)
 
-    def add_library(self, lib: GCLibrary):
+    def add_library(self, lib: Library):
         for comp in lib:
             self.add_compound(comp)
 
@@ -178,14 +178,14 @@ class GCLibrary:
             pickle.dump(self, file)
 
     @classmethod
-    def from_pickle(cls, file_path: str | pathlib.Path) -> GCLibrary:
+    def from_pickle(cls, file_path: str | pathlib.Path) -> Library:
         import pickle
         with open(file_path, 'rb') as file:
             loaded_obj = pickle.load(file)
         return loaded_obj
 
     @classmethod
-    def from_dict(cls, dict_: dict) -> GCLibrary:
+    def from_dict(cls, dict_: dict) -> Library:
         optimized = is_optimized(dict_.keys())
         if optimized:
             dict_ = {OPTIMIZATION_KEY_REVERSE.get(k, k): v for k, v in dict_.items()}
@@ -200,7 +200,7 @@ class GCLibrary:
         return cls(**dict_)
 
     @classmethod
-    def from_JSON(cls, file_path: str | pathlib.Path) -> GCLibrary:
+    def from_JSON(cls, file_path: str | pathlib.Path) -> Library:
         import json
 
         with open(file_path, 'r', encoding='UTF-8') as file:

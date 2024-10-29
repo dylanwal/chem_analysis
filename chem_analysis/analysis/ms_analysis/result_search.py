@@ -4,7 +4,7 @@ import numpy as np
 
 from chem_analysis.analysis.peak import Peak
 from chem_analysis.analysis.peak_result import ResultPeaks
-from chem_analysis.gc_lc.library.compound import Compound
+from chem_analysis.library import Compound
 
 
 class PeakCompound:
@@ -18,7 +18,7 @@ class PeakCompound:
         self.metric = metric
 
     def __str__(self):
-        return f"{len(self.compound)} compound for peak {self.peak}"
+        return str(self.compound)
 
     def __repr__(self):
         return self.__str__()

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class CompoundTimeSeries:
-    def __init__(self, compound: ca.gc_lc.Compound, method: str):
+    def __init__(self, compound: ca.library.Compound, method: str):
         self.method = method
         self.compound = compound
         self._areas = []
@@ -59,7 +59,7 @@ class CompoundTimeSeries:
 class ResultTimeSeries:
     def __init__(self,
                  method: str,
-                 internal_standard: ca.gc_lc.Compound,
+                 internal_standard: ca.library.Compound,
                  internal_standard_mmol: int | float = 1
                  ):
         self.method = method

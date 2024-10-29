@@ -58,7 +58,9 @@ class SubtractOptimize(Baseline):
 
     def _get_multiplier(self, y: np.ndarray, y_sub: np.ndarray) -> float:
         def func(m) -> float:
-            return float(np.sum(np.abs(y-m*y_sub)))
+            offset = y-m*y_sub
+            mask = offset > 0
+            return float(np.sum(offset[mask]) - np.sum(offset[np.logical_not(mask)]*10))        # float(np.sum(np.abs(y-m*y_sub)))
 
         result = minimize_scalar(func, bounds=self.bounds)
         if not result.success:

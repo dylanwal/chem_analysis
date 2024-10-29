@@ -16,6 +16,7 @@ import chem_analysis.ir as ir
 import chem_analysis.gc_lc as gc_lc
 import chem_analysis.mass_spec as ms
 import chem_analysis.uv_vis as uv_vis
+import chem_analysis.library as library
 import chem_analysis.utils
 import chem_analysis.plotting as plot
 

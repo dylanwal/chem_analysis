@@ -9,7 +9,7 @@ import chem_analysis as ca
 from development.time_series_support import ResultTimeSeries, plot_results
 
 lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json"
-LIBRARY = ca.gc_lc.GCLibrary.from_JSON(lib_path)
+LIBRARY = ca.library.Library.from_JSON(lib_path)
 INTERNAL_STANDARD = LIBRARY.find_by_label("TCB")
 picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_fid")
 picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_ms")
@@ -20,18 +20,21 @@ def process_single(data_path):
     ms, fid = ca.gc_lc.GCParser.from_Agilent_D_folder(data_path)
 
     # fid
-    fid.processor.add(ca.processing.edit.ReplaceSpans(value=0, x_spans=(1.3, 3.7), invert=True))
     fid.processor.add(
-        ca.processing.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4, save_result=True)
+        ca.p.edit.ReplaceSpans(value=0,
+                               x_spans=(
+                                   (1.3, 3.7),  # solvent
+                                   # (44.15, 44.85)  # PPh3
+                               )
+                               ),
+        # ca.p.baseline.SubtractOptimize(x=x, y=y),
+        ca.p.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4)
     )
-    peak_locations = ca.analysis.peak_picking.find_peaks_scipy(fid,
-                                                               scipy_kwargs={"height": 8000, "width": 0.1}
-                                                               )
-    fid_peaks = ca.analysis.integration.rolling_ball(peak_locations, n=5, min_height=0.002,
-                                                     n_points_with_pos_slope=2)
-    fid_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_fid, fid_peaks)
+    peak_locations = ca.a.peak_picking.find_peaks_scipy(fid, scipy_kwargs={"height": 500, "width": 0.15})
+    peaks = ca.a.integration.rolling_ball(peak_locations, n=5, min_height=0.002, n_points_with_pos_slope=2)
+    fid_compounds = ca.a.ms_analysis.search_by_retention_time(picking_lib_fid, peaks)
 
-    fid_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    fid_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     ca.plotting.signal(fid, fig=fid_fig)
     ca.plotting.peaks(fid_compounds, fig=fid_fig)
     fid_fig.layout.title = "FID"
@@ -48,7 +51,7 @@ def process_single(data_path):
     ms_compounds = ca.analysis.ms_analysis.search_by_retention_time(picking_lib_ms, ms_peaks)
 
     # plotting peak results
-    ms_fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    ms_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     ca.plotting.signal(ms, fig=ms_fig)
     ca.plotting.peaks(ms_compounds, fig=ms_fig)
     ms_fig.layout.title = "MS"
@@ -103,23 +106,23 @@ def process_timeseries(data_path: str, pattern: str):
         fid_timeseries.add_result(fid_compounds[i], times[i])
         ms_timeseries.add_result(ms_compounds[i], times[i])
 
-    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
-    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
-    fig.add_scatter(x=[0, 20], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
+    fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
+    plot_results(fid_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True, carbon=True)
+    fig.add_scatter(x=[0, 20], y=[0.658, 0.658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
-    fig.layout.yaxis.title = "<b>mmol<br>"
+    fig.layout.yaxis.title = "<b>mmol of carbon<br>"
     fid_figs.append(fig)
-    fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
+    fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     plot_results(ms_timeseries, PLOTTING_GROUPS, fig=fig, add_zero=True)
     fig.add_scatter(x=[0, 20], y=[0.0658, 0.0658], mode="lines", line={"color": "black", "dash": "dash"}, name="decane_init")
     fig.layout.xaxis.title = "<b>time (min)<br>"
     fig.layout.yaxis.title = "<b>mmol<br>"
     ms_figs.append(fig)
 
-    ca.plotting.PlotlyConfig.merge_figures(fid_figs, filename=figure_folder / "fid")
-    ca.plotting.PlotlyConfig.merge_figures(ms_figs, filename=figure_folder / "ms")
+    ca.plotting.plotly_utils.merge_figures(fid_figs, filename=figure_folder / "fid")
+    ca.plotting.plotly_utils.merge_figures(ms_figs, filename=figure_folder / "ms")
 
-    data = ms_timeseries.to_csv_str()
+    data = ms_timeseries.to_csv()
     print(data)
 
 
