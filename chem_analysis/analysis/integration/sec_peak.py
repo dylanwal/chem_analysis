@@ -6,8 +6,7 @@ import numpy as np
 
 import chem_analysis.utils.math as general_math
 from chem_analysis.sec.sec_math_functions import calculate_Mn_D_from_wi
-from chem_analysis.analysis.peak import PeakParent
-from chem_analysis.analysis.integration.result_integration import PeakIntegration
+from chem_analysis.analysis.peak import PeakParent, PeakContinuous
 from chem_analysis.sec.sec_calibration import SECCalibration
 
 logger = logging.getLogger(__name__)
@@ -19,9 +18,9 @@ class PeakParentSEC(PeakParent):
     calibration: SECCalibration | None
 
 
-class PeakSEC(PeakIntegration):
-    def __init__(self, parent: PeakParentSEC, bounds: slice, id_: int = None):
-        super().__init__(parent, bounds, id_)
+class PeakSEC(PeakContinuous):
+    def __init__(self, parent: PeakParentSEC, x: np.ndarray, y: np.ndarray, id_: int = None):
+        super().__init__(parent, x, y, id_)
         self.parent: PeakParentSEC = parent  # duplicate, but helps with type hinting
 
         self._mw_n = None

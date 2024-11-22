@@ -7,7 +7,8 @@ from chem_analysis.utils.math import map_argmax_to_original
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.processing.weigths.weights import DataWeight
-from chem_analysis.analysis.peak_picking.result_picking import PeakPicking, ResultPicking, ResultPicking2D
+from chem_analysis.analysis.peak import PeakDiscrete
+from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, ResultPicking2D
 
 
 def apply_limits(signal, result: ResultPicking):
@@ -54,6 +55,6 @@ def find_peaks_scipy_single(signal: Signal, mask: DataWeight = None, scipy_kwarg
         indices_of_peaks = map_argmax_to_original(indices_of_peaks, mask)
     result = ResultPicking(signal=signal)
     for i, peak in enumerate(indices_of_peaks):
-        result.add_peak(PeakPicking(signal, index=peak, id_=i))
+        result.add_peak(PeakDiscrete(signal, index=peak, id_=i))
 
     return result

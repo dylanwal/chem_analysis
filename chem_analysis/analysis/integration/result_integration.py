@@ -1,16 +1,11 @@
-
-from chem_analysis.analysis.peak import PeakBounded
+from chem_analysis.analysis.peak import PeakContinuous
 from chem_analysis.analysis.peak_result import ResultPeaks, ResultPeaks2D
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
 
 
-class PeakIntegration(PeakBounded):
-    ...
-
-
 class ResultIntegration(ResultPeaks):
-    def __init__(self, peaks: list[PeakIntegration] = None, signal: Signal = None) -> None:
+    def __init__(self, peaks: list[PeakContinuous] = None, signal: Signal = None) -> None:
         super().__init__(peaks)
         self.signal = signal
 

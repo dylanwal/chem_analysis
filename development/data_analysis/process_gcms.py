@@ -189,10 +189,10 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
 
 
 def main():
-    data_path = pathlib.Path(rf"C:\Users\nicep\Desktop\research_wis\data\11\11_52\GCMS")
-    times = np.array([0, 10, 20, 30, 45, 60, 120])
-    data_label = "DJW-11-52-V2"
-    labels = [data_label + f"-t{i}" for i in times]
+    data_path = pathlib.Path(rf"C:\Users\nicep\Desktop\research_wis\data\11\11_65\GCMS")
+    times = np.array([30, 60, 120, 240, 360, 720, 1950])
+    data_label = "DJW-11-65-v1"
+    labels = [data_label + f"-t{i}-TMS" for i in times]
     process_timeseries(data_path, data_label, labels, times)
 
 

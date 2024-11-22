@@ -5,17 +5,8 @@ from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
 
 
-class PeakPicking(PeakDiscrete):
-    def __init__(self, parent: Signal, index: int, id_: int = None):
-        super().__init__(parent, index, id_)
-
-    @property
-    def signal(self) -> Signal:
-        return self.parent
-
-
 class ResultPicking(ResultPeaks):
-    def __init__(self, peaks: list[PeakPicking] = None, signal: Signal = None) -> None:
+    def __init__(self, peaks: list[PeakDiscrete] = None, signal: Signal = None) -> None:
         super().__init__(peaks)
         self.signal = signal
 

@@ -1,9 +1,16 @@
+from typing import Callable
+
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
+
 from chem_analysis.utils.pad_edges import pad_edges_polynomial
 from numpy.lib.stride_tricks import sliding_window_view
 
-from chem_analysis.processing.processing_method import Smoothing
 from chem_analysis.processing.weigths.weights import DataWeight
+
+# Input || y_old: np.ndarray
+# Return || y_smoothed: np.ndarray
+Smoother = Callable[[np.ndarray], np.ndarray]
 
 
 def divide_array(array: np.ndarray, num_sections: int) -> list[slice]:
@@ -33,7 +40,7 @@ def sectioned_std(y,
                   window: int = 3,
                   sections: int = 32,
                   number_of_deviations: int | float = 2,
-                  smoother: Smoothing = None,
+                  smoother: Smoother = lambda x: gaussian_filter1d(x, 10),
                   ignore_zeros: bool = True,
                   ):
     """
@@ -54,6 +61,8 @@ def sectioned_std(y,
         little effect, typically 2 to 4
     smoother:
         smoother used before doing min_max analysis
+    ignore_zeros:
+        won't apply mask if value is zero
 
     Returns
     -------
@@ -63,9 +72,6 @@ def sectioned_std(y,
     """
     if not y.any():  # check if y is all zeros
         raise ValueError("y must have non-zero elements")
-    if smoother is None:
-        from chem_analysis.processing.smoothing.convolution import Gaussian
-        smoother = Gaussian()
 
     window = max(window, 1)
     # compute noise level by breaking the data into sections and find section with min sigma
@@ -73,10 +79,9 @@ def sectioned_std(y,
     min_sigma = np.percentile(stds, 5)  # min(stds)
 
     # smooth spectra with convolution
-    _, smoothed_y = smoother.run(np.empty(0), y)
+    smoothed_y = smoother(y)
 
     # evaluate if point is outside min_sigma
-    # (max(y_i) - min(y_i)) < n*sigma
     half_window = int(window / 2)
     padded_smoothed_y = pad_edges_polynomial(smoothed_y, degree=2, pad_amount=half_window)
     sliding_window = sliding_window_view(padded_smoothed_y, 2 * half_window + 1)
@@ -89,26 +94,17 @@ def sectioned_std(y,
     return mask
 
 
-
-    min_sigma = np.percentile(y, 5 * number_of_deviations)
-    # min_sigma = np.max(y) - abs(np.min(y))
-    # for slice_ in slices:
-    #     std_ = np.std(y[slice_])
-    #     if std_ == 0:
-    #         continue
-    #     min_sigma = min(min_sigma, std_)
-
-
 class MaxMinSigma(DataWeight):
     def __init__(self,
                  window: int = 3,
                  sections: int = 32,
                  number_of_deviations: int | float = 2,
-                 smoother: Smoothing = None,
+                 smoother: Smoother = lambda x: gaussian_filter1d(x, 10),
                  invert: bool = False,
                  ):
         """
-        This algorithm assumes the y data contains at least one region with no signals.
+        This algorithm assumes the y data contains at least one region with no signals which will be used to
+        compute areas where variation exceeds the standard deviation.
 
         https://doi.org/10.1006/jmre.2000.2121
 

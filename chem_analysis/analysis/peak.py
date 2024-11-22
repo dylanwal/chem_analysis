@@ -36,8 +36,9 @@ class Peak(abc.ABC):
 
         return super().__new__(cls)
 
-    def __init__(self, id_: int = None):
+    def __init__(self, parent: PeakParent, id_: int = None):
         self.id_ = id_
+        self.parent = parent
 
     def _get_exclude_from_stats(self) -> set[str]:
         return {"stats_table", "stats_dict"}
@@ -69,9 +70,14 @@ class Peak(abc.ABC):
 
 class PeakDiscrete(Peak):
     def __init__(self, parent: PeakParent, index: int, id_: int = None):
-        super().__init__(id_)
-        self.parent = parent
+        super().__init__(parent, id_)
         self.index = index
+
+    def __str__(self):
+        return f"PeakDiscrete(index:{self.index}, x:{self.parent.x[self.index]:.3f}, y:{self.parent.y[self.index]:.3f})"
+
+    def __repr__(self):
+        return self.__str__()
 
     def _get_exclude_from_stats(self) -> set[str]:
         return super()._get_exclude_from_stats().union({"parent"})
@@ -81,22 +87,19 @@ class PeakDiscrete(Peak):
         return self.parent.y[self.index]
 
 
-class PeakContinuous(Peak, abc.ABC):
-
-    def __init__(self, id_: int = None):
-        super().__init__(id_)
+class PeakContinuous(Peak):
+    def __init__(self, parent: PeakParent, x: np.ndarray, y: np.ndarray, id_: int = None):
+        super().__init__(parent, id_)
         self._stats = None
         self._y_norm = None
+        self.x = x
+        self.y = y
 
-    @property
-    @abc.abstractmethod
-    def x(self) -> np.ndarray:
-        ...
+    def __str__(self):
+        return f"PeakContinuous(x:{self.max_x:.3f}, y:{self.max_y:.3f})"
 
-    @property
-    @abc.abstractmethod
-    def y(self) -> np.ndarray:
-        ...
+    def __repr__(self):
+        return self.__str__()
 
     def _get_exclude_from_stats(self) -> set[str]:
         return super()._get_exclude_from_stats()
@@ -164,44 +167,10 @@ class PeakContinuous(Peak, abc.ABC):
             raise ValueError('height must be between 0 and 1')
         return general_math.get_asymmetry_factor(x=self.x, y=self.y, height=height)
 
-
-class PeakBounded(PeakContinuous):
-    def __init__(self, parent: PeakParent, bounds: slice, id_: int = None):
-        super().__init__(id_)
-        self.parent = parent
-        self.bounds = bounds
-
-    def __repr__(self):
-        return f"peak: {self.id_} at {self.low_bound_x:.2f}-{self.high_bound_x:.2f}"
-
-    def _get_exclude_from_stats(self) -> set[str]:
-        return super()._get_exclude_from_stats().union({"x", "y", "parent"})
+    @property
+    def bounds(self) -> tuple[float, float]:
+        return np.min(self.x), np.max(self.x)
 
     @property
-    def x(self) -> np.ndarray:
-        return self.parent.x[self.bounds]
-
-    @property
-    def y(self) -> np.ndarray:
-        return self.parent.y[self.bounds]
-
-    @property
-    def low_bound_y(self) -> float:
-        return self.parent.y[self.bounds.start]
-
-    @property
-    def high_bound_y(self) -> float:
-        return self.parent.y[self.bounds.stop]
-
-    @property
-    def low_bound_x(self) -> float:
-        return self.parent.x[self.bounds.start]
-
-    @property
-    def high_bound_x(self) -> float:
-        return self.parent.x[self.bounds.stop]
-
-    # @property
-    # def area(self) -> float:
-    #     return np.trapz(x=self.x, y=self.y)
-    #
+    def bound_slice(self) -> slice:
+        return general_math.get_slice(self.parent.x, self.bounds[0], self.bounds[1])

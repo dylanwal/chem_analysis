@@ -5,7 +5,8 @@ from chem_analysis.utils.math import map_argmax_to_original
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
 from chem_analysis.processing.weigths.weights import DataWeight
-from chem_analysis.analysis.peak_picking.result_picking import PeakPicking, ResultPicking, ResultPicking2D
+from chem_analysis.analysis.peak import PeakDiscrete
+from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, ResultPicking2D
 
 
 def find_peak_largest(
@@ -35,6 +36,6 @@ def find_peak_largest_single(signal: Signal, mask: DataWeight = None) -> ResultP
         indices_of_peaks = map_argmax_to_original(indices_of_peaks, mask)
 
     result = ResultPicking(signal=signal)
-    result.add_peak(PeakPicking(signal, index=indices_of_peaks))
+    result.add_peak(PeakDiscrete(signal, index=indices_of_peaks))
 
     return result

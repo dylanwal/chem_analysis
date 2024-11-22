@@ -37,10 +37,24 @@ def copy_and_rename_files(src_dir, dst_dir, files: list[str], max_depth: int = 0
                 print(f"Skipped {dir_name} in {subfolder_path} as not files found.")
 
 
+def ensure_directories(file_path: pathlib.Path) -> None:
+    """
+    Ensures all directories in the given file path exist.
+    Creates any missing directories.
+
+    Args:
+        file_path (str): The file path for which directories need to be created.
+    """
+    directory = os.path.dirname(file_path)
+    if directory:  # Ensure there's a directory to create
+        os.makedirs(directory, exist_ok=True)
+
+
 def main():
     # Usage
-    src_directory = pathlib.Path(r"D:\11_52")
-    dst_directory = pathlib.Path(r"C:\Users\nicep\Desktop\research_wis\data\11\11_52\GCMS")
+    src_directory = pathlib.Path(r"D:\11_65")
+    dst_directory = pathlib.Path(r"C:\Users\nicep\Desktop\research_wis\data\11\11_65\GCMS")
+    ensure_directories(dst_directory)
     print(dst_directory)
     files = ['data.ms', 'FID1A.ch', 'pre_post.ini']
     copy_and_rename_files(src_directory, dst_directory, files)

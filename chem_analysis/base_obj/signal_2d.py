@@ -5,7 +5,7 @@ import numpy as np
 
 from chem_analysis.base_obj.unify_methods import UnifyMethod, UnifyMethodStrict
 from chem_analysis.processing.processor import Processor
-from chem_analysis.analysis.peak import PeakBounded
+from chem_analysis.analysis.peak import PeakContinuous
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.utils.math import unpack_signal2D
 
@@ -32,7 +32,7 @@ class Signal2D:
 
     """
     __count = 0
-    _peak_type = PeakBounded
+    _peak_type = PeakContinuous
     _signal = Signal
 
     def __init__(self,

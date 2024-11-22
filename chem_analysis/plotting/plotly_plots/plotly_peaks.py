@@ -5,7 +5,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 from chem_analysis.plotting.plotly_plots.plotly_utils import input_check
-from chem_analysis.analysis.peak import PeakBounded
+from chem_analysis.analysis.peak import PeakContinuous
 from chem_analysis.analysis.peak_result import ResultPeaks
 from chem_analysis.analysis.ms_analysis.result_search import PeakCompound
 
@@ -60,14 +60,14 @@ def plotly_peaks(
     return fig
 
 
-def get_hover_stats(peak: PeakBounded):
+def get_hover_stats(peak: PeakContinuous):
     text = []
     if isinstance(peak, PeakCompound) and peak.compound is not None:
         text.append(f"compound: {peak.compound.label}")
     else:
         text.append(f"label: {peak.id_}")
     text += [
-        f"span: [{peak.low_bound_x:.2f}, {peak.high_bound_x:.2f}]",
+        f"span: [{peak.bounds[0]:.2f}, {peak.bounds[1]:.2f}]",
         f"max: {peak.max_y:,.2f} at {peak.max_x:.2f}",
         f"area: {peak.area():,.2f}"
     ]
