@@ -26,7 +26,7 @@ def plotly_peaks(
         logger.warning('No peaks to added to figure.')
         return fig
 
-    if len(peaks.peaks) > 0 and (not hasattr(peaks.peaks[0], "parent") or not hasattr(peaks.peaks[0], "max_x")):
+    if len(peaks.peaks) > 0 and (not hasattr(peaks.peaks[0], "parent")):
         raise ValueError(f"Not supported peak type.\n\tpeak type received: {type(peaks[0])}")
 
     if normalize == 1:
@@ -66,11 +66,11 @@ def get_hover_stats(peak: PeakContinuous):
         text.append(f"compound: {peak.compound.label}")
     else:
         text.append(f"label: {peak.id_}")
-    text += [
-        f"span: [{peak.bounds[0]:.2f}, {peak.bounds[1]:.2f}]",
-        f"max: {peak.max_y:,.2f} at {peak.max_x:.2f}",
-        f"area: {peak.area():,.2f}"
-    ]
+    # text += [
+    #     f"span: [{peak.bounds[0]:.2f}, {peak.bounds[1]:.2f}]",
+    #     f"max: {peak.max_y:,.2f} at {peak.max_x:.2f}",
+    #     f"area: {peak.area():,.2f}"
+    # ]
     return "<br>".join(text)
 
 

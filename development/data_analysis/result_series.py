@@ -4,8 +4,8 @@ from typing import Sequence
 import numpy as np
 
 import chem_analysis as ca
-from chem_analysis.analysis.ms_analysis import ResultCompoundSearch
-
+from chem_analysis.analysis.peak_result import ResultPeaks
+from chem_analysis.analysis.peak import PeakContinuous
 
 class TimeSeries:
     def __init__(self, times: Sequence[float], compounds: Sequence[str], values: np.ndarray):
@@ -28,7 +28,7 @@ class TimeSeries:
         return text
 
 
-def results_to_timeseries(data: Sequence[ResultCompoundSearch], times: Sequence[float]) -> TimeSeries:
+def results_to_timeseries(data: Sequence[ResultPeaks], times: Sequence[float]) -> TimeSeries:
     if len(times) != len(data):
         raise ValueError(f"Length of times does not match length of data: "
                          f"\n\tlen(data):{len(data)}"
@@ -49,8 +49,10 @@ class CompoundTimeSeries:
         self.areas = []
         self.times = []
 
-    def __getattr__(self, name):
-        return getattr(self.compound, name)
+    def __getattr__(self, name: str):
+        if hasattr(self.compound, name):
+            return getattr(self.compound, name)
+        return self.compound
 
     def add_time_point(self, time_: int | float, area: int | float):
         self.times.append(time_)
@@ -62,16 +64,16 @@ class ResultTimeSeries:
         self.compounds: list[CompoundTimeSeries] = []
         self._times: list[int | float] = []
         self.compounds_by_times: list[list[CompoundTimeSeries]] = []
-        self._compound_list: list[ca.gc_lc.Compound] = []
+        self._compound_list: list = []
 
     @property
     def times(self) -> np.ndarray:
         return np.array(self._times)
 
-    def add_result(self, result: ca.analysis.ms_analysis.ResultCompoundSearch, time_: int | float):
+    def add_result(self, result: ResultPeaks, time_: int | float):
         comp_for_time_ = []
         for comp in result.peaks:
-            if comp.compound is not None:
+            if comp.label is not None:
                 comp_out = self._add_compound(comp, time_)
                 comp_for_time_.append(comp_out)
 
@@ -79,17 +81,17 @@ class ResultTimeSeries:
         self._times.append(time_)
 
     def _add_compound(self,
-                      compound: ca.analysis.ms_analysis.PeakCompound,
+                      compound: PeakContinuous,
                       time_: int | float,
                       ) -> CompoundTimeSeries:
-        if compound.compound in self._compound_list:
-            index = self._compound_list.index(compound.compound)
+        if compound.label in self._compound_list:
+            index = self._compound_list.index(compound.label)
             comp = self.compounds[index]
-            comp.add_time_point(time_, compound.peak.area())
+            comp.add_time_point(time_, compound.properties.area())
         else:
-            self._compound_list.append(compound.compound)
-            comp = CompoundTimeSeries(compound.compound)
-            comp.add_time_point(time_, compound.peak.area())
+            self._compound_list.append(compound.label)
+            comp = CompoundTimeSeries(compound.label)
+            comp.add_time_point(time_, compound.properties.area())
             self.compounds.append(comp)
 
         return comp
@@ -106,7 +108,7 @@ class ResultTimeSeries:
         compounds = []
         areas = np.zeros((len(times), len(self.compounds)))
         for i, comp in enumerate(self.compounds):
-            compounds.append(comp.compound.label)
+            compounds.append(str(comp.label))
             for ii, t in enumerate(comp.times):
                 index = np.argmin(abs(times - t))
                 areas[index, i] = comp.areas[ii]

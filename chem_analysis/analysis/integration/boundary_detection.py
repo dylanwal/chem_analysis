@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 
-from chem_analysis.analysis.peak import PeakContinuous
+from chem_analysis.analysis.peak import PeakContinuousData
 from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, ResultPicking2D
 from chem_analysis.analysis.integration.result_integration import ResultIntegration, ResultIntegration2D
 
@@ -144,7 +144,7 @@ def rolling_ball_single(
     if hasattr(picking_result.signal, "_PeakIntegration"):
         peak_type = picking_result.signal._PeakIntegration
     else:
-        peak_type = PeakContinuous
+        peak_type = PeakContinuousData
 
     for i, peak in enumerate(picking_result.peaks):
         lb_index, ub_index = rolling_ball_n_points(peak.index, result.signal.x, result.signal.y, n, poly_degree,
@@ -157,8 +157,7 @@ def rolling_ball_single(
         result.add_peak(
             peak_type(
                 parent=picking_result.signal,
-                x=peak.parent.x[lb_index:ub_index],
-                y=peak.parent.y[lb_index:ub_index],
+                slice_=slice(lb_index, ub_index),
                 id_=i
             )
         )

@@ -6,7 +6,6 @@ import numpy as np
 import chem_analysis.utils.math as math_utils
 from chem_analysis.base_obj.unify_methods_2d import UnifyMethod2D, UnifyMethodStrict2D
 from chem_analysis.processing.processor import Processor
-from chem_analysis.analysis.peak import PeakParent2D
 from chem_analysis.base_obj.signal_2d import Signal2D
 
 
@@ -38,7 +37,6 @@ class Signal3D:
     """
     _signal = Signal2D
     __count = 0
-    _peak_type = PeakParent2D  # TODO: upgrade to 2D bounded
 
     def __init__(self,
                  x: np.ndarray,

@@ -13,6 +13,7 @@ picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "
 picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_ms")
 
 parameters = ""
+lib_FID = r"C:\Users\nicep\Desktop\intergate_FID_MC.txt"
 
 
 def process_single(data_path: pathlib.Path, label: str):
@@ -29,42 +30,26 @@ def process_single(data_path: pathlib.Path, label: str):
     )
     fid.processor.add(baseline_proc)
 
-    peak_locations = ca.a.peak_picking.find_peaks_scipy(fid,
-                                                        mask=ca.p.weigths.Spans((4.1, 44)),
-                                                        scipy_kwargs={"height": 20_000, "width": 0.15}
-                                                        )
+    # peak_locations = ca.a.peak_picking.find_peaks_scipy(fid,
+    #                                                     mask=ca.p.weigths.Spans((4.1, 44)),
+    #                                                     scipy_kwargs={"height": 20_000, "width": 0.15}
+    #                                                     )
     # peaks = ca.a.integration.integrate_by_fitting_normal_distribution(peak_locations)
-    peaks = ca.a.integration.rolling_ball(peak_locations, n=5, min_height=0.002, n_points_with_pos_slope=2)
-    fid_compounds = ca.a.ms_analysis.search_by_retention_time(picking_lib_fid, peaks)
+    # peaks = ca.a.integration.rolling_ball(peak_locations, n=5, min_height=0.002, n_points_with_pos_slope=2)
+    peaks_fid = ca.a.integration.integrate_from_file_trapz(fid, lib_FID)
+    # fid_compounds = ca.a.ms_analysis.search_by_retention_time(picking_lib_fid, peaks)
 
     fid_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
     ca.plotting.signal(fid, fig=fid_fig)
-    ca.plotting.peaks(fid_compounds, fig=fid_fig)
+    ca.plotting.peaks(peaks_fid, fig=fid_fig)
+    max_y = max(peak.properties.max_y for peak in peaks_fid.peaks)
+    fid_fig.layout.yaxis.range = [-0.1*max_y, 1.1*max_y]
     fid_fig.layout.title = "FID"
-
-    # ms
-    ms.processor.add(
-        # ca.p.edit.ReplaceSpans(value=0,
-        #                        x_spans=(
-        #                            (44.1, 45.1)  # PPh3
-        #                        )
-        #                        ),
-        ca.p.baseline.SectionMinMax(sections=100, window=15, number_of_deviations=4)
-    )
-    peak_locations = ca.a.peak_picking.find_peaks_scipy(ms, scipy_kwargs={"height": 8000, "width": 0.1})
-    peaks = ca.a.integration.rolling_ball(peak_locations, n=5, min_height=0.002, n_points_with_pos_slope=2)
-    ms_compounds = ca.a.ms_analysis.search_by_retention_time(picking_lib_ms, peaks)
-
-    ms_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
-    ca.plotting.signal(ms, fig=ms_fig)
-    ca.plotting.peaks(ms_compounds, fig=ms_fig)
-    ms_fig.layout.title = "MS"
 
     print("finished analyzing:", label)
     global parameters
-    parameters += "\n" + str(data_path) + "\n\t ms:" + str(ms.processor.methods) + "\n\t fid:" + str(
-        ms.processor.methods)
-    return ms_fig, fid_fig, ms_compounds, fid_compounds
+    parameters += "\n" + str(data_path) + "\n\t fid:" + str(fid.processor.methods)
+    return fid_fig, peaks_fid
 
 
 def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[str], times: np.ndarray):
@@ -74,20 +59,16 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
     # process data
     fid_compounds, ms_compounds, fid_figs, ms_figs = [], [], [], []
     for label in labels:
-        ms_fig_, fid_fig_, ms_comp, fid_comp = process_single(data_path / "GCMS", label)
-        ms_figs.append(ms_fig_)
+        fid_fig_, fid_comp = process_single(data_path / "GCMS", label)
         fid_figs.append(fid_fig_)
-        ms_compounds.append(ms_comp)
         fid_compounds.append(fid_comp)
 
     # re-organizing data
     fid_timeseries = results_to_timeseries(fid_compounds, times)
-    ms_timeseries = results_to_timeseries(ms_compounds, times)
 
     # saving data
     ca.plotting.plotly_utils.merge_figures(fid_figs, filename=data_path / (data_label + '_fid.html'))
     ca.plotting.plotly_utils.merge_figures(ms_figs, filename=data_path / (data_label + '_ms.html'))
-    ms_timeseries.to_csv(data_path / (data_label + '_ms.csv'))
     data = fid_timeseries.to_csv(data_path / (data_label + '_fid.csv'))
 
     with open(data_path.parent / (data_label + "_params.txt"), mode='w') as f:
@@ -98,7 +79,7 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
 
 def main():
     data_path = pathlib.Path(rf"C:\Users\nicep\Desktop\research_wis\data\11\11_65")
-    times = np.array([60])  # 30, 60, 120, 240, 360, 720, 1950
+    times = np.array([30, 60, 120, 240, 360, 720, 1950])  # 30, 60, 120, 240, 360, 720, 1950
     data_label = "DJW-11-65-v1"
     labels = [data_label + f"-t{i}-TMS" for i in times]
     process_timeseries(data_path, data_label, labels, times)
