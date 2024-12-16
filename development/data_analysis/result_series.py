@@ -7,6 +7,7 @@ import chem_analysis as ca
 from chem_analysis.analysis.peak_result import ResultPeaks
 from chem_analysis.analysis.peak import PeakContinuous
 
+
 class TimeSeries:
     def __init__(self, times: Sequence[float], compounds: Sequence[str], values: np.ndarray):
         self.times = times

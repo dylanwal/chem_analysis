@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+import chem_analysis.utils.math as utils_math
 from chem_analysis.analysis.peak_properties import PeakProperties, PeakPropertiesData
 
 
@@ -98,12 +99,15 @@ class PeakContinuousData(PeakContinuous):
     def __init__(self,
                  parent: PeakParent,
                  slice_: slice,
-                 properties: type = None,
+                 properties: PeakProperties = None,
                  label=None,
                  id_: int = None
                  ):
         super().__init__(parent, properties, label, id_)
         self.slice_ = slice_
+
+    def __str__(self):
+        return f"PeakContinuousData | {self.slice_}"
 
     @property
     def x(self) -> np.ndarray:
@@ -114,26 +118,34 @@ class PeakContinuousData(PeakContinuous):
         return self.parent.y[self.slice_]
 
 
-class Model(Protocol):
-    x: np.ndarray
-    y: np.ndarray
-
-
 class PeakContinuousModel(PeakContinuous):
+    CUTOFF = 0.001
+
     def __init__(self,
                  parent: PeakParent,
-                 model: Model,
-                 properties: type = None,
+                 model: Callable,
+                 properties: PeakProperties = None,
                  label=None,
-                 id_: int = None
+                 id_: int = None,
+                 slice_: slice = None
                  ):
         super().__init__(parent, properties, label, id_)
         self.model = model
+        self.slice_ = slice_
+
+    def __str__(self):
+        return f"PeakContinuousModel | {self.model}"
+
+    def _get_slice(self):
+        self.slice_ = utils_math.get_slice_by_nearest_y(self.model(self.parent.x), self.CUTOFF)
 
     @property
     def x(self) -> np.ndarray:
-        return self.model.x
+        if self.slice_ is None:
+            self._get_slice()
+
+        return self.parent.x[self.slice_]
 
     @property
     def y(self) -> np.ndarray:
-        return self.model.y
+        return self.model(self.x)

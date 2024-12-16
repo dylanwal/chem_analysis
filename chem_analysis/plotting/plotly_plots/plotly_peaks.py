@@ -63,14 +63,11 @@ def plotly_peaks(
 def get_hover_stats(peak: PeakContinuous):
     text = []
     if isinstance(peak, PeakCompound) and peak.compound is not None:
-        text.append(f"compound: {peak.compound.label}")
+        text.append(f"compound: {peak.compound.label} (id: {peak.id_})")
     else:
-        text.append(f"label: {peak.id_}")
-    # text += [
-    #     f"span: [{peak.bounds[0]:.2f}, {peak.bounds[1]:.2f}]",
-    #     f"max: {peak.max_y:,.2f} at {peak.max_x:.2f}",
-    #     f"area: {peak.area():,.2f}"
-    # ]
+        text.append(f"label: {peak.label} (id: {peak.id_})")
+
+    text += [str(peak)]
     return "<br>".join(text)
 
 

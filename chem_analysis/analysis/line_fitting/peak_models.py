@@ -1,60 +1,42 @@
 from __future__ import annotations
-
+from typing import Sequence, TypeVar
 import abc
-from typing import Sequence
 
 import numpy as np
 from scipy.special import voigt_profile
 
-from chem_analysis.analysis.peak import PeakContinuous
+from chem_analysis.utils.math import rescale_array
 
 
 class PeakModel(abc.ABC):
-    _args = None
-
-    def __init__(self):
-        ...
-
     def __str__(self):
-        args_text = ','.join([arg + f": {getattr(self, arg):0.3f}" for arg in self._args])
+        args_text = ','.join([arg + f": {getattr(self, arg):0.3f}" for arg in self.__slots__])
         return f"{type(self).__name__}({args_text})"
 
     @abc.abstractmethod
     def __call__(self, x: np.ndarray) -> np.ndarray:
         ...
 
-    @property
-    def number_args(self) -> int:
-        return len(self._args)
+    def number_of_params(self) -> int:
+        return len(self.__slots__)
 
-    def get_args(self) -> tuple:
-        return tuple(getattr(self, arg) for arg in self._args)
-
-    def get_kwargs(self) -> dict:
-        return {arg: getattr(self, arg) for arg in self._args}
-
-    def set_args(self, args: Sequence):
-        for i, arg in enumerate(args):
-            setattr(self, self._args[i], arg)
-
-    def set_kwargs(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    def get_bounds(self) -> list[tuple[float, float]]:
-        bounds = []
-        for k in self._args:
-            bounds.append(getattr(self, k + "_bounds"))
-        return bounds
+    @classmethod
+    def initial_guess_generator(cls,
+                                x: np.ndarray,
+                                y: np.ndarray,
+                                number_trials: int = 5,
+                                args: Sequence[str] = None
+                                ) -> Sequence[np.ndarray]:
+        raise NotImplementedError()
 
 
 class DistributionNormal(PeakModel):
-    _args = ("scale", "mean", "sigma")
+    __slots__ = ("scale", "mean", "sigma")
 
     def __init__(self,
-                 scale: int | float = 1,
-                 mean: int | float = 0,
-                 sigma: int | float = 1,
+                 scale: int | float,
+                 mean: int | float,
+                 sigma: int | float,
                  ):
         super().__init__()
         self.scale = scale
@@ -64,45 +46,51 @@ class DistributionNormal(PeakModel):
     def __call__(self, x: np.ndarray) -> np.ndarray:
         return self.scale / (self.sigma * np.sqrt(2 * np.pi)) * np.exp(-(x - self.mean) ** 2 / (2 * self.sigma ** 2))
 
-    def convert_to_peak(self, x: np.ndarray) -> DistributionNormalPeak:
-        return DistributionNormalPeak(x, self.scale, self.mean, self.sigma)
+    @classmethod
+    def initial_guess_generator(cls,
+                                x: np.ndarray,
+                                y: np.ndarray,
+                                num_trials: int = 5,
+                                args: Sequence[str] = ("mean",)
+                                ) -> Sequence[np.ndarray]:
+        from scipy.stats import qmc
+        sampler = qmc.LatinHypercube(d=len(args))
+        sample = sampler.random(num_trials)
+
+        counter = 0
+        if "scale" in args:
+            y_max = y.max()
+            bounds = (y_max-0.2*(y_max-y.min()), y_max)
+            scale = rescale_array(sample[:, counter], bounds[0], bounds[1])
+            counter += 1
+        else:
+            scale = np.ones(num_trials) * np.max(y)
+
+        if "mean" in args:
+            span = x.max() - x.min()
+            bounds = (x.min()+0.15*span, x.max()-0.15*span)  # 0.15 is to move bounds more center
+            mean = rescale_array(sample[:, counter], bounds[0], bounds[1])
+            counter += 1
+        else:
+            mean = np.ones(num_trials) * np.mean(x)
+
+        if "sigma" in args:
+            span = x.max() - x.min()
+            bounds = (span*0.01, span)
+            sigma = rescale_array(sample[:, counter], bounds[0], bounds[1])
+        else:
+            sigma = np.ones(num_trials) * 0.5*(x.max() - x.min())
+
+        return [np.array([scale[i], mean[i], sigma[i]]) for i in range(num_trials)]
 
 
-class DistributionNormalPeak(DistributionNormal, PeakContinuous):
-    def __init__(self,
-                 x: np.ndarray,
-                 scale: int | float = 1,
-                 mean: int | float = 0,
-                 sigma: int | float = 1,
-                 scale_bounds: tuple[float, float] = (0, np.inf),
-                 mean_bounds: tuple[float, float] = (np.inf, np.inf),
-                 sigma_bounds: tuple[float, float] = (0, np.inf),
-                 id_: int = None
-                 ):
-        DistributionNormal.__init__(self, scale, mean, sigma)
-        PeakContinuous.__init__(self, id_)
-        self._x = x
-        self.scale_bounds = scale_bounds
-        self.mean_bounds = mean_bounds
-        self.sigma_bounds = sigma_bounds
-
-    @property
-    def y(self) -> np.ndarray:
-        return self(self.x)
-
-    @property
-    def x(self) -> np.ndarray:
-        return self._x
-
-
-# from scipy.stats import cauchy
 class DistributionCauchy(PeakModel):
-    _args = ("scale", "mean", "gamma")
+    __slots__ = ("scale", "mean", "gamma")
 
     def __init__(self,
-                 scale: int | float = 1,
-                 mean: int | float = 0,
-                 gamma: int | float = 1,
+                 scale: int | float,
+                 mean: int | float,
+                 gamma: int | float,
                  ):
         super().__init__()
         self.scale = scale
@@ -113,39 +101,14 @@ class DistributionCauchy(PeakModel):
         return self.scale / (np.pi * self.gamma * (1 + ((x - self.mean) / 2) ** 2))
 
 
-class DistributionCauchyPeak(DistributionCauchy, PeakContinuous):
-    def __init__(self,
-                 x: np.ndarray,
-                 scale: int | float = 1,
-                 mean: int | float = 0,
-                 gamma: int | float = 1,
-                 scale_bounds: tuple[float, float] = (0, np.inf),
-                 mean_bounds: tuple[float, float] = (np.inf, np.inf),
-                 gamma_bounds: tuple[float, float] = (0, np.inf),
-                 id_: int = None
-                 ):
-        DistributionCauchy.__init__(self, scale, mean, gamma)
-        PeakContinuous.__init__(self, id_)
-        self._x = x
-        self.scale_bounds = scale_bounds
-        self.mean_bounds = mean_bounds
-        self.gamma_bounds = gamma_bounds
-
-    @property
-    def y(self) -> np.ndarray:
-        return self(self.x)
-
-    @property
-    def x(self) -> np.ndarray:
-        return self._x
-
-
 class DistributionVoigt(PeakModel):
+    __slots__ = ("scale", "mean", "gamma")
+
     def __init__(self,
-                 scale: int | float = 1,
-                 mean: int | float = 0,
-                 sigma: int | float = 1,
-                 gamma: int | float = 1
+                 scale: int | float,
+                 mean: int | float,
+                 sigma: int | float,
+                 gamma: int | float
                  ):
         """
         gamma = 0 normal
@@ -161,33 +124,26 @@ class DistributionVoigt(PeakModel):
         return self.scale * voigt_profile(x - self.mean, sigma=self.sigma, gamma=self.gamma)
 
 
-class DistributionVoigtPeak(DistributionVoigt, PeakContinuous):
-    _args = ("scale", "mean", "sigma", "gamma")
+class DistributionMultinomial(PeakModel):
+    def __init__(self, models: list[PeakModel]):
+        super().__init__()
+        self.models = models
 
-    def __init__(self,
-                 x: np.ndarray,
-                 scale: int | float = 1,
-                 mean: int | float = 0,
-                 sigma: int | float = 1,
-                 gamma: int | float = 1,
-                 scale_bounds: tuple[float, float] = (0, np.inf),
-                 mean_bounds: tuple[float, float] = (np.inf, np.inf),
-                 sigma_bounds: tuple[float, float] = (0, np.inf),
-                 gamma_bounds: tuple[float, float] = (0, np.inf),
-                 id_: int = None
-                 ):
-        DistributionVoigt.__init__(self, scale, mean, sigma, gamma)
-        PeakContinuous.__init__(self, id_)
-        self._x = x
-        self.scale_bounds = scale_bounds
-        self.mean_bounds = mean_bounds
-        self.gamma_bounds = gamma_bounds
-        self.sigma_bounds = sigma_bounds
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return np.sum(tuple(model(x) for model in self.models))
 
-    @property
-    def y(self) -> np.ndarray:
-        return self(self.x)
+    def initial_guess_generator(self,
+                                x: np.ndarray,
+                                y: np.ndarray,
+                                num_trials: int = 5,
+                                args: Sequence[str] = ("mean",)
+                                ) -> Sequence[np.ndarray]:
+        model_trials = [model.initial_guess_generator(x, y, num_trials) for model in self.models]
+        trials = []
+        for i in range(num_trials):
+            trial = np.array(0)
+            for model in model_trials:
+                trial = np.concatenate((trial, model[i]))
+            trials.append(trial)
 
-    @property
-    def x(self) -> np.ndarray:
-        return self._x
+        return trials

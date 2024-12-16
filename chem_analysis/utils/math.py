@@ -155,6 +155,21 @@ def get_slice(
     return slice(start_, end_)
 
 
+def get_slice_by_nearest_y(y: np.ndarray, value: int | float) -> slice:
+    """"""
+    max_index = np.argmax(y)
+    if max_index == 0:
+        bound = np.argmin(np.abs(y - value))
+        return slice(None, bound)
+    if max_index == len(y) - 1:
+        bound = np.argmin(np.abs(y - value))
+        return slice(bound, None)
+
+    lb = np.argmin(np.abs(y[:max_index] - value))
+    ub = np.argmin(np.abs(y[max_index:] - value)) + max_index
+    return slice(lb, ub)
+
+
 def map_argmax_to_original(index: int | np.ndarray, mask) -> int | np.ndarray:
     """
     Map the index from a masked array back to the index of the original array.
@@ -433,3 +448,13 @@ def get_all_unique_values_within_tolerance(arrays: Sequence[np.ndarray], **kwarg
             unique_values.append(value)
 
     return np.array(unique_values)
+
+
+def rescale_array(
+        arr: np.ndarray,
+        new_lb: int | float,
+        new_up: int | float,
+        old_lb: int | float = 0,
+        old_up: int | float = 1
+) -> np.ndarray:
+    return new_lb + (new_up - new_lb) * (arr - old_lb) / (old_up - old_lb)
