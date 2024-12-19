@@ -129,14 +129,14 @@ def baseline(
 ):
     plot_kwargs = copy.copy(plot_kwargs) or {}
     if isinstance(baseline_, Signal):
-        baselines = [method_ for method_ in baseline_.processor.methods if isinstance(method_, Baseline)]
+        _ = baseline_.x  # force processing to run
+        baselines = [method_ for method_ in baseline_.processor.methods if isinstance(method_, Baseline) and method_.baseline is not None]
         if len(baselines) == 0:
-            raise ValueError("No Baseline methods detected.")
-        baseline_ = baselines[0]
+            raise ValueError("No Baseline methods detected. Ensure 'Baseline.save_result' attribute is set to 'True'. ")
+        baseline_ = baselines[-1]  # only look at the first one
 
     if baseline_.baseline is None:
-        raise RuntimeError("No baseline detected.\nEither the processing method has not been run yet (call Signal.x to force processing) or"
-                         "the 'Baseline.save_result' attribute was not set to 'True'.")
+        raise RuntimeError("No baseline detected.\n The 'Baseline.save_result' attribute was likely not set to 'True'.")
 
     for option in global_config.get_plotting_options():
         if option == global_config.PLOTTING_LIBRARIES.PLOTLY:

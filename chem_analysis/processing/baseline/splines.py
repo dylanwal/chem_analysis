@@ -23,5 +23,8 @@ class Spline(Baseline):
         self.smoothing_factor = smoothing_factor
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        spline = UnivariateSpline(x, y, w=self.weights.get_weights(x, y), k=self.degree, s=self.smoothing_factor)
+        kwargs = dict()
+        if self.weights is not None:
+            kwargs['w'] = self.weights.get_weights(x, y)
+        spline = UnivariateSpline(x, y, k=self.degree, s=self.smoothing_factor, **kwargs)
         return spline(x)

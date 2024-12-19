@@ -21,26 +21,8 @@ def plotly_baseline(
     fig.add_trace(
         go.Scatter(
             x=baseline.x,
-            y=baseline.data,
-            name="raw_signal",
-            **plot_kwargs
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=baseline.x,
             y=baseline.baseline,
             name="baseline",
-            **plot_kwargs
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=baseline.x,
-            y=baseline.data - baseline.baseline,
-            name="result",
             **plot_kwargs
         )
     )

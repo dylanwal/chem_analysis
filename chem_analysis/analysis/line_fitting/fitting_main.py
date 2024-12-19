@@ -1,15 +1,16 @@
-from typing import Sequence, Any
-from typing import Type
+from typing import Sequence, Any, Type
 import logging
+import warnings
 
 import numpy as np
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, OptimizeWarning
 from sklearn.metrics import r2_score
 
 from chem_analysis.analysis.line_fitting.peak_models import PeakModel
 from chem_analysis.analysis.line_fitting.fitting_criteria import Criteria, BIC
 
 logger = logging.getLogger(__name__)
+warnings.filterwarnings("ignore", category=OptimizeWarning)
 
 
 class ResultFit:
