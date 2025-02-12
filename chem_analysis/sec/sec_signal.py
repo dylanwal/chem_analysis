@@ -5,7 +5,7 @@ import numpy as np
 
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.sec.sec_calibration import SECCalibration
-from chem_analysis.analysis.integration.sec_peak import PeakSEC
+from chem_analysis.sec.sec_peak_properties import PeakPropertiesDataSEC
 
 
 class SECTypes(Enum):
@@ -20,7 +20,7 @@ class SECSignal(Signal):
     """
     SECSignal
     """
-    _PeakIntegration = PeakSEC
+    _peak_properties = PeakPropertiesDataSEC
     TYPES_ = SECTypes
 
     def __init__(self,

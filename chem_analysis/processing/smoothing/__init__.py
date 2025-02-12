@@ -2,6 +2,7 @@ from chem_analysis.processing.smoothing.savitzky_golay import SavitzkyGolay
 from chem_analysis.processing.smoothing.convolution import Gaussian, Uniform
 from chem_analysis.processing.smoothing.time_smoothing import ExponentialTime, GaussianTime
 from chem_analysis.processing.smoothing.rolling_window import RollingWindow
+from chem_analysis.processing.smoothing.wavelet import Wavelet
 
 # TODO:
 # Denoise
@@ -13,7 +14,6 @@ from chem_analysis.processing.smoothing.rolling_window import RollingWindow
 # Savitzky-Golay
 # moving average: span
 # Whittaker Smoother: smooth factor 36
-# Wavelets: scales=4, fraction=1%
 # Cadzow
 
 

@@ -17,7 +17,10 @@ class Parent(Protocol):
 class PeakProperties:
     def __init__(self):
         self.parent = None
-    
+
+    def _exclude_from_stats(self):
+        return ["_exclude_from_stats", "set_parent", "to_dict", "property_table"]
+
     def set_parent(self, parent: Parent):
         self.parent = parent
 
@@ -27,6 +30,8 @@ class PeakProperties:
         attrs.sort()
         dict_ = OrderedDict()
         for attr in attrs:
+            if attr in self._exclude_from_stats():
+                continue
             attr_ = getattr(self, attr)
             if isinstance(attr_, Callable):
                 dict_[attr] = attr_()

@@ -219,6 +219,21 @@ class Signal2D:
         np.savez(path, x=self.x, y=self.y, z=self.z, **kwargs)
 
     @classmethod
+    def from_file(cls, path: str | pathlib.Path):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+        if path.suffix == ".npz":
+            return cls.from_npz(path)
+        elif path.suffix == ".feather":
+            return cls.from_feather(path)
+        elif path.suffix == ".csv":
+            return cls.from_csv(path)
+        elif path.suffix == ".npy":
+            return cls.from_npy(path)
+        else:
+            raise ValueError(f"Unsupported file type: {path.suffix}")
+
+    @classmethod
     def from_csv(cls, path: str | pathlib.Path):
         z = np.loadtxt(path, delimiter=",")
         x, y, z = unpack_signal2D(z)

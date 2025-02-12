@@ -11,19 +11,21 @@ from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, Re
 
 def find_peak_largest(
         signal: Signal | Signal2D,
-        mask: DataWeight = None,
+        min_height: float | None = None,
+        mask: DataWeight = None
 ) -> ResultPicking | ResultPicking2D:
     if isinstance(signal, Signal):
-        return find_peak_largest_single(signal, mask)
+        return find_peak_largest_single(signal, mask, min_height)
     elif isinstance(signal, Signal2D):
         results = ResultPicking2D(signal=signal)
-        for i in range(len(signal)):
-            result = find_peak_largest_single(signal.get_signal(i, processed=True), mask)
+        for sig in signal.signal_iter():
+            result = find_peak_largest_single(sig, mask, min_height)
             results.add_result(result)
         return results
 
 
-def find_peak_largest_single(signal: Signal, mask: DataWeight = None) -> ResultPicking:
+def find_peak_largest_single(signal: Signal, mask: DataWeight = None, min_height: float | None = None) -> ResultPicking:
+    result = ResultPicking(signal=signal)
     if mask is not None:
         mask = mask.get_mask(signal.x, signal.y)
         y = signal.y[mask]
@@ -35,7 +37,6 @@ def find_peak_largest_single(signal: Signal, mask: DataWeight = None) -> ResultP
     if mask is not None:
         indices_of_peaks = map_argmax_to_original(indices_of_peaks, mask)
 
-    result = ResultPicking(signal=signal)
-    result.add_peak(PeakDiscrete(signal, index=indices_of_peaks))
-
+    if min_height is None or signal.y[indices_of_peaks] > min_height:
+        result.add_peak(PeakDiscrete(signal, index=indices_of_peaks))
     return result

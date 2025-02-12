@@ -30,15 +30,15 @@ class ResultPeaks:
             return str(self.peaks[0].parent.name)
         return None
 
-    def get_stats(self) -> list[OrderedDict]:
+    def to_dict(self) -> list[OrderedDict]:
         dicts_ = []
         for peak in self.peaks:
-            dicts_.append(peak.stats_dict())
+            dicts_.append(peak.properties.to_dict())
 
         return dicts_
 
     def stats_table(self) -> StatsTable:
-        return StatsTable.from_list_dicts(self.get_stats())
+        return StatsTable.from_list_dicts(self.to_dict())
 
     def add_peak(self, peak: Peak):
         self.peaks.append(peak)

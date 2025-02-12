@@ -74,7 +74,10 @@ class PeakContinuous(Peak, abc.ABC):
     def __init__(self, parent: PeakParent, properties: PeakProperties = None, label=None, id_: int = None):
         super().__init__(parent, label, id_)
         if properties is None:
-            properties = PeakPropertiesData()
+            if hasattr(parent, '_peak_properties'):
+                properties = getattr(parent, '_peak_properties')()
+            else:
+                properties = PeakPropertiesData()
         self.properties = properties
         self.properties.set_parent(self)
 

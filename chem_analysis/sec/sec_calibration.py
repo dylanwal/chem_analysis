@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from typing import Callable
 
 import numpy as np
-from scipy.optimize import brentq
+from scipy.optimize import brentq, minimize_scalar
 
 
 def check_bounds(bound: Sequence[int | float]) -> tuple[int | float, int | float]:
@@ -15,17 +15,17 @@ def check_bounds(bound: Sequence[int | float]) -> tuple[int | float, int | float
         raise ValueError("The lower and upper bounds can not be equal.")
     if bound[0] > bound[1]:
         bound = (bound[1], bound[0])
-    return tuple(bound)
+    return bound
 
 
 def compute_x_bound_from_y_bound(func: Callable, y_bound: tuple[int | float, int | float]) \
         -> tuple[int | float, int | float] | None:
-    b = 100
-    for i in range(5):
+    b = 10
+    for i in range(100):
         try:
             lb_x, result_lb = brentq(lambda x: func(x) - y_bound[0], 1, b, full_output=True)
         except ValueError:
-            b = b*100
+            b = b*2
             continue
         if result_lb.converged:
             break
@@ -34,15 +34,15 @@ def compute_x_bound_from_y_bound(func: Callable, y_bound: tuple[int | float, int
         return None
 
     try:
-        ub_x, result_ub = brentq(lambda x: func(x) - y_bound[1], 1, lb_x, full_output=True)
-        if not result_ub.converged:
+        result_ub = minimize_scalar(lambda x: abs(func(x) - y_bound[1]), bounds=(5, lb_x))
+        if not result_ub.success:
             logging.error("Could not converge Calibration.y_bound calculation. Take cautions using the calibration.")
             return None
     except ValueError:
         logging.error("Could not converge Calibration.y_bound calculation. Take cautions using the calibration.")
         return None
 
-    return lb_x, ub_x
+    return lb_x, result_ub.x
 
 
 class SECCalibration:
