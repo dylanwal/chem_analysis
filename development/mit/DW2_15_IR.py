@@ -177,7 +177,7 @@ def mca_4(x: np.ndarray, t: np.ndarray, D: np.ndarray, pure: Pure):
 
     convMA, convDMA = conversion(mca_result)
     plot_mca_results(mca_result, x, D, t, convMA, convDMA)
-    return np.column_stack((t, convMA, convDMA))
+    return np.column_stack((t, mca_result.C))
 
 
 def main():
@@ -206,7 +206,7 @@ def main():
 
     ## get conversion
     mca_result_1 = mca_4(*mca_pre(data))
-    np.savetxt("mca_result.csv", mca_result_1, delimiter=',')
+    np.savetxt("mca_result_conc.csv", mca_result_1, delimiter=',')
     print("done")
 
 

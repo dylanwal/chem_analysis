@@ -95,9 +95,9 @@ class UnifyMethodExpandValueStrict(UnifyMethod):
 
         # try to get an existing x-axis
         for sig in signals:
-            if sig.x[0] == min_ and sig.x[1] == max_:
+            if sig.x[0] == min_ and sig.x[-1] == max_:
                 return sig.x
-
+        return np.linspace(min_, max_, signals[0].x.size)
         # try to compose existing x-axis
         return ca_math.get_all_unique_values_within_tolerance([sig.x for sig in signals], **self.get_args())
 
@@ -129,7 +129,7 @@ class UnifyMethodExpandInterpolate(UnifyMethod):
     fills with a value
     """
     def __init__(self,
-                 value: None | int | float = None,
+                 value: None | int | float = 0,
                  min_: None | int | float = None,
                  max_: None | int | float = None
                  ):
@@ -138,7 +138,7 @@ class UnifyMethodExpandInterpolate(UnifyMethod):
         Parameters
         ----------
         value: None | int | float
-            None will extrapolate outside bounds
+            None will extrapolate outside bounds #TODO: <--
             value to fill in expansion with
         min_:
             set to override the smallest min
@@ -161,7 +161,7 @@ class UnifyMethodExpandInterpolate(UnifyMethod):
 
         # try to get an existing x-axis
         for sig in signals:
-            if sig.x[0] == min_ and sig.x[1] == max_:
+            if sig.x[0] == min_ and sig.x[-1] == max_:
                 return sig.x
 
         # create new x-axis
@@ -173,7 +173,7 @@ class UnifyMethodExpandInterpolate(UnifyMethod):
 
         z = np.ones((len(signals), len(x)), dtype=signals[0].y.dtype)*self.value
         for i, sig in enumerate(signals):
-            if not np.all(np.isclose(sig.x, x, rtol=0.0001)):
+            if np.all(np.isclose(sig.x, x, rtol=0.0001)):
                 z[i, :] = sig.y
             else:
                 spline = InterpolatedUnivariateSpline(x=sig.x, y=sig.y)

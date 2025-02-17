@@ -68,7 +68,7 @@ class Wavelet(Smoothing):
         # Reconstruct the denoised signal
         denoised_signal = pywt.waverec(denoised_coeffs, wavelet=self.wavelet)
 
-        return x, denoised_signal[:-1]
+        return x, denoised_signal #[:-1]
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -5,7 +5,7 @@ import plotly.graph_objs as go
 
 import chem_analysis as ca
 from chem_analysis.utils.math import get_slice
-from chem_analysis.analysis.line_fitting import DistributionNormalPeak, peak_deconvolution
+from chem_analysis.analysis.line_fitting import fitting_adaptive, DistributionNormal, DistributionMultinomial
 from chem_analysis.utils.math import normalize_by_max
 
 
@@ -122,11 +122,18 @@ def fit_MA(nmr_array: ca.nmr.NMRSignal2D):
         y = signal.y[slice_]
         if np.max(y) < 0.1:
             continue
-        peaks = [
-            DistributionNormalPeak(x, 1, 3.57, 0.01, scale_bounds= [.01, 1], mean_bounds=[3.54, 3.6], sigma_bounds=[0.002, 0.04]),
-            DistributionNormalPeak(x, 1, 3.67, 0.01, scale_bounds= [.01, 1], mean_bounds=[3.65, 3.72], sigma_bounds=[0.002, 0.04]),
-        ]
-        result = peak_deconvolution(peaks=peaks, xdata=x, ydata=y)
+
+        result = fitting_adaptive(
+            DistributionMultinomial((DistributionNormal, DistributionNormal)),
+            x=x, y=y,
+            num_trials=20
+        )
+
+        # peaks = [
+        #     DistributionNormal(x, 1, 3.57, 0.01, scale_bounds= [.01, 1], mean_bounds=[3.54, 3.6], sigma_bounds=[0.002, 0.04]),
+        #     DistributionNormal(x, 1, 3.67, 0.01, scale_bounds= [.01, 1], mean_bounds=[3.65, 3.72], sigma_bounds=[0.002, 0.04]),
+        # ]
+        # result = peak_deconvolution(peaks=peaks, xdata=x, ydata=y)
 
         PMA = result.multipeak.peaks[0]
         MA = result.multipeak.peaks[1]
@@ -160,51 +167,76 @@ def plot_fit(x, y, peaks):
 
 def do_integrate(nmr_array: ca.nmr.NMRSignal2D):
     x_ranges = {
-        'I_benzene': (7.2, 7.5),
-        'I_MA': (5.75, 6.4),
-        'I_DMA1': (5.4, 5.7),
-        'I_DMA2': (6.5, 7)
+        'I_benzene': (7.15, 7.45),  # 6
+        'I_MA': (3.6, 3.75),  # 3PMA
+        'I_PMA': (3.42, 3.6),  # 3PMA
+        'I_DMA_PDMA': (2.60, 3.2),  # 3DMA, 3PDMA
+        'I_DMA1': (5.4, 5.75),  # 1 DMA
+        'I_DMA2': (6.47, 7.03),  # 1DMA
+        'I_DMA_MA': (5.75, 6.4)  # 3 MA, 1 DMA
     }
     results = {key: np.zeros(nmr_array.number_of_signals) for key in x_ranges}
     for i, signal in enumerate(nmr_array.signal_iter()):
         for key, x_range in x_ranges.items():
             results[key][i] = ca.a.integrate.integrate_trapz(signal, x_range=x_range)
-    return tuple(results[key] for key in x_ranges)
+    return results
 
 
 def integrate_array(nmr_array: ca.nmr.NMRSignal2D):
-    I_benzene, I_MA, I_DMA1, I_DMA2 = do_integrate(nmr_array)
+    results = do_integrate(nmr_array)
+    I_benzene = results['I_benzene']
+    I_MA = results['I_MA']/results['I_benzene']/3
+    I_PMA = results['I_PMA']/results['I_benzene']/3
+    I_DMA = results['I_DMA1']/results['I_benzene']
+    I_DMA2 = results['I_DMA2']/results['I_benzene']
+    I_PDMA = (results['I_DMA_PDMA'] - 6*results['I_DMA1'])/results['I_benzene']/6
 
-    I_DMA = np.mean((I_DMA1, I_DMA2), axis=0)
+    x = np.arange(len(I_MA))
     fig = go.Figure()
-    fig.add_scatter(x=np.arange(len(I_benzene)), y=I_benzene)
-    fig.add_scatter(x=np.arange(len(I_MA)), y=I_MA)
-    fig.add_scatter(x=np.arange(len(I_DMA)), y=I_DMA)
+    smoother = ca.processing.smoothing.Gaussian(sigma=1)
+    # _, I_MA = smoother.run(x, I_MA)
+    # _, I_PMA = smoother.run(x, I_PMA)
+    # _, I_DMA = smoother.run(x, I_DMA)
+    # _, I_PDMA = smoother.run(x, I_PDMA)
+
+    fig.add_scatter(x=x, y=I_MA, name="MA")
+    fig.add_scatter(x=x, y=I_DMA, name="DMA")
+    fig.add_scatter(x=x, y=I_PMA, name="PMA")
+    fig.add_scatter(x=x, y=I_DMA2, name="DMA2")
+    fig.add_scatter(x=x, y=I_PDMA, name="PDMA")
     fig.show()
 
-    conv_DMA = (I_DMA/I_benzene) / (I_DMA[4]/I_benzene[4])
-    conv_MA = ((I_MA-I_DMA)/I_benzene) / ((I_MA[4]-I_DMA[4])/I_benzene[4])
 
     # print
-    for i in range(len(conv_DMA)):
-        print(nmr_array.y[i], conv_MA[i], conv_DMA[i])
+    for i in range(len(I_MA)):
+        print(nmr_array.y[i], I_MA[i], I_DMA[i], I_PDMA[i], I_PMA[i])
 
-    fig = go.Figure()
-    fig.add_scatter(x=nmr_array.y-1703178980, y=conv_MA)
-    fig.add_scatter(x=nmr_array.y-1703178980, y=conv_DMA)
-    fig.layout.yaxis.range = [0, 1]
-    fig.show()
+    # conv_DMA = 1 - I_DMA / (I_DMA + I_PDMA)
+    # conv_MA = 1 - I_MA / (I_MA + I_PMA)
+    # fig = go.Figure()
+    # fig.add_scatter(x=nmr_array.y-1703178980, y=conv_MA)
+    # fig.add_scatter(x=nmr_array.y-1703178980, y=conv_DMA)
+    # fig.layout.yaxis.range = [0, 1]
+    # fig.show()
 
 
 def main():
     path = pathlib.Path(r"C:\Users\nicep\Desktop\dynamic_poly\data\DW2-15\DW2_15_NMR.feather")
     data = ca.nmr.NMRSignal2D.from_feather(path)
-    data.delete([109, 107, 85])
+    data.delete([0, 1, 2, 109, 107, 85])
 
     # process data
-    data.processor.add(ca.processing.translations.AlignMax(range_=(2.5, 2.7), x_value=2.53, temporal_processing=True))
-    data.processor.add(ca.processing.smoothing.Gaussian(sigma=10, temporal_processing=True))
+    signals = list(data.signal_iter())
+    for signal in signals:
+        signal.processor.add(
+            # ca.processing.translations.AlignMaxValue(range_=(2.5, 2.7), x_value=2.53, temporal_processing=True),
+            ca.p.smoothing.Wavelet(threshold=0.015),
+            ca.processing.smoothing.Gaussian(sigma=5),
+            ca.processing.translations.AlignMaxValue(range_=(7.2, 7.5), x_value=7.33, min_height=0.01),
+        )
+        print(signal)
 
+    data = ca.nmr.NMRSignal2D.from_signals(signals, unify_method=ca.base.unify_methods.UnifyMethodExpandInterpolate())
 
     # t_slice = slice(1, None)
     # mask = ca.p.weights.Spans(
@@ -218,12 +250,15 @@ def main():
     # mca_result_1 = mca_4(data.x[mask], data.y[t_slice], data.z[t_slice, mask])
     # np.savetxt("mca_result.csv", mca_result_1, delimiter=',')
 
-    # integrate_array(data)
-    conv_from_normal(data)
+    integrate_array(data)
+    # conv_from_normal(data)
 
-    # single analysis
-    # fig = ca.plot.signal(nmr_array.get_signal(10))
-    # fig.show()
+    # visualize
+    n = 56
+    fig = ca.plot.signal(data.get_signal(n, processed=False), raw=True)
+    fig = ca.plot.signal(data.get_signal(n), fig=fig)
+    # fig = ca.plot.signal2D_slices(data, slice(0,None,5))
+    fig.show()
 
     print("done")
 

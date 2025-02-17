@@ -65,11 +65,14 @@ class NMRSignal(Signal):
         self.fid: NMRFID | None = None
         self.parameters = parameters
 
-    def __repr__(self):
-        return f"{self.parameters.type_.name} (in {self.parameters.solvent})"
-
-    def __str__(self):
-        return self.__repr__()
+    # def __repr__(self):
+    #     text = str(type(self).__name__)
+    #     if self.parameters is not None:
+    #         text += self.parameters.type_.name
+    #     return text
+    #
+    # def __str__(self):
+    #     return self.__repr__()
 
     def _fid_processing(self):
         if self.fid is None:

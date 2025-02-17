@@ -158,6 +158,7 @@ class Signal2D:
         sig.extract_value = self.y[y_index]
         if not processed:
             sig.processor = self.processor.get_copy()
+            sig.processor = False
         return sig
 
     def signal_iter(self) -> Iterator[Signal]:

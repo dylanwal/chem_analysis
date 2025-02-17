@@ -45,7 +45,11 @@ def get_index_from_slice(slices: None | int | Sequence[int] | slice, len_y: int)
     if isinstance(slices, int):
         return [slices]
     if isinstance(slices, slice):
-        return range(slices.start, slices.stop)
+        return range(
+            slices.start if slices.start is not None else 0,
+            slices.stop if slices.stop is not None else len_y,
+            slices.step if slices.step is not None else 1
+        )
     if isinstance(slices, Sequence):
         return slices
 

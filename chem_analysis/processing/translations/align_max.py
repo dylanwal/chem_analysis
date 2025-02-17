@@ -56,15 +56,20 @@ class AlignMaxValue(Translation):
     def __init__(self,
                  range_: tuple[float, float],
                  x_value: int | float,
-                 temporal_processing: int = 1
+                 min_height: float = 0,
+                 temporal_processing: int = 1,
                  ):
         super().__init__(temporal_processing)
         self.range_ = range_
         self.x_value = x_value
+        self.min_height = min_height
 
     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         range_index = get_slice(x, self.range_[0], self.range_[1])
         max_index = np.argmax(y[range_index]) + range_index.start
+        if y[max_index] < self.min_height:
+            return x, y
+
         shift_amount = self.x_value - x[max_index]
         return x + shift_amount, y
 

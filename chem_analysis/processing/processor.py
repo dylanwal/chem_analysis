@@ -42,6 +42,10 @@ class Processor:
     def run(self, x: np.ndarray, y: np.ndarray, z: np.ndarray | None = None, w: np.ndarray | None = None) \
             -> (tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]
                 | tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]):
+        x = np.copy(x)
+        y = np.copy(y)
+        if z is not None:
+            z = np.copy(z)
         for method in self._methods:
             if z is None:
                 x, y = method.run(x, y)
