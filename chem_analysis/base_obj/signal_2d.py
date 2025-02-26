@@ -4,24 +4,23 @@ from typing import Sequence, Iterable, Iterator
 import numpy as np
 
 from chem_analysis.base_obj.unify_methods import UnifyMethod, UnifyMethodStrict
-from chem_analysis.processing.processor import Processor
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.utils.math import unpack_signal2D
 
 
-def validate_input(x_raw: np.ndarray, y_raw: np.ndarray, z_raw: np.ndarray):
-    if len(x_raw.shape) != 1:
-        raise ValueError(f"'x_raw' must shape 1. \n\treceived: {x_raw.shape}")
-    if len(y_raw.shape) != 1:
-        raise ValueError(f"'y_raw' must shape 1. \n\treceived: {y_raw.shape}")
-    if len(z_raw.shape) != 2:
-        raise ValueError(f"'z_raw' must shape 2. \n\treceived: {z_raw.shape}")
-    if x_raw.shape[0] != z_raw.shape[1]:
-        raise ValueError(f"'x_raw' and 'z_raw[1]' must have same shape. \n\treceived: x_raw:{x_raw.shape} "
-                         f"|| z_raw.shape[1]: {z_raw.shape[1]}")
-    if y_raw.shape[0] != z_raw.shape[0]:
-        raise ValueError(f"'y_raw' and 'z_raw[0]' must have same shape. \n\treceived: y_raw:{y_raw.shape} "
-                         f"|| z_raw.shape[0]: {z_raw.shape[0]}")
+def validate_input(x: np.ndarray, y: np.ndarray, z: np.ndarray):
+    if len(x.shape) != 1:
+        raise ValueError(f"'x' must shape 1. \n\treceived: {x.shape}")
+    if len(y.shape) != 1:
+        raise ValueError(f"'y' must shape 1. \n\treceived: {y.shape}")
+    if len(z.shape) != 2:
+        raise ValueError(f"'z' must shape 2. \n\treceived: {z.shape}")
+    if x.shape[0] != z.shape[1]:
+        raise ValueError(f"'x' and 'z[1]' must have same shape. \n\treceived: x:{x.shape} "
+                         f"|| z.shape[1]: {z.shape[1]}")
+    if y.shape[0] != z.shape[0]:
+        raise ValueError(f"'y' and 'z[0]' must have same shape. \n\treceived: y:{y.shape} "
+                         f"|| z.shape[0]: {z.shape[0]}")
 
 
 class Signal2D:
@@ -64,9 +63,9 @@ class Signal2D:
         """
         validate_input(x, y, z)
 
-        self.x_raw = x
-        self.y_raw = y
-        self.z_raw = z
+        self.x = x
+        self.y = y
+        self.z = z
         self.id_ = id_ or Signal2D.__count
         Signal2D.__count += 1
         self.name = name or f"signal_{self.id_}"
@@ -74,43 +73,17 @@ class Signal2D:
         self.y_label = y_label or "y_axis"
         self.z_label = z_label or "z_axis"
 
-        self.processor = Processor()
-        self._x = None
-        self._y = None
-        self._z = None
-
         self.extract_value = None  # value
 
     def __repr__(self):
         text = f"{self.name}: "
         text += f"{self.x_label} vs. {self.y_label} vs. {self.z_label}"
-        text += f" (shape: {self.z_raw.shape})"
+        text += f" (shape: {self.z.shape})"
         return text
-
-    def _process(self):
-        self._x, self._y, self._z = self.processor.run(self.x_raw, self.y_raw, self.z_raw)
-
-    @property
-    def x(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._x
-
-    @property
-    def y(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._y
-
-    @property
-    def z(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._z
 
     @property
     def number_of_signals(self):
-        return len(self.y_raw)
+        return len(self.y)
 
     def pop(self, index: int) -> Signal:
         sig = self.get_signal(index)
@@ -122,8 +95,8 @@ class Signal2D:
             index = [index]
         index.sort(reverse=True)  # delete largest to smallest to avoid issue of changing index
         for i in index:
-            self.z_raw = np.delete(self.z_raw, i, axis=0)
-            self.y_raw = np.delete(self.y_raw, i)
+            self.z = np.delete(self.z, i, axis=0)
+            self.y = np.delete(self.y, i)
 
     def get_signal(self, y_index: int, processed: bool = True, copy_: bool = False) -> Signal:
         """
@@ -133,7 +106,7 @@ class Signal2D:
         y_index
         processed:
             True: get x, z
-            False: get x_raw, z_raw
+            False: get x, z
         copy_:
             True: data will be a copy.
             False: data will be a view (until edited)
@@ -145,20 +118,14 @@ class Signal2D:
         https://numpy.org/doc/stable/user/basics.copies.html
 
         """
-        if processed:
-            x, y = self.x, self.z[y_index, :]
-        else:
-            x, y = self.x_raw, self.z_raw[y_index, :]
-
+        x, y = self.x, self.z[y_index, :]
+  
         if copy_:
             x, y = x.copy(), y.copy()
 
         sig = self._signal(x=x, y=y, x_label=self.x_label, y_label=self.y_label,
                            name=f"slice_{self.y_label}: {self.y[y_index]}", id_=y_index)
         sig.extract_value = self.y[y_index]
-        if not processed:
-            sig.processor = self.processor.get_copy()
-            sig.processor = False
         return sig
 
     def signal_iter(self) -> Iterator[Signal]:

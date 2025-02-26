@@ -4,17 +4,16 @@ import pathlib
 import numpy as np
 
 import chem_analysis.utils.math as general_math
-from chem_analysis.processing.processor import Processor
+from chem_analysis.base_obj.parameters import Parameters
 
 
-def validate_input(x_raw: np.ndarray, y_raw: np.ndarray):
-    if len(x_raw.shape) != 1:
-        raise ValueError(f"'x_raw' must shape 1. \n\treceived: {x_raw.shape}")
-    if len(y_raw.shape) != 1:
-        raise ValueError(f"'y_raw' must shape 1. \n\treceived: {y_raw.shape}")
-    if x_raw.shape != y_raw.shape:
-        raise ValueError(f"'x_raw' and 'y_raw' must have same shape. \n\treceived: x_raw:{x_raw.shape} || y_raw: "
-                         f"{y_raw.shape}")
+def validate_input(x: np.ndarray, y: np.ndarray):
+    if len(x.shape) != 1:
+        raise ValueError(f"'x' must shape 1. \n\treceived: {x.shape}")
+    if len(y.shape) != 1:
+        raise ValueError(f"'y' must shape 1. \n\treceived: {y.shape}")
+    if x.shape != y.shape:
+        raise ValueError(f"'x' and 'y' must have same shape. \n\treceived: x:{x.shape} || y:{y.shape}")
 
 
 class Signal:
@@ -23,6 +22,7 @@ class Signal:
     A signal is any x-y data.
 
     """
+    __slots__ = "x", "y", "id_", "name", "x_label", "y_label", "parameters", "processed", "extract_value"
     __count = 0
 
     def __init__(self,
@@ -31,7 +31,9 @@ class Signal:
                  x_label: str = None,
                  y_label: str = None,
                  name: str = None,
-                 id_: int = None
+                 id_: int = None,
+                 parameters: Parameters = None,
+                 processed: bool = False,
                  ):
         """
 
@@ -47,22 +49,23 @@ class Signal:
             y-axis label
         name: str
             user defined name
+        parameters: Parameters
+            various meta-data
+        processed: bool
+            Been through a processing method
         """
         validate_input(x, y)
         x, y = general_math.check_for_flip(x, y)
 
-        self.x_raw = x
-        self.y_raw = y
+        self.x = x
+        self.y = y
         self.id_ = id_ or Signal.__count
         Signal.__count += 1
         self.name = name or f"signal_{self.id_}"
         self.x_label = x_label or "x_axis"
         self.y_label = y_label or "y_axis"
-
-        self.processor = Processor()
-        self._x = None
-        self._y = None
-
+        self.processed = processed
+        self.parameters = parameters
         self.extract_value = None
 
     def __repr__(self):
@@ -70,21 +73,6 @@ class Signal:
         text += f"{self.x_label} vs {self.y_label}"
         text += f" (pts: {len(self.x)})"
         return text
-
-    def _process(self):
-        self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
-
-    @property
-    def x(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._x
-
-    @property
-    def y(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._y
 
     def y_normalized_by_max(self, x_range: Sequence[int | float] = None) -> np.ndarray:
         if x_range is None:
@@ -135,22 +123,20 @@ class Signal:
         headers = [self.x_label, self.y_label]
         numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
 
-    # def to_parquet(self, path: str | pathlib.Path):
-    #     import pyarrow as pa
-    #     import pyarrow.parquet as pq
-    #     # TODO:
-    #     raise NotImplementedError()
-    #     arrays = [pa.array(self.x), pa.array(self.y)]
-    #     table = pa.Table().from_arrays(arrays=arrays, names=("x", "y"))
-    #     pq.write_table(table, path)
-    #
-    # @classmethod
-    # def from_parquet(cls, path: str | pathlib.Path, **kwargs):
-    #     if isinstance(path, str):
-    #         path = pathlib.Path(path)
-    #
-    #     # TODO:
-    #     raise NotImplementedError()
+    @classmethod
+    def from_file(cls, path: str | pathlib.Path):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+        if path.suffix == ".npz":
+            return cls.from_npz(path)
+        elif path.suffix == ".feather":
+            return cls.from_feather(path)
+        elif path.suffix == ".csv":
+            return cls.from_csv(path)
+        elif path.suffix == ".npy":
+            return cls.from_npy(path)
+        else:
+            raise ValueError(f"Unsupported file type: {path.suffix}")
 
     @classmethod
     def from_json(cls, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
@@ -171,7 +157,7 @@ class Signal:
         if isinstance(path, str):
             path = pathlib.Path(path)
 
-        x, y, x_label, y_label = load_csv(path)
+        x, y, x_label, y_label = _load_csv(path)
         return cls(x, y, x_label=x_label, y_label=y_label)
 
     @classmethod
@@ -181,6 +167,13 @@ class Signal:
 
         x, y = np.load(str(path))
         return cls(x, y)
+
+    @classmethod
+    def from_npz(cls, path: str | pathlib.Path):
+        npzfile = np.load(str(path))
+        x, y = npzfile['x'], npzfile['y']
+        x_label = y_label = None
+        return cls(x, y, x_label=x_label, y_label=y_label)
 
     @classmethod
     def from_feather(cls, path: str | pathlib.Path):
@@ -199,7 +192,7 @@ class Signal:
         return cls(x, y, x_label=x_label, y_label=y_label)
 
 
-def load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | None]:
+def _load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | None]:
     import csv
 
     data = []

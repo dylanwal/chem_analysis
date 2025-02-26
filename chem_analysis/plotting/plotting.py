@@ -4,6 +4,7 @@ import logging
 
 from chem_analysis.config import global_config
 from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.processing.processor import Processor
 from chem_analysis.sec.sec_calibration import SECCalibration
 from chem_analysis.processing.processing_method import Baseline
 from chem_analysis.analysis.peak_result import ResultPeaks
@@ -15,7 +16,6 @@ def signal(
         signal_: Signal,
         *,
         fig=None,
-        raw: bool = False,
         normalize: int = 0,
         plot_kwargs: dict | None = None,
 ):
@@ -27,8 +27,6 @@ def signal(
         signal to be plotted
     fig:
         figure for signal to be added to
-    raw:
-        True: x_
     normalize:
         0: no normalization
         1: normalize by height
@@ -44,7 +42,7 @@ def signal(
     for option in global_config.get_plotting_options():
         if option == global_config.PLOTTING_LIBRARIES.PLOTLY:
             from chem_analysis.plotting.plotly_plots.plotly_signal import plotly_signal
-            return plotly_signal(signal_, plot_kwargs, fig, raw, normalize)
+            return plotly_signal(signal_, plot_kwargs, fig, normalize)
         if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
             pass
 
@@ -122,15 +120,16 @@ def calibration(
 
 
 def baseline(
-        baseline_: Baseline | Signal,
+        baseline_: Baseline | Processor,
         *,
         fig=None,
         plot_kwargs: dict | None = None,
 ):
     plot_kwargs = copy.copy(plot_kwargs) or {}
-    if isinstance(baseline_, Signal):
-        _ = baseline_.x  # force processing to run
-        baselines = [method_ for method_ in baseline_.processor.methods if isinstance(method_, Baseline) and method_.baseline is not None]
+    if isinstance(baseline_, Processor):
+        if not baseline_.processed:
+            raise ValueError("Processer has not been used to process a signal yet. Run the 'Processor.run(signal)' method.")
+        baselines = [method_ for method_ in baseline_.methods if isinstance(method_, Baseline) and method_.baseline is not None]
         if len(baselines) == 0:
             raise ValueError("No Baseline methods detected. Ensure 'Baseline.save_result' attribute is set to 'True'. ")
         baseline_ = baselines[-1]  # only look at the first one

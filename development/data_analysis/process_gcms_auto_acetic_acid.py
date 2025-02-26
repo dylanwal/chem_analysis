@@ -6,7 +6,7 @@ import plotly.graph_objs as go
 import chem_analysis as ca
 
 from result_series import results_to_timeseries
-import development.data_analysis.utils.plotly_utils
+import development.data_analysis.utils.plotly_utils  # don't delete; automatically adds formating
 
 lib_FID = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\intergate_FID_AA.txt"
 parameters = ""
@@ -24,16 +24,23 @@ def process_fid(sig: ca.gc_lc.GCSignal):
         baseline_method=ca.p.baseline.Polynomial(degree=0),
         mask=ca.p.weigths.Spans((None, 1.5))
     )
-    sig.processor.add(baseline_proc)
-    peaks = ca.a.integration.integrate_from_file(sig, lib_FID)
+    proc = ca.p.Processor(baseline_proc)
+    proc_sig = proc.run(sig)
 
-    fid_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
-    ca.plotting.signal(sig, fig=fid_fig)
-    ca.plotting.peaks(peaks, fig=fid_fig)
+    peaks = ca.a.integration.integrate_from_file(proc_sig, lib_FID)
+
+    fig = ca.plot.signal(sig)
+    fig = ca.plot.peaks(peaks, fig=fig)
     max_y = max(peak.properties.max_y for peak in peaks.peaks)
-    fid_fig.layout.yaxis.range = [-0.1*max_y, 1.1*max_y]
-    fid_fig.layout.title = "FID"
-    return fid_fig, peaks
+    fig.layout.yaxis.range = [-0.1*max_y, 1.1*max_y]
+    fig.layout.title = "FID"
+    return fig, peaks
+
+
+def process_ms(sig: ca.gc_lc.GCMSSignal):
+    fig = ca.plot.signal(sig)
+    fig.layout.title = "MS"
+    return fig
 
 
 def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[str], times: np.ndarray):
@@ -41,12 +48,14 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
     parameters += str(data_path) + "\n" + str(data_label) + "\n"
 
     # process data
-    fid_compounds, ms_compounds, fid_figs, ms_figs = [], [], [], []
+    fid_compounds, fid_figs, ms_figs = [], [], []
     for label in labels:
         ms, fid = load_single_file(data_path / "GCMS", label)
         fid_fig_, fid_comp = process_fid(fid)
         fid_figs.append(fid_fig_)
         fid_compounds.append(fid_comp)
+        ms_figs.append(process_ms(ms))
+        print(f"processed: {label}")
 
     # re-organizing data
     fid_timeseries = results_to_timeseries(fid_compounds, times)
@@ -55,10 +64,6 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
     ca.plotting.plotly_utils.merge_figures(fid_figs, filename=data_path / (data_label + '_fid.html'))
     ca.plotting.plotly_utils.merge_figures(ms_figs, filename=data_path / (data_label + '_ms.html'))
     data = fid_timeseries.to_csv(data_path / (data_label + '_fid.csv'))
-
-    with open(data_path.parent / (data_label + "_params.txt"), mode='w') as f:
-        f.write(parameters)
-
     print(data)
 
 

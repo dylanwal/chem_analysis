@@ -9,37 +9,31 @@ from chem_analysis.sec.sec_signal import SECSignal
 
 
 def plotly_signal(
-        signal: Signal,
+        sig: Signal,
         plot_kwargs: dict,
         fig: go.Figure | None,
-        raw: bool = True,
         normalize: int = 0,
 ) -> go.Figure:
     fig = input_check(fig)
 
-    if raw:
-        name = signal.name + "_raw"
-        x = signal.x_raw
-        y = signal.y_raw
-    else:
-        x = signal.x
-        y = signal.y
-        name = signal.name
+    x = sig.x
+    y = sig.y
+    name = sig.name
 
     if normalize == 1:
-        y = signal.y_normalized_by_max()
+        y = sig.y_normalized_by_max()
     if normalize == 2:
-        y = signal.y_normalized_by_area()
+        y = sig.y_normalized_by_area()
 
-    if hasattr(signal, "_discrete"):
+    if hasattr(sig, "_discrete"):
         plotly_signal_discrete_core(x, y, fig, name, plot_kwargs)
     else:
         plot_signal_core(x, y, fig, name, plot_kwargs)
 
-    fig.layout.xaxis.title = bold_in_html(signal.x_label)
-    fig.layout.yaxis.title = bold_in_html(signal.y_label)
-    if isinstance(signal, SECSignal):
-        plotly_signal_sec(signal, fig)
+    fig.layout.xaxis.title = bold_in_html(sig.x_label)
+    fig.layout.yaxis.title = bold_in_html(sig.y_label)
+    if isinstance(sig, SECSignal):
+        plotly_signal_sec(sig, fig)
     return fig
 
 

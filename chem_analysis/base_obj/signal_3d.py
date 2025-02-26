@@ -5,28 +5,27 @@ import numpy as np
 
 import chem_analysis.utils.math as math_utils
 from chem_analysis.base_obj.unify_methods_2d import UnifyMethod2D, UnifyMethodStrict2D
-from chem_analysis.processing.processor import Processor
 from chem_analysis.base_obj.signal_2d import Signal2D
 
 
-def validate_input(x_raw: np.ndarray, y_raw: np.ndarray, z_raw: np.ndarray, w_raw: np.ndarray):
-    if len(x_raw.shape) != 1:
-        raise ValueError(f"'x_raw' must shape 1. \n\treceived: {x_raw.shape}")
-    if len(y_raw.shape) != 1:
-        raise ValueError(f"'y_raw' must shape 1. \n\treceived: {y_raw.shape}")
-    if len(z_raw.shape) != 1:
-        raise ValueError(f"'z_raw' must shape 1. \n\treceived: {z_raw.shape}")
-    if len(w_raw.shape) != 3:
-        raise ValueError(f"'w_raw' must shape 3. \n\treceived: {w_raw.shape}")
-    if x_raw.shape[0] != w_raw.shape[2]:
-        raise ValueError(f"'x_raw' and 'w_raw[2]' must have same shape. \n\treceived: x_raw:{x_raw.shape} "
-                         f"|| w_raw.shape[2]: {w_raw.shape[2]}")
-    if y_raw.shape[0] != w_raw.shape[1]:
-        raise ValueError(f"'y_raw' and 'w_raw[1]' must have same shape. \n\treceived: y_raw:{y_raw.shape} "
-                         f"|| w_raw.shape[1]: {w_raw.shape[1]}")
-    if z_raw.shape[0] != w_raw.shape[0]:
-        raise ValueError(f"'z_raw' and 'w_raw[0]' must have same shape. \n\treceived: z_raw:{z_raw.shape} "
-                         f"|| w_raw.shape[0]: {w_raw.shape[0]}")
+def validate_input(x: np.ndarray, y: np.ndarray, z: np.ndarray, w: np.ndarray):
+    if len(x.shape) != 1:
+        raise ValueError(f"'x' must shape 1. \n\treceived: {x.shape}")
+    if len(y.shape) != 1:
+        raise ValueError(f"'y' must shape 1. \n\treceived: {y.shape}")
+    if len(z.shape) != 1:
+        raise ValueError(f"'z' must shape 1. \n\treceived: {z.shape}")
+    if len(w.shape) != 3:
+        raise ValueError(f"'w' must shape 3. \n\treceived: {w.shape}")
+    if x.shape[0] != w.shape[2]:
+        raise ValueError(f"'x' and 'w[2]' must have same shape. \n\treceived: x:{x.shape} "
+                         f"|| w.shape[2]: {w.shape[2]}")
+    if y.shape[0] != w.shape[1]:
+        raise ValueError(f"'y' and 'w[1]' must have same shape. \n\treceived: y:{y.shape} "
+                         f"|| w.shape[1]: {w.shape[1]}")
+    if z.shape[0] != w.shape[0]:
+        raise ValueError(f"'z' and 'w[0]' must have same shape. \n\treceived: z:{z.shape} "
+                         f"|| w.shape[0]: {w.shape[0]}")
 
 
 class Signal3D:
@@ -75,10 +74,10 @@ class Signal3D:
         """
         validate_input(x, y, z, w)
 
-        self.x_raw = x
-        self.y_raw = y
-        self.z_raw = z
-        self.w_raw = w
+        self.x = x
+        self.y = y
+        self.z = z
+        self.w = w
         self.id_ = id_ or Signal3D.__count
         Signal3D.__count += 1
         self.name = name or f"signal3D_{self.id_}"
@@ -87,46 +86,13 @@ class Signal3D:
         self.z_label = z_label or "z_axis"
         self.w_label = w_label or "w_axis"
 
-        self.processor = Processor()
-        self._x = None
-        self._y = None
-        self._z = None
-        self._w = None
-
         self.extract_value = None
 
     def __repr__(self):
         text = f"{self.name}: "
         text += f"{self.x_label} vs {self.y_label} vs {self.z_label} vs {self.w_label}"
-        text += f" (shape: {self.w_raw.shape})"
+        text += f" (shape: {self.w.shape})"
         return text
-
-    def _process(self):
-        self._x, self._y, self._z, self._w = self.processor.run(self.x_raw, self.y_raw, self.z_raw, self.w_raw)
-
-    @property
-    def x(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._x
-
-    @property
-    def y(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._y
-
-    @property
-    def z(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._z
-
-    @property
-    def w(self) -> np.ndarray:
-        if not self.processor.processed:
-            self._process()
-        return self._w
 
     def pop(self, index: int) -> Signal2D:
         sig = self.get_signal(index)
@@ -138,8 +104,8 @@ class Signal3D:
             index = [index]
         index.sort(reverse=True)  # delete largest to smallest to avoid issue of changing index
         for i in index:
-            self.w_raw = np.delete(self.w_raw, i, axis=0)
-            self.z_raw = np.delete(self.z_raw, i)
+            self.w = np.delete(self.w, i, axis=0)
+            self.z = np.delete(self.z, i)
 
     def get_signal(self, z_index: int, processed: bool = True, copy_: bool = False) -> Signal2D:
         """
@@ -149,7 +115,7 @@ class Signal3D:
         z_index
         processed:
             True: get x, y, w
-            False: get x_raw, y_raw, w_raw
+            False: get x, y, w
         copy_:
             True: data will be a copy.
             False: data will be a view (until edited)
@@ -161,20 +127,13 @@ class Signal3D:
         https://numpy.org/doc/stable/user/basics.copies.html
 
         """
-        if processed:
-            x, y, z = self.x, self.y, self.w[z_index, :]
-        else:
-            x, y, z = self.x_raw, self.y_raw, self.w_raw[z_index, :]
-
+        x, y, z = self.x, self.y, self.w[z_index, :]
         if copy_:
             x, y, z = x.copy(), y.copy(), z.copy()
 
         sig = self._signal(x=x, y=y, z=z, x_label=self.x_label, y_label=self.y_label,  z_label=self.z_label,
                            name=f"slice_{self.z_label}: {self.z[z_index]}", id_=z_index)
         sig.extract_value = self.z[z_index]
-        if not processed:
-            sig.processor = self.processor.get_copy()
-
         return sig
 
     @classmethod

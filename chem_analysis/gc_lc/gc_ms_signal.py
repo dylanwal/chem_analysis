@@ -25,7 +25,7 @@ class GCMSSignal(Signal):
             if ms is None:
                 raise ValueError('x and y must not be None or ms must not be None')
             x = copy.copy(ms.y)
-            y = np.sum(ms.z_raw, axis=1)
+            y = np.sum(ms.z, axis=1)
 
         x_label = x_label or "retention time"
         y_label = y_label or "intensity"
