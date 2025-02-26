@@ -16,13 +16,16 @@ class UnifyMethod(abc.ABC):
 
 
 class UnifyMethodStrict(UnifyMethod):
+    R_TOL = 0.01
+
     def __init__(self, rtol: float | None = None, atol: float | None = None):
-        self.rtol= rtol
+        """ the x-axis are the same within relative tolerance or absolute tolerance """
+        self.rtol = rtol
         self.atol = atol
 
     def get_args(self) -> dict:
         if self.rtol is None and self.atol is None:
-            self.rtol = 0.01
+            self.rtol = self.R_TOL
         dict_ = {}
         if self.rtol is not None:
             dict_['rtol'] = self.rtol
@@ -173,7 +176,7 @@ class UnifyMethodExpandInterpolate(UnifyMethod):
 
         z = np.ones((len(signals), len(x)), dtype=signals[0].y.dtype)*self.value
         for i, sig in enumerate(signals):
-            if np.all(np.isclose(sig.x, x, rtol=0.0001)):
+            if len(sig.x) == len(x) and np.all(np.isclose(sig.x, x, rtol=0.0001)):
                 z[i, :] = sig.y
             else:
                 spline = InterpolatedUnivariateSpline(x=sig.x, y=sig.y)

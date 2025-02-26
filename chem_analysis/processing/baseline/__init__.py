@@ -5,3 +5,4 @@ from chem_analysis.processing.baseline.whittaker import AsymmetricLeastSquared, 
 from chem_analysis.processing.baseline.splines import Spline
 from chem_analysis.processing.baseline.sliding_window import SectionMinMax
 from chem_analysis.processing.baseline.compound_methods import BaselineWithMask
+from chem_analysis.processing.baseline.wavelet import Wavelet

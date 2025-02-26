@@ -6,50 +6,34 @@ import plotly.graph_objs as go
 import chem_analysis as ca
 
 from result_series import results_to_timeseries
+import development.data_analysis.utils.plotly_utils
 
-lib_path = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json"
-LIBRARY = ca.library.Library.from_JSON(lib_path)
-picking_lib_fid = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_fid")
-picking_lib_ms = ca.analysis.ms_analysis.PickingLibrary.from_library(LIBRARY, "decane_ms")
-
+lib_FID = r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\intergate_FID_AA.txt"
 parameters = ""
-lib_FID = r"C:\Users\nicep\Desktop\intergate_FID_MC.txt"
 
 
-def process_single(data_path: pathlib.Path, label: str):
-    # load data
+def load_single_file(data_path: pathlib.Path, label: str) -> tuple[ca.gc_lc.GCMSSignal, ca.gc_lc.GCSignal]:
     ms_file = data_path / f"{label}_data.ms"
     fid_file = data_path / f"{label}_FID1A.ch"
     ini_file = data_path / f"{label}_pre_post.ini"
-    ms, fid = ca.gc_lc.GCParser.from_Agilent_D_files(ini_file, ms_file, fid_file)
+    return ca.gc_lc.GCParser.from_Agilent_D_files(ini_file, ms_file, fid_file)
 
-    # fid
+
+def process_fid(sig: ca.gc_lc.GCSignal):
     baseline_proc = ca.p.baseline.BaselineWithMask(
         baseline_method=ca.p.baseline.Polynomial(degree=0),
         mask=ca.p.weigths.Spans((None, 1.5))
     )
-    fid.processor.add(baseline_proc)
-
-    # peak_locations = ca.a.peak_picking.find_peaks_scipy(fid,
-    #                                                     mask=ca.p.weigths.Spans((4.1, 44)),
-    #                                                     scipy_kwargs={"height": 20_000, "width": 0.15}
-    #                                                     )
-    # peaks = ca.a.integration.integrate_by_fitting_normal_distribution(peak_locations)
-    # peaks = ca.a.integration.rolling_ball(peak_locations, n=5, min_height=0.002, n_points_with_pos_slope=2)
-    peaks_fid = ca.a.integration.integrate_from_file_trapz(fid, lib_FID)
-    # fid_compounds = ca.a.ms_analysis.search_by_retention_time(picking_lib_fid, peaks)
+    sig.processor.add(baseline_proc)
+    peaks = ca.a.integration.integrate_from_file(sig, lib_FID)
 
     fid_fig = go.Figure(layout=ca.plotting.plotly_utils.layout())
-    ca.plotting.signal(fid, fig=fid_fig)
-    ca.plotting.peaks(peaks_fid, fig=fid_fig)
-    max_y = max(peak.properties.max_y for peak in peaks_fid.peaks)
+    ca.plotting.signal(sig, fig=fid_fig)
+    ca.plotting.peaks(peaks, fig=fid_fig)
+    max_y = max(peak.properties.max_y for peak in peaks.peaks)
     fid_fig.layout.yaxis.range = [-0.1*max_y, 1.1*max_y]
     fid_fig.layout.title = "FID"
-
-    print("finished analyzing:", label)
-    global parameters
-    parameters += "\n" + str(data_path) + "\n\t fid:" + str(fid.processor.methods)
-    return fid_fig, peaks_fid
+    return fid_fig, peaks
 
 
 def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[str], times: np.ndarray):
@@ -59,7 +43,8 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
     # process data
     fid_compounds, ms_compounds, fid_figs, ms_figs = [], [], [], []
     for label in labels:
-        fid_fig_, fid_comp = process_single(data_path / "GCMS", label)
+        ms, fid = load_single_file(data_path / "GCMS", label)
+        fid_fig_, fid_comp = process_fid(fid)
         fid_figs.append(fid_fig_)
         fid_compounds.append(fid_comp)
 
@@ -85,5 +70,19 @@ def main():
     process_timeseries(data_path, data_label, labels, times)
 
 
+def main_plot():
+    data_path = pathlib.Path(rf"C:\Users\nicep\Desktop\research_wis\data\11\11_65")
+    times = np.array([30, 60, 120, 240, 360, 720, 1950])  # 30, 60, 120, 240, 360, 720, 1950
+    data_label = "DJW-11-65-v1"
+    labels = [data_label + f"-t{i}-TMS" for i in times]
+    sigs = [load_single_file(data_path / "GCMS", label) for label in labels]
+    fids = ca.gc_lc.GCSignal2D.from_signals([i[1] for i in sigs], times, "time", unify_method=ca.base_obj.UnifyMethodExpandInterpolate())
+    mss = [i[0] for i in sigs]
+
+    fig = ca.plot.signal2D_overlap_signals(fids)
+    fig.show()
+
+
 if __name__ == "__main__":
     main()
+    # main_plot()

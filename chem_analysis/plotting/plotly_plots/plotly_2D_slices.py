@@ -11,7 +11,7 @@ from chem_analysis.plotting.plotly_plots.plotly_peaks import plotly_peaks
 from chem_analysis.analysis.peak_result import ResultPeaks2D
 
 
-def plotly_slices(
+def plotly_overlap_signals(
         signal: Signal2D,
         slices: None | int | Sequence[int] | slice,
         fig: go.Figure | None,
@@ -33,7 +33,7 @@ def plotly_slices(
 
     indexes = get_index_from_slice(slices, len(y))
     for i in indexes:
-        fig.add_scatter(x=x, y=z[i, :], name=f"{name} (y={i})", **plot_kwargs)
+        fig.add_scatter(x=x, y=z[i, :], name=f"{signal.y_label}: {y[i]}", **plot_kwargs)
     fig.layout.xaxis.title = bold_in_html(signal.x_label)
     fig.layout.yaxis.title = bold_in_html(signal.z_label)
     return fig
@@ -59,7 +59,7 @@ def get_index_from_slice(slices: None | int | Sequence[int] | slice, len_y: int)
                     )
 
 
-def plotly_slices_separate(
+def plotly_stack_signals(
         signal: Signal2D,
         slices: None | int | Sequence[int] | slice,
         fig: go.Figure | None,
@@ -83,7 +83,7 @@ def plotly_slices_separate(
     indexes = get_index_from_slice(slices, len(y))
     for i in indexes:
         fig_ = copy.copy(fig)
-        fig_.add_scatter(x=x, y=z[i, :], name=f"{name} (y={i})", **plot_kwargs)
+        fig_.add_scatter(x=x, y=z[i, :], name=f"{signal.y_label}: {y[i]}", **plot_kwargs)
         fig_.layout.xaxis.title = bold_in_html(signal.x_label)
         fig_.layout.yaxis.title = bold_in_html(signal.z_label)
         figs.append(fig_)

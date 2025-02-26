@@ -52,7 +52,7 @@ def signal2D_surface(
     raise NotImplementedError()
 
 
-def signal2D_slices(
+def signal2D_overlap_signals(
         signal_: Signal2D,
         slices: None | int | Sequence[int] | slice = None,
         *,
@@ -80,8 +80,8 @@ def signal2D_slices(
     plot_kwargs = copy.copy(plot_kwargs) or {}
     for option in global_config.get_plotting_options():
         if option == global_config.PLOTTING_LIBRARIES.PLOTLY:
-            from chem_analysis.plotting.plotly_plots.plotly_2D_slices import plotly_slices
-            return plotly_slices(signal_, slices, fig, raw, plot_kwargs)
+            from chem_analysis.plotting.plotly_plots.plotly_2D_slices import plotly_overlap_signals
+            return plotly_overlap_signals(signal_, slices, fig, raw, plot_kwargs)
         if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
             pass
 
@@ -91,7 +91,7 @@ def signal2D_slices(
     raise NotImplementedError()
 
 
-def signal2D_slices_separate(
+def signal2D_stack_signals(
         signal_: Signal2D,
         slices: None | int | Sequence[int] | slice = None,
         *,
@@ -120,8 +120,8 @@ def signal2D_slices_separate(
     plot_kwargs = copy.copy(plot_kwargs) or {}
     for option in global_config.get_plotting_options():
         if option == global_config.PLOTTING_LIBRARIES.PLOTLY:
-            from chem_analysis.plotting.plotly_plots.plotly_2D_slices import plotly_slices_separate
-            return plotly_slices_separate(signal_, slices, fig, raw, plot_kwargs)
+            from chem_analysis.plotting.plotly_plots.plotly_2D_slices import plotly_stack_signals
+            return plotly_stack_signals(signal_, slices, fig, raw, plot_kwargs)
         if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
             pass
 
