@@ -4,6 +4,8 @@ from typing import Sequence
 
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 MIN_FLOAT = np.float64.min  # np.finfo(float).eps
 DTYPE_UINT = (np.uint8, np.uint16, np.uint32, np.uint64)
 DTYPE_INT = (np.int8, np.int16, np.int32, np.int64)
@@ -322,7 +324,7 @@ def get_asymmetry_factor(x: np.ndarray, y: np.ndarray, height: float | int = 0.1
     lower, high = get_width_at(x, y, height)
     middle = x[np.argmax(y)]
 
-    return (high - middle) / (middle - lower)
+    return float((high - middle) / (middle - lower))
 
 
 def get_width_at(x: np.ndarray, y: np.ndarray, height: float | int = 0.5) -> tuple[float, float]:
@@ -331,21 +333,21 @@ def get_width_at(x: np.ndarray, y: np.ndarray, height: float | int = 0.5) -> tup
     height_half_max = np.max(y) * height
     index_max = np.argmax(y)
     if index_max == 0 or index_max == len(x):  # peak max is at end.
-        logging.info("Finding fwhm is not possible with a peak max at an bound.")
+        logger.info("Finding fwhm is not possible with a peak max at an bound.")
         return 0, 0
 
     x_low = np.interp(height_half_max, y[:index_max], x[:index_max])
     x_high = np.interp(height_half_max, np.flip(y[index_max:]), np.flip(x[index_max:]))
 
     if x_low == x[0]:
-        logging.info("fwhm or asym is having to linear interpolate on the lower end.")
+        logger.info("fwhm or asym is having to linear interpolate on the lower end.")
         slice_ = max(3, int(index_max / 10))
         fit = np.polyfit(y[:slice_], x[:slice_], deg=1)
         p = np.poly1d(fit)
         x_low = p(height_half_max)
 
     if x_high == x[-1]:
-        logging.info("fwhm or asym is having to linear interpolate on the lower end.")
+        logger.info("fwhm or asym is having to linear interpolate on the lower end.")
         slice_ = max(3, int(index_max / 10))
         fit = np.polyfit(y[-slice_:], x[-slice_:], deg=1)
         p = np.poly1d(fit)

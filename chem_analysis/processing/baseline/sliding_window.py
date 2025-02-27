@@ -4,15 +4,12 @@ import numpy as np
 from scipy.ndimage import gaussian_filter1d
 
 from chem_analysis.processing.processing_method import Baseline
-from chem_analysis.processing.weigths.sliding_window import sectioned_std, Smoother
+from chem_analysis.processing.smoothing import Smoother
+from chem_analysis.processing.weigths.sliding_window_std import sectioned_std
 
 # Input || x: np.ndarray, x_old: np.ndarray, y_old: np.ndarray
 # Return || y: np.ndarray
 FittingFunction = Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]
-
-
-def interpolation_gaussian_filter(x: np.ndarray, x_old: np.ndarray, y_old: np.ndarray, sigma: int = 100) -> np.ndarray:
-    return gaussian_filter1d(np.interp(x, x_old, y_old), sigma)
 
 
 from scipy.interpolate import CubicSpline
@@ -22,6 +19,10 @@ def cubic_splines(x: np.ndarray, x_old: np.ndarray, y_old: np.ndarray, sigma: in
     y_new = gaussian_filter1d(y_old, sigma)
     cs = CubicSpline(x_old, y_new, extrapolate=True)
     return cs(x)
+
+
+def interpolation_gaussian_filter(x: np.ndarray, x_old: np.ndarray, y_old: np.ndarray, sigma: int = 100) -> np.ndarray:
+    return gaussian_filter1d(np.interp(x, x_old, y_old), sigma)
 
 
 class SectionMinMax(Baseline):

@@ -25,6 +25,11 @@ class Processor:
     def __len__(self):
         return len(self._methods)
 
+    def __copy__(self):
+        copy_ = copy.deepcopy(self)
+        copy_.processed = False
+        return copy_
+
     @property
     def methods(self) -> list[ProcessingMethod]:
         return self._methods
@@ -45,6 +50,7 @@ class Processor:
         self.processed = False
 
     def run(self, sig: Signal | Signal2D | Signal3D) -> Signal | Signal2D | Signal3D:
+        """ Run processing methods on passed in signal. """
         new_signal = copy.deepcopy(sig)
         if isinstance(sig, Signal):
             new_signal.x, new_signal.y = self.run_individual(sig.x, sig.y)
@@ -60,10 +66,17 @@ class Processor:
     def run_individual(self, x: np.ndarray, y: np.ndarray, z: np.ndarray | None = None, w: np.ndarray | None = None) \
             -> (tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]
                 | tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]):
+        """
+        Run processing methods on passed in x, y, (z), (w) np arrays.
+        Processing.run(signal) is preferred use over run_individual() method.
+        """
         x = np.copy(x)
         y = np.copy(y)
         if z is not None:
             z = np.copy(z)
+        if w is not None:
+            w = np.copy(w)
+
         for method in self._methods:
             if z is None:
                 x, y = method.run(x, y)
@@ -73,13 +86,9 @@ class Processor:
                 x, y, z, w = method._run3D(x, y, z, w)
 
         self.processed = True
+
         if z is None:
             return x, y
-        if w is None:
+        elif w is None:
             return x, y, z
         return x, y, z, w
-
-    def get_copy(self) -> Processor:
-        copy_ = copy.deepcopy(self)
-        copy_.processed = False
-        return copy_

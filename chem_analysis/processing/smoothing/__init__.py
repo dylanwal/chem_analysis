@@ -4,6 +4,13 @@ from chem_analysis.processing.smoothing.time_smoothing import ExponentialTime, G
 from chem_analysis.processing.smoothing.rolling_window import RollingWindow
 from chem_analysis.processing.smoothing.wavelet import Wavelet
 
+from typing import Callable
+import numpy as np
+
+# Input || y_old: np.ndarray
+# Return || y_smoothed: np.ndarray
+Smoother = Callable[[np.ndarray], np.ndarray]
+
 # TODO:
 # Denoise
 # non-local means: noise factor 0.75 blockwise

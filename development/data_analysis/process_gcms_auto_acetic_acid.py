@@ -20,16 +20,18 @@ def load_single_file(data_path: pathlib.Path, label: str) -> tuple[ca.gc_lc.GCMS
 
 
 def process_fid(sig: ca.gc_lc.GCSignal):
-    baseline_proc = ca.p.baseline.BaselineWithMask(
-        baseline_method=ca.p.baseline.Polynomial(degree=0),
-        mask=ca.p.weigths.Spans((None, 1.5))
+    # baseline_proc = ca.p.baseline.BaselineWithMask(
+    #     baseline_method=ca.p.baseline.Polynomial(degree=0),
+    #     mask=ca.p.weigths.Spans((None, 1.5))
+    # )
+    proc = ca.p.Processor(
+        ca.p.baseline.Polynomial(degree=2)
     )
-    proc = ca.p.Processor(baseline_proc)
     proc_sig = proc.run(sig)
 
     peaks = ca.a.integration.integrate_from_file(proc_sig, lib_FID)
 
-    fig = ca.plot.signal(sig)
+    fig = ca.plot.signal(proc_sig)
     fig = ca.plot.peaks(peaks, fig=fig)
     max_y = max(peak.properties.max_y for peak in peaks.peaks)
     fig.layout.yaxis.range = [-0.1*max_y, 1.1*max_y]
@@ -67,6 +69,33 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
     print(data)
 
 
+def main_baseline():
+    data_path = pathlib.Path(rf"C:\Users\nicep\Desktop\research_wis\data\11\11_65")
+    times = np.array([30, 60, 120, 240, 360, 720, 1950])  # 30, 60, 120, 240, 360, 720, 1950
+    data_label = "DJW-11-65-v1"
+    labels = [data_label + f"-t{i}-TMS" for i in times]
+
+    figs = []
+    for label in labels:
+        ms, fid = load_single_file(data_path / "GCMS", label)
+        proc = ca.p.Processor(
+            ca.p.baseline.MorphologicalAverage()
+        )
+        proc_sig = proc.run(fid)
+        peaks = ca.a.integration.integrate_from_file(proc_sig, lib_FID)
+        fig = ca.plot.signal(fid)
+        fig = ca.plot.signal(proc_sig, fig=fig)
+        fig = ca.plot.peaks(peaks, fig=fig)
+        max_y = max(peak.properties.max_y for peak in peaks.peaks)
+        fig.layout.yaxis.range = [-0.1*max_y, 1.1*max_y]
+        fig.layout.title = "FID"
+
+        figs.append(fig)
+        print(f"processed: {label}")
+
+    ca.plotting.plotly_utils.merge_figures(figs, filename=data_path / 'baseline_fid.html')
+
+
 def main():
     data_path = pathlib.Path(rf"C:\Users\nicep\Desktop\research_wis\data\11\11_65")
     times = np.array([30, 60, 120, 240, 360, 720, 1950])  # 30, 60, 120, 240, 360, 720, 1950
@@ -89,5 +118,6 @@ def main_plot():
 
 
 if __name__ == "__main__":
-    main()
+    main_baseline()
+    # main()
     # main_plot()

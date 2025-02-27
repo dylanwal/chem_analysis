@@ -51,7 +51,7 @@ def process_single(data_path: pathlib.Path, label: str, x_baseline: np.ndarray, 
     fid.processor.add(ca.p.baseline.Subtract(y=y_baseline, x=x_baseline))
     fid.processor.add(ca.p.baseline.BaselineWithMask(
         ca.p.baseline.AdaptiveAsymmetricLeastSquared(lambda_=1e2),
-        mask=ca.p.weigths.MaxMinSigma(window=10, sections=200, smoother=lambda x: gaussian_filter1d(x, 5))
+        mask=ca.p.weigths.SlidingWindowStd(window=10, sections=200, smoother=lambda x: gaussian_filter1d(x, 5))
     ))
 
     peaks_fid = ca.a.integration.integrate_from_file(fid, lib_FID)

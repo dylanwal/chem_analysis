@@ -1,16 +1,12 @@
-from typing import Callable
 
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
 
 from chem_analysis.utils.pad_edges import pad_edges_polynomial
+from chem_analysis.processing.smoothing import Smoother
 from numpy.lib.stride_tricks import sliding_window_view
 
 from chem_analysis.processing.weigths.weights import DataWeight
-
-# Input || y_old: np.ndarray
-# Return || y_smoothed: np.ndarray
-Smoother = Callable[[np.ndarray], np.ndarray]
 
 
 def divide_array(array: np.ndarray, num_sections: int) -> list[slice]:
@@ -78,8 +74,8 @@ def sectioned_std(y,
     stds = std_by_section(y, sections)
     min_sigma = np.percentile(stds, 5)  # min(stds)
 
-    # smooth spectra with convolution
-    smoothed_y = smoother(y)
+    # smooth spectra
+    smoothed_y = smoother(y) if smoother is not None else y
 
     # evaluate if point is outside min_sigma
     half_window = int(window / 2)
@@ -94,15 +90,19 @@ def sectioned_std(y,
     return mask
 
 
-class MaxMinSigma(DataWeight):
+class SlidingWindowStd(DataWeight):
     def __init__(self,
                  window: int = 3,
                  sections: int = 32,
                  number_of_deviations: int | float = 2,
-                 smoother: Smoother = lambda x: gaussian_filter1d(x, 10),
+                 smoother: Smoother | None = lambda x: gaussian_filter1d(x, 10),
                  invert: bool = False,
                  ):
         """
+        Finds the region with the smallest standard deviation.
+        It uses the std to determine if a point within a window is outside that region.
+        smoothing is usually applied to soften the analysis
+
         This algorithm assumes the y data contains at least one region with no signals which will be used to
         compute areas where variation exceeds the standard deviation.
 
