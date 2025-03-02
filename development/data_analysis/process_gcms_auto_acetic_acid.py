@@ -82,6 +82,7 @@ def main_baseline():
             ca.p.baseline.MorphologicalAverage()
         )
         proc_sig = proc.run(fid)
+        print(f"window: {proc.methods[0].window_size}")
         peaks = ca.a.integration.integrate_from_file(proc_sig, lib_FID)
         fig = ca.plot.signal(fid)
         fig = ca.plot.signal(proc_sig, fig=fig)

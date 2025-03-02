@@ -12,6 +12,12 @@ DTYPE_INT = (np.int8, np.int16, np.int32, np.int64)
 DTYPE_FLOAT = (np.float16, np.float32, np.float64)
 
 
+def norm2(old: np.ndarray, new: np.ndarray) -> float:
+    if np.all(old == 0):
+        return 0.0
+    return np.linalg.norm(new - old) / np.linalg.norm(old)
+
+
 def pack_time_series(x: np.ndarray, time_: np.ndarray, z: np.array) -> np.ndarray:
     if x.shape[0] != z.shape[1]:
         raise ValueError(f"'x.shape[0]' must equal 'z.shape[1]'\n\tx shape:{x.shape}\n\tz shape:{z.shape}")
@@ -460,3 +466,15 @@ def rescale_array(
         old_up: int | float = 1
 ) -> np.ndarray:
     return new_lb + (new_up - new_lb) * (arr - old_lb) / (old_up - old_lb)
+
+
+def get_slope(y: np.ndarray) -> float:
+    """Compute the slope of the last few values in `norms` using linear regression."""
+    if len(y) < 2:
+        return 0  # Not enough points to compute a meaningful slope
+
+    x = np.arange(len(y))
+    A = np.vstack([x, np.ones_like(x)]).T
+    slope, _ = np.linalg.lstsq(A, y, rcond=None)[0]
+
+    return slope
