@@ -7,6 +7,14 @@ import chem_analysis.utils.math as general_math
 from chem_analysis.base_obj.parameters import Parameters
 
 
+def check_array_inf_nan(x: np.ndarray, name: str):
+    if np.any(np.isinf(x)):
+        raise ValueError(f"The array '{name}' contains 'inf' values.")
+
+    if np.any(np.isnan(x)):
+        raise ValueError(f"The array '{name}' contains 'nan' values.")
+
+
 def validate_input(x: np.ndarray, y: np.ndarray):
     if len(x.shape) != 1:
         raise ValueError(f"'x' must shape 1. \n\treceived: {x.shape}")
@@ -14,6 +22,8 @@ def validate_input(x: np.ndarray, y: np.ndarray):
         raise ValueError(f"'y' must shape 1. \n\treceived: {y.shape}")
     if x.shape != y.shape:
         raise ValueError(f"'x' and 'y' must have same shape. \n\treceived: x:{x.shape} || y:{y.shape}")
+    check_array_inf_nan(x, name="x")
+    check_array_inf_nan(y, name="y")
 
 
 class Signal:

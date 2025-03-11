@@ -1,33 +1,45 @@
-from typing import Iterable
+from typing import Sequence
 
 import numpy as np
 
-from chem_analysis.processing.processing_method import Baseline
-from chem_analysis.processing.weigths.weights import DataWeight, DataWeightChain
+from chem_analysis.processing.processing_method import ProcessingMethod, Baseline
 
 
-class BaselineWithMask(Baseline):
+class CompoundProcessingBaseline(ProcessingMethod):
     def __init__(self,
-                 baseline_method: Baseline,
-                 mask: DataWeight | Iterable[DataWeight],
+                 methods: Sequence[ProcessingMethod],
                  temporal_processing: int = 1,
-                 save_result: bool = False
                  ):
-        super().__init__(temporal_processing, save_result)
-        self.baseline_method = baseline_method
-        if mask is not None and isinstance(mask, Iterable):
-            mask = DataWeightChain(mask)
-        self.mask: DataWeight = mask
-        self.mask = mask
+        """
+        Compound Processing Baseline Class
+        allows for smoothing, masking, subsampling, etc. prior to computing baseline
+        the methods will not affect x,y signal; just the data used for computing baseline
 
-    def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.mask is not None:
-            mask = self.mask.get_mask(x, y)
-            x_ = x[mask]
-            y_ = y[mask]
-        else:
-            x_ = x
-            y_ = y
+        Parameters
+        ----------
+        methods:
+            list of processing methods applied to x,y before computing baseline
+            last method in list must be a 'Baseline' ProcessingMethod
+        temporal_processing:
 
-        baseline = self.baseline_method.get_baseline(x_, y_)
-        return np.interp(x, x_, baseline)
+        """
+        if not isinstance(methods[-1], Baseline):
+            raise ValueError("The last method must be a 'Baseline' processing")
+
+        super().__init__(temporal_processing)
+        self.methods = methods
+
+    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        x_, y_ = np.copy(x), np.copy(y)
+        for method in self.methods[:-1]:
+           x_, y_ = method.run(x, y)
+        baseline = self.methods[-1].get_baseline(x_,y_)
+        baseline = np.interp(x, x_, baseline)
+        return x, y - baseline
+
+    def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        pass
+
+    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, w: np.ndarray) -> tuple[
+        np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        pass
