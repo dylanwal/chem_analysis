@@ -345,7 +345,6 @@ Adaptive Rolling Ball Baseline Correction with Bidirectional Smoothing.
             continue
         slope_norms = math_utils.get_slope(norms[i-3:i])
         if abs(slope_norms) < min_slope:
-            print("radius:", r[i-1])
             break
 
     else:

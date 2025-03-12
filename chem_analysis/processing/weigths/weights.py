@@ -9,7 +9,7 @@ from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 import chem_analysis.processing.weigths.penalty_functions as penalty_functions
 
 
-class DataWeight(MixinSubClassList, abc.ABC):
+class Weights(MixinSubClassList, abc.ABC):
     def __init__(self, threshold: float = 0.5, normalized: bool = True, invert: bool = False):
         self.threshold = threshold
         self.normalized = normalized
@@ -124,8 +124,8 @@ class DataWeight(MixinSubClassList, abc.ABC):
     #     return x_list, y, z_list
 
 
-class DataWeightChain(DataWeight):
-    def __init__(self, weights: DataWeight | Iterable[DataWeight] = None):
+class WeightsChain(Weights):
+    def __init__(self, weights: Weights | Iterable[Weights] = None):
         super().__init__()
         if weights is None:
             weights = []
@@ -143,7 +143,7 @@ class DataWeightChain(DataWeight):
         pass
 
 
-class Slices(DataWeight):
+class Slices(Weights):
     def __init__(self,
                  slices: slice | Iterable[slice],
                  threshold: float = 0.5,
@@ -187,7 +187,7 @@ class Slices(DataWeight):
         return weights
 
 
-class Spans(DataWeight):
+class Spans(Weights):
     def __init__(self,
                  x_spans: Sequence[float] | Iterable[Sequence[float]],  # Sequence of length 2
                  threshold: float = 0.5,
@@ -215,7 +215,7 @@ class Spans(DataWeight):
         return weights
 
 
-class MultiPoint(DataWeight):
+class MultiPoint(Weights):
     def __init__(self,
                  indexes: Iterable[int],
                  threshold: float = 0.5,
@@ -238,7 +238,7 @@ class MultiPoint(DataWeight):
         return weights
 
 
-class Distance(DataWeight):
+class Distance(Weights):
     def __init__(self,
                  reference_value: float | int = 0,
                  penalty_function: Callable = penalty_functions.penalty_function_linear,
@@ -254,7 +254,7 @@ class Distance(DataWeight):
         return self.penalty_function(y-self.reference_value)
 
 
-class DistanceMedian(DataWeight):
+class DistanceMedian(Weights):
     def __init__(self,
                  penalty_function: Callable = penalty_functions.penalty_function_linear,
                  threshold: float = 0.5,
@@ -289,7 +289,7 @@ def get_distance_remove(y: np.ndarray, amount: float = 0.7, speed: float = 0.1, 
     return indexes
 
 
-class AdaptiveDistanceMedian(DataWeight):
+class AdaptiveDistanceMedian(Weights):
     def __init__(self,
                  penalty_function: Callable = penalty_functions.penalty_function_linear,
                  amount: float = 0.5,

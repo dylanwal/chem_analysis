@@ -20,12 +20,8 @@ def load_single_file(data_path: pathlib.Path, label: str) -> tuple[ca.gc_lc.GCMS
 
 
 def process_fid(sig: ca.gc_lc.GCSignal):
-    # baseline_proc = ca.p.baseline.BaselineWithMask(
-    #     baseline_method=ca.p.baseline.Polynomial(degree=0),
-    #     mask=ca.p.weigths.Spans((None, 1.5))
-    # )
     proc = ca.p.Processor(
-        ca.p.baseline.Polynomial(degree=2)
+        ca.p.baseline.MorphologicalAverage()
     )
     proc_sig = proc.run(sig)
 
@@ -34,7 +30,7 @@ def process_fid(sig: ca.gc_lc.GCSignal):
     fig = ca.plot.signal(proc_sig)
     fig = ca.plot.peaks(peaks, fig=fig)
     max_y = max(peak.properties.max_y for peak in peaks.peaks)
-    fig.layout.yaxis.range = [-0.1*max_y, 1.1*max_y]
+    fig.layout.yaxis.range = [-0.1 * max_y, 1.1 * max_y]
     fig.layout.title = "FID"
     return fig, peaks
 
@@ -82,13 +78,13 @@ def main_baseline():
             ca.p.baseline.MorphologicalAverage()
         )
         proc_sig = proc.run(fid)
-        print(f"window: {proc.methods[0].window_size}")
+        # print(f"window: {proc.methods[0].window_size}")
         peaks = ca.a.integration.integrate_from_file(proc_sig, lib_FID)
         fig = ca.plot.signal(fid)
-        fig = ca.plot.signal(proc_sig, fig=fig)
-        fig = ca.plot.peaks(peaks, fig=fig)
+        fig = ca.plot.baseline(proc, fig=fig)
+        # fig = ca.plot.peaks(peaks, fig=fig)
         max_y = max(peak.properties.max_y for peak in peaks.peaks)
-        fig.layout.yaxis.range = [-0.1*max_y, 1.1*max_y]
+        fig.layout.yaxis.range = [-0.1 * max_y, 1.1 * max_y]
         fig.layout.title = "FID"
 
         figs.append(fig)
@@ -111,7 +107,8 @@ def main_plot():
     data_label = "DJW-11-65-v1"
     labels = [data_label + f"-t{i}-TMS" for i in times]
     sigs = [load_single_file(data_path / "GCMS", label) for label in labels]
-    fids = ca.gc_lc.GCSignal2D.from_signals([i[1] for i in sigs], times, "time", unify_method=ca.base_obj.UnifyMethodExpandInterpolate())
+    fids = ca.gc_lc.GCSignal2D.from_signals([i[1] for i in sigs], times, "time",
+                                            unify_method=ca.base_obj.UnifyMethodExpandInterpolate())
     mss = [i[0] for i in sigs]
 
     fig = ca.plot.signal2D_overlap_signals(fids)

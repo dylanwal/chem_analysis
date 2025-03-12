@@ -3,13 +3,13 @@ from typing import Iterable
 import numpy as np
 
 from chem_analysis.processing.processing_method import Baseline
-from chem_analysis.processing.weigths.weights import DataWeight
+from chem_analysis.processing.weigths.weights import Weights
 
 
 class Polynomial(Baseline):
     def __init__(self,
                  degree: int = 1,
-                 weights: DataWeight | Iterable[DataWeight] = None,
+                 weights: Weights | Iterable[Weights] = None,
                  temporal_processing: int = 1,
                  save_result: bool = False
                  ):

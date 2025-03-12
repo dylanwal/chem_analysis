@@ -5,9 +5,10 @@ import numpy as np
 from chem_analysis.processing.processing_method import ProcessingMethod, Baseline
 
 
-class CompoundProcessingBaseline(ProcessingMethod):
+class CompoundProcessingBaseline(Baseline):
     def __init__(self,
                  methods: Sequence[ProcessingMethod],
+                 save_result: bool = False,
                  temporal_processing: int = 1,
                  ):
         """
@@ -26,20 +27,30 @@ class CompoundProcessingBaseline(ProcessingMethod):
         if not isinstance(methods[-1], Baseline):
             raise ValueError("The last method must be a 'Baseline' processing")
 
-        super().__init__(temporal_processing)
+        super().__init__(temporal_processing, save_result)
         self.methods = methods
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         x_, y_ = np.copy(x), np.copy(y)
         for method in self.methods[:-1]:
            x_, y_ = method.run(x, y)
         baseline = self.methods[-1].get_baseline(x_,y_)
-        baseline = np.interp(x, x_, baseline)
-        return x, y - baseline
+        return np.interp(x, x_, baseline)
 
-    def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        pass
-
-    def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, w: np.ndarray) -> tuple[
-        np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        pass
+    # def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    #
+    #
+    #     if self.save_result:
+    #         self.baseline = baseline
+    #         self.x = x
+    #         self.data = y
+    #
+    #
+    #     return x, y - baseline
+    #
+    # def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    #     pass
+    #
+    # def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, w: np.ndarray) -> tuple[
+    #     np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    #     pass

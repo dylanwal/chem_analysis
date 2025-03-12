@@ -4,7 +4,7 @@ import numpy as np
 from chem_analysis.utils.math import map_argmax_to_original
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
-from chem_analysis.processing.weigths.weights import DataWeight
+from chem_analysis.processing.weigths.weights import Weights
 from chem_analysis.analysis.peak import PeakDiscrete
 from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, ResultPicking2D
 
@@ -12,7 +12,7 @@ from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, Re
 def find_peak_largest(
         signal: Signal | Signal2D,
         min_height: float | None = None,
-        mask: DataWeight = None
+        mask: Weights = None
 ) -> ResultPicking | ResultPicking2D:
     if isinstance(signal, Signal):
         return find_peak_largest_single(signal, mask, min_height)
@@ -24,7 +24,7 @@ def find_peak_largest(
         return results
 
 
-def find_peak_largest_single(signal: Signal, mask: DataWeight = None, min_height: float | None = None) -> ResultPicking:
+def find_peak_largest_single(signal: Signal, mask: Weights = None, min_height: float | None = None) -> ResultPicking:
     result = ResultPicking(signal=signal)
     if mask is not None:
         mask = mask.get_mask(signal.x, signal.y)

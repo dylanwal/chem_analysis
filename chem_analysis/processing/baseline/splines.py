@@ -4,14 +4,14 @@ import numpy as np
 from scipy.interpolate import UnivariateSpline
 
 from chem_analysis.processing.processing_method import Baseline
-from chem_analysis.processing.weigths.weights import DataWeight
+from chem_analysis.processing.weigths.weights import Weights
 
 
 class Spline(Baseline):
     def __init__(self,
                  degree: int = 3,
                  smoothing_factor: float = None,
-                 weights: DataWeight | Iterable[DataWeight] = None,
+                 weights: Weights | Iterable[Weights] = None,
                  temporal_processing: int = 1,
                  save_result: bool = False
                  ):

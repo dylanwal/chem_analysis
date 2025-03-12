@@ -6,7 +6,7 @@ from chem_analysis.utils.pad_edges import pad_edges_polynomial
 from chem_analysis.processing.smoothing import Smoother
 from numpy.lib.stride_tricks import sliding_window_view
 
-from chem_analysis.processing.weigths.weights import DataWeight
+from chem_analysis.processing.weigths.weights import Weights
 
 
 def divide_array(array: np.ndarray, num_sections: int) -> list[slice]:
@@ -90,7 +90,7 @@ def sectioned_std(y,
     return mask
 
 
-class SlidingWindowStd(DataWeight):
+class SlidingWindowStd(Weights):
     def __init__(self,
                  window: int = 3,
                  sections: int = 32,

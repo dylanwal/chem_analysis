@@ -6,7 +6,7 @@ from scipy.signal import find_peaks
 from chem_analysis.utils.math import map_argmax_to_original
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.base_obj.signal_2d import Signal2D
-from chem_analysis.processing.weigths.weights import DataWeight
+from chem_analysis.processing.weigths.weights import Weights
 from chem_analysis.analysis.peak import PeakDiscrete
 from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, ResultPicking2D
 
@@ -25,7 +25,7 @@ def apply_limits(signal, result: ResultPicking):
 @wraps(find_peaks)  # TODO: add support for signal array
 def find_peaks_scipy(
         signal: Signal | Signal2D,
-        mask: DataWeight = None,
+        mask: Weights = None,
         scipy_kwargs: dict = None,
         timeseries: bool = True,
 ) -> ResultPicking | ResultPicking2D:
@@ -43,7 +43,7 @@ def find_peaks_scipy(
         raise NotImplementedError()
 
 
-def find_peaks_scipy_single(signal: Signal, mask: DataWeight = None, scipy_kwargs: dict = None) -> ResultPicking:
+def find_peaks_scipy_single(signal: Signal, mask: Weights = None, scipy_kwargs: dict = None) -> ResultPicking:
     if mask is not None:
         mask = mask.get_mask(signal.x, signal.y)
         y = signal.y[mask]

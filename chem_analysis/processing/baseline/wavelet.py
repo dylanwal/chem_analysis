@@ -16,8 +16,8 @@ def wavelet_baseline_correction(y, wavelet='sym6', level=6):
 
 class Wavelet(Baseline):
     def __init__(self,
-                 wavelet: str = 'sym6',
-                 level: int = 6,
+                 wavelet: str = 'sym4',
+                 level: int = 4,
                  temporal_processing: int = 1,
                  save_result: bool = False
                  ):

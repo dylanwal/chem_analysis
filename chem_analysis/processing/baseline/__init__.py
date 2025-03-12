@@ -9,3 +9,5 @@ from chem_analysis.processing.baseline.morphological import (MorphologicalAverag
                                                              MorphologicalMollifier, MorphologicalTopHat,
                                                              MorphologicalBallRolling, MorphologicalAdaptiveBallRolling)
 from chem_analysis.processing.baseline.convex_hull import ConvexHull
+from chem_analysis.processing.baseline.local_regression import (LOESS, LocallyWeightedScatterplotSmoothing, RLOESS,
+                                                                RobustLocallyWeightedScatterplotSmoothing)

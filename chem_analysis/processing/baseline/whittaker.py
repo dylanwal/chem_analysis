@@ -138,3 +138,7 @@ class ImprovedAsymmetricLeastSquared(Baseline):
         )
 
         return y_baseline
+
+
+# https://pubs.rsc.org/en/content/articlelanding/2010/an/b922045c
+# https://diposit.ub.edu/dspace/bitstream/2445/188026/1/2014_IEEE_Adaptive_MarcoS_postprint.pdf  Adaptive Asymmetric Least Squares baseline estimation for analytical instruments     Sergio Oller-Moreno∗, Antonio Pardo‡
