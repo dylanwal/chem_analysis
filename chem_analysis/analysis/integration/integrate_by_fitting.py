@@ -2,7 +2,6 @@ import logging
 
 import numpy as np
 
-from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, ResultPicking2D
 from chem_analysis.analysis.integration.result_integration import ResultIntegration, ResultIntegration2D
 from chem_analysis.analysis.peak import PeakContinuousModel, PeakDiscrete
 from chem_analysis.analysis.integration.boundary_detection import rolling_ball_n_points

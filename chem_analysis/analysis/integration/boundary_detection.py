@@ -3,7 +3,6 @@ import logging
 import numpy as np
 
 from chem_analysis.analysis.peak import PeakContinuousData
-from chem_analysis.analysis.peak_picking.result_picking import ResultPicking, ResultPicking2D
 from chem_analysis.analysis.integration.result_integration import ResultIntegration, ResultIntegration2D
 
 logger = logging.getLogger(__name__)
@@ -84,7 +83,7 @@ def rolling_ball_n_points(
 
 
 def rolling_ball(
-        picking_result: ResultPicking | ResultPicking2D,
+        peaks,
         n: int = 2,
         poly_degree: int = 1,
         deriv_degree: int = None,
@@ -127,7 +126,7 @@ def rolling_ball(
 
 
 def rolling_ball_single(
-        picking_result: ResultPicking,
+        picking_result,
         n: int,
         poly_degree: int,
         deriv_degree: int,

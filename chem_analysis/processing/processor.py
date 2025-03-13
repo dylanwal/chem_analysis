@@ -13,10 +13,14 @@ class Processor:
     """
     Processor
     """
-    def __init__(self, methods: list[ProcessingMethod] | ProcessingMethod = None):
+    def __init__(self, methods: list[ProcessingMethod] | ProcessingMethod = None, *args):
         if isinstance(methods, ProcessingMethod):
             methods = [methods]
-        self._methods: list[ProcessingMethod] = [] if methods is None else methods
+        methods = methods or []
+        if args:
+            methods = methods + list(args)
+
+        self._methods: list[ProcessingMethod] = methods
         self.processed = False
 
     def __repr__(self):
