@@ -2,21 +2,22 @@ from typing import Iterable, Sequence
 import numpy as np
 
 from chem_analysis.analysis.peak_picking.base_classes import Filter
+import chem_analysis.utils.math as math_utils
 
 
 def _slice_to_mask(slice_: slice, index: np.ndarray, max_index: int) -> np.ndarray:
-        if slice_.start is None:
-            start = 0
-        else:
-            start = slice_.start
-        if slice_.stop is None:
-            stop = max_index
-        else:
-            stop = slice_.stop
+    if slice_.start is None:
+        start = 0
+    else:
+        start = slice_.start
+    if slice_.stop is None:
+        stop = max_index
+    else:
+        stop = slice_.stop
 
-        sub_mask = index > start
-        sub_mask &= index < stop
-        return sub_mask
+    sub_mask = index > start
+    sub_mask &= index < stop
+    return sub_mask
 
 
 class Slices(Filter):
@@ -284,8 +285,8 @@ class WidthFilter(Filter):
                  mode: str = 'span',
                  ):
         """
-        horizontal spacing
-        smallest y height values removed first
+        peak width filter
+
         Parameters
         ----------
         min_
@@ -327,6 +328,81 @@ class WidthFilter(Filter):
                     break
             else:
                 right = len(y)
+
+            if self.mode == 'span':
+                span = x[right] - x[left]
+            elif self.mode == 'index':
+                span = right - left
+            else:
+                raise ValueError("Type must be 'span' or 'index'")
+
+            if self.min_ is not None and span < self.min_:
+                mask[i] &= False
+            if self.max_ is not None and span > self.max_:
+                mask[i] &= False
+
+        return index[mask]
+
+
+from chem_analysis.processing.baseline.morphological import estimate_window
+from scipy.ndimage import grey_opening
+
+
+class WidthMorphological(Filter):
+    def __init__(self,
+                 min_: float = None,
+                 max_: float = None,
+                 window: int | None = None,
+                 auto_window: int | float | None = None,
+                 mode: str = 'span',
+                 ):
+        """
+        horizontal spacing
+        smallest y height values removed first
+        Parameters
+        ----------
+        min_
+        max_
+        window:
+            window used in morphological filter
+        auto_window:
+            if now window provided one will be calculated; this is a divisor to tune the window
+        mode:
+            "span"  x distance
+            "index" index
+        """
+        self.min_ = min_
+        self.max_ = max_
+        self.window = window
+        self.mode = mode
+        self.auto_window = auto_window or 5
+
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        if self.window is None:
+            self.window = int(estimate_window(y)/self.auto_window)
+
+        y_ = grey_opening(y, self.window)
+        # all peaks will now have flat tops; now find width of flat tops
+
+        mask = np.ones_like(index, dtype=bool)
+        for i, idx in enumerate(index):
+            # # left
+            # if idx == 0:
+            #     left = 0
+            # else:
+            #     y_left = y_[:idx][::-1]  # Reverse the slice to search in order
+            #     diffs = np.nonzero(y_left != y_[idx])[0]  # Find first mismatch
+            #     left = idx - diffs[0] if len(diffs) != 0 else idx  # Convert back to original index
+            #
+            # # right
+            # if idx == len(y):
+            #     right = len(y)
+            # else:
+            #     y_right = y_[idx:]
+            #     diffs = np.nonzero(y_right != y_[idx])[0]  # Find first mismatch
+            #     right = idx + diffs[0] - 1 if len(diffs) != 0 else idx
+
+            left, right = math_utils.find_first_change_in_value(y_, int(idx), len(y))
 
             if self.mode == 'span':
                 span = x[right] - x[left]

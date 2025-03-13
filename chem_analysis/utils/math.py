@@ -478,3 +478,43 @@ def get_slope(y: np.ndarray) -> float:
     slope, _ = np.linalg.lstsq(A, y, rcond=None)[0]
 
     return slope
+
+
+def find_first_increase(y: np.ndarray, idx: int, max_y: int | None = None) -> tuple[int, int]:
+    """Finds the first increasing point relative to the previous neighbor on both sides of idx."""
+
+    # Left side search (move left and find first increase)
+    if idx == 0:
+        left = 0  # If idx is at the start, no left search needed
+    else:
+        diffs_left = np.nonzero(np.diff(y[:idx + 1]) > 0)[0]  # Find increasing steps
+        left = diffs_left[-1] if diffs_left.size > 0 else 0  # Get last increasing index
+
+    # Right side search (move right and find first increase)
+    if idx == (max_y or len(y)):
+        right = len(y) - 1  # If idx is at the end, no right search needed
+    else:
+        diffs_right = np.nonzero(np.diff(y[idx:]) > 0)[0]  # Find increasing steps
+        right = idx + diffs_right[0] + 1 if diffs_right.size > 0 else len(y) - 1
+
+    return left, right
+
+
+def find_first_change_in_value(y: np.ndarray, idx: int, max_y: int | None = None) -> tuple[int, int]:
+    # left
+    if idx == 0:
+        left = 0
+    else:
+        y_left = y[:idx][::-1]  # Reverse the slice to search in order
+        diffs = np.nonzero(y_left != y[idx])[0]  # Find first mismatch
+        left = idx - diffs[0] if len(diffs) != 0 else idx  # Convert back to original index
+
+    # right
+    if idx == (max_y or len(y)):
+        right = max_y or len(y)
+    else:
+        y_right = y[idx:]
+        diffs = np.nonzero(y_right != y[idx])[0]  # Find first mismatch
+        right = idx + diffs[0] - 1 if len(diffs) != 0 else idx
+
+    return left, right

@@ -10,32 +10,32 @@ import chem_analysis.utils.math as math_utils
 logger = logging.getLogger(__name__)
 
 
-def average_opening(y: np.ndarray, window_size: int = 10, opening: bool = True) -> np.ndarray:
+def average_opening(y: np.ndarray, window: int = 10, opening: bool = True) -> np.ndarray:
     if not opening:
-        y = average_opening(y, window_size)
-    return (grey_dilation(y, window_size) + grey_erosion(y, window_size)) / 2
+        y = average_opening(y, window)
+    return (grey_dilation(y, window) + grey_erosion(y, window)) / 2
 
 
-def morphological_average(y: np.ndarray, window_size: int = 10) -> np.ndarray:
-    if len(y)/window_size < 3:
-        logger.warning('"window_size" may be too large causing issues. ')
-    opening = grey_opening(y, window_size)
-    return np.minimum(opening, average_opening(opening, window_size))
+def morphological_average(y: np.ndarray, window: int = 10) -> np.ndarray:
+    if len(y)/window < 3:
+        logger.warning('"window" may be too large causing issues. ')
+    opening = grey_opening(y, window)
+    return np.minimum(opening, average_opening(opening, window))
 
 
-def average_open_close(y: np.ndarray, window_size: int = 10) -> np.ndarray:
-    return (grey_closing(y, window_size) + grey_opening(y, window_size))/2
+def average_open_close(y: np.ndarray, window: int = 10) -> np.ndarray:
+    return (grey_closing(y, window) + grey_opening(y, window))/2
 
 
 def iterative_morphological_baseline(
         y: np.ndarray,
-        window_size: int = 10,
+        window: int = 10,
         error: float = 1e-4,
         max_iter: int = 100
 ) -> np.ndarray:
     baseline = y
     for i in range(max_iter):
-        new_baseline = morphological_average(y, window_size)
+        new_baseline = morphological_average(y, window)
         if math_utils.norm2(baseline, new_baseline) < error:
             return baseline
         baseline = new_baseline
@@ -44,19 +44,19 @@ def iterative_morphological_baseline(
     return baseline
 
 
-def iterative_morphological_mollify(y: np.ndarray, window_size: int = 10, num_iter: int = 100, error: float = 1e-6):
+def iterative_morphological_mollify(y: np.ndarray, window: int = 10, num_iter: int = 100, error: float = 1e-6):
     """
     some testing suggest there may be an issue; the error is not good stopping condtion and num_iter changes
     result quite a bit
     so not adding to list at this point in time
     https://doi.org/10.1177/0003702818811688
     """
-    mollify_base = mollify_kernel(window_size)
+    mollify_base = mollify_kernel(window)
     conv_edge_base = convolve(np.ones_like(y), mollify_base, mode='same')
-    window_size = int(2*window_size+1)
+    window = int(2*window+1)
     baseline = np.copy(y)
     for k in range(num_iter):
-        b = np.minimum(y, average_open_close(baseline, window_size))
+        b = np.minimum(y, average_open_close(baseline, window))
         new_baseline = convolve(b, mollify_base, mode='same') / conv_edge_base
         if k >= 2 and math_utils.norm2(baseline, new_baseline) <= error:
             break
@@ -65,11 +65,11 @@ def iterative_morphological_mollify(y: np.ndarray, window_size: int = 10, num_it
     return baseline
 
 
-def mollify_kernel(window_size: int) -> np.ndarray:
+def mollify_kernel(window: int) -> np.ndarray:
     """
     Applies the Gaussian mollifier to a 1D signal.
     """
-    x = (np.arange(0, 2 * window_size + 1) - window_size) / window_size
+    x = (np.arange(0, 2 * window + 1) - window) / window
     kernel = np.zeros_like(x)
     kernel[1:-1] = np.exp(-1 / (1 - (x[1:-1]) ** 2))
     return kernel / kernel.sum()
@@ -78,20 +78,20 @@ def mollify_kernel(window_size: int) -> np.ndarray:
 def morphological_mollifer(
         y: np.ndarray,
         smooth_width: int = 6,
-        window_size: int = 50,
+        window: int = 50,
         max_iter: int = 25,
         error: float = 1e-1
 ) -> np.ndarray:
     # # Define mollifier kernels
     mollify_spec = mollify_kernel(smooth_width)
     conv_edge_spec = convolve(np.ones_like(y), mollify_spec, mode='same')
-    mollify_base = mollify_kernel(window_size)
+    mollify_base = mollify_kernel(window)
     conv_edge_base = convolve(np.ones_like(y), mollify_base, mode='same')
 
     baseline_smooth = np.zeros((len(y), max_iter))
     for k in range(max_iter):
         ysmooth = convolve(y, mollify_spec, mode='same') / conv_edge_spec
-        baseline = minimum_filter(ysmooth, size=window_size, mode='nearest')
+        baseline = minimum_filter(ysmooth, size=window, mode='nearest')
 
         baseline_smooth[:, k] = convolve(baseline, mollify_base, mode='same') / conv_edge_base
         if k >= 2 and math_utils.norm2(baseline_smooth[:, k - 1], baseline_smooth[:, k]) <= error:
@@ -156,7 +156,7 @@ def estimate_window(
 
 class MorphologicalAverage(Baseline):
     def __init__(self,
-                 window_size: int = None,
+                 window: int = None,
                  temporal_processing: int = 1,
                  save_result: bool = False
                  ):
@@ -166,17 +166,17 @@ class MorphologicalAverage(Baseline):
 
         Parameters
         ----------
-        window_size: int
+        window: int
             size of window
 
     """
         super().__init__(temporal_processing, save_result)
-        self.window_size = window_size
+        self.window = window
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.window_size is None:
-            self.window_size = estimate_window(y)
-        return morphological_average(y, self.window_size)
+        if self.window is None:
+            self.window = estimate_window(y)
+        return morphological_average(y, self.window)
 
 
 class MorphologicalAutoWindow(Baseline):
@@ -197,20 +197,20 @@ class MorphologicalAutoWindow(Baseline):
 
     """
         super().__init__(temporal_processing, save_result)
-        self.window_size = None
+        self.window = None
         self.max_iter = max_iter
         self.error = error
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.window_size is None:
-            self.window_size = estimate_window(y)
-        return iterative_morphological_baseline(y, self.window_size, self.error, self.max_iter)
+        if self.window is None:
+            self.window = estimate_window(y)
+        return iterative_morphological_baseline(y, self.window, self.error, self.max_iter)
 
 
 class MorphologicalMollifier(Baseline):
     def __init__(self,
                  smooth_width: int = None,
-                 window_size: int = None,
+                 window: int = None,
                  error: int | float = 1e-1,
                  max_iter: int = 25,
                  temporal_processing: int = 1,
@@ -224,29 +224,29 @@ class MorphologicalMollifier(Baseline):
         ----------
         smooth_width:
             higher number does more smoothing
-        window_size:
+        window:
             size of window
         max_iter:
             max_iterations to refine baseline
 
     """
         super().__init__(temporal_processing, save_result)
-        self.window_size = window_size
+        self.window = window
         self.smooth_width = smooth_width
         self.max_iter = max_iter
         self.error = error
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.window_size is None:
-            self.window_size = estimate_window(y)
+        if self.window is None:
+            self.window = estimate_window(y)
         if self.smooth_width is None:
-            self.smooth_width = max([1, int(self.window_size/4)])  # guess; probably better methods
-        return iterative_morphological_baseline(y, self.window_size, self.error, self.max_iter)
+            self.smooth_width = max([1, int(self.window/4)])  # guess; probably better methods
+        return iterative_morphological_baseline(y, self.window, self.error, self.max_iter)
 
 
 class MorphologicalTopHat(Baseline):
     def __init__(self,
-                 window_size: int = None,
+                 window: int = None,
                  temporal_processing: int = 1,
                  save_result: bool = False
                  ):
@@ -255,18 +255,18 @@ class MorphologicalTopHat(Baseline):
         Parameters
         ----------
 
-        window_size:
+        window:
             size of window
 
     """
         super().__init__(temporal_processing, save_result)
-        self.window_size = window_size
+        self.window = window
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        if self.window_size is None:
-            self.window_size = estimate_window(y)
+        if self.window is None:
+            self.window = estimate_window(y)
 
-        return grey_opening(y, self.window_size)
+        return grey_opening(y, self.window)
 
 
 def distance_to_circle(y: float, x_y: np.ndarray, center_index: int, radius: float) -> float:
