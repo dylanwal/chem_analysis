@@ -1,7 +1,7 @@
 from typing import Iterable, Sequence
 import numpy as np
 
-from chem_analysis.analysis.peak_picking.base_classes import Filter
+from chem_analysis.analysis.peaks.base_classes import Filter
 import chem_analysis.utils.math as math_utils
 
 
@@ -353,8 +353,8 @@ class WidthMorphological(Filter):
                  min_: float = None,
                  max_: float = None,
                  window: int | None = None,
-                 auto_window: int | float | None = None,
                  mode: str = 'span',
+                 auto_div: int | float | None = None,
                  ):
         """
         horizontal spacing
@@ -365,43 +365,31 @@ class WidthMorphological(Filter):
         max_
         window:
             window used in morphological filter
-        auto_window:
-            if now window provided one will be calculated; this is a divisor to tune the window
         mode:
             "span"  x distance
             "index" index
+        auto_div:
+            divisor to tune the auto window algorithm
         """
+        if min_ is None and max_ is None:
+            raise ValueError("At least one spacing parameter is required")
+        if not (mode == 'span' or mode == 'index'):
+            raise ValueError("Type must be 'span' or 'index'")
         self.min_ = min_
         self.max_ = max_
         self.window = window
         self.mode = mode
-        self.auto_window = auto_window or 5
+        self.auto_div = auto_div or 5
 
     def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
         if self.window is None:
-            self.window = int(estimate_window(y)/self.auto_window)
+            self.window = int(estimate_window(y)/self.auto_div)
 
         y_ = grey_opening(y, self.window)
         # all peaks will now have flat tops; now find width of flat tops
 
         mask = np.ones_like(index, dtype=bool)
         for i, idx in enumerate(index):
-            # # left
-            # if idx == 0:
-            #     left = 0
-            # else:
-            #     y_left = y_[:idx][::-1]  # Reverse the slice to search in order
-            #     diffs = np.nonzero(y_left != y_[idx])[0]  # Find first mismatch
-            #     left = idx - diffs[0] if len(diffs) != 0 else idx  # Convert back to original index
-            #
-            # # right
-            # if idx == len(y):
-            #     right = len(y)
-            # else:
-            #     y_right = y_[idx:]
-            #     diffs = np.nonzero(y_right != y_[idx])[0]  # Find first mismatch
-            #     right = idx + diffs[0] - 1 if len(diffs) != 0 else idx
-
             left, right = math_utils.find_first_change_in_value(y_, int(idx), len(y))
 
             if self.mode == 'span':

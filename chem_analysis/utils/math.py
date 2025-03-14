@@ -480,14 +480,31 @@ def get_slope(y: np.ndarray) -> float:
     return slope
 
 
-def find_first_increase(y: np.ndarray, idx: int, max_y: int | None = None) -> tuple[int, int]:
-    """Finds the first increasing point relative to the previous neighbor on both sides of idx."""
+def find_first_increase(
+        y: np.ndarray,
+        idx: int,
+        max_y: int | None = None,
+) -> tuple[int, int]:
+    """
+    Finds the first increasing point relative to the previous neighbor on both sides of idx.
+    zero change is not included as an increase
 
+    Parameters
+    ----------
+    y
+    idx
+    max_y
+
+    Returns
+    -------
+    [left, right]
+
+    """
     # Left side search (move left and find first increase)
     if idx == 0:
         left = 0  # If idx is at the start, no left search needed
     else:
-        diffs_left = np.nonzero(np.diff(y[:idx + 1]) > 0)[0]  # Find increasing steps
+        diffs_left = np.nonzero(np.diff(y[:idx + 1]) < 0)[0]  # Find increasing steps
         left = diffs_left[-1] if diffs_left.size > 0 else 0  # Get last increasing index
 
     # Right side search (move right and find first increase)
@@ -496,6 +513,73 @@ def find_first_increase(y: np.ndarray, idx: int, max_y: int | None = None) -> tu
     else:
         diffs_right = np.nonzero(np.diff(y[idx:]) > 0)[0]  # Find increasing steps
         right = idx + diffs_right[0] + 1 if diffs_right.size > 0 else len(y) - 1
+
+    return left, right
+
+
+def find_first_increase_zero(
+        y: np.ndarray,
+        idx: int,
+        max_y: int | None = None,
+        exclude: bool = False,
+) -> tuple[int, int]:
+    """
+    Finds the first increasing point relative to the previous neighbor on both sides of idx.
+    Zero change is included as an increase
+
+    Parameters
+    ----------
+    y
+    idx
+    max_y
+    exclude:
+        True: if current value is on flat plateau; it will not count plateau as an increase
+
+    Returns
+    -------
+    [left, right]
+
+    """
+    if exclude:
+        left_, right_ = find_first_change_in_value(y, idx, max_y)
+    else:
+        left_ = right_ = idx
+    # Left side search (move left and find first increase)
+    if idx == 0:
+        left = 0  # If idx is at the start, no left search needed
+    else:
+        diffs_left = np.nonzero(np.diff(y[:left_ + 1]) <= 0)[0]  # Find increasing steps
+
+        left = diffs_left[-1] if diffs_left.size > 0 else 0  # Get last increasing index
+
+    # Right side search (move right and find first increase)
+    if idx == (max_y or len(y)):
+        right = len(y) - 1  # If idx is at the end, no right search needed
+    else:
+        diffs_right = np.nonzero(np.diff(y[right_:]) >= 0)[0]  # Find increasing steps
+        right = idx + diffs_right[0] + 1 if diffs_right.size > 0 else len(y) - 1
+
+    return left, right
+
+
+def find_max_slope(y: np.ndarray, idx: int, max_y: int | None = None) -> tuple[int, int]:
+    """Finds the find the max slope idx."""
+
+    # Left side search (move left and find first increase)
+    if idx == 0:
+        left = 0  # If idx is at the start, no left search needed
+    else:
+        diffs_left = np.flip(np.abs(np.diff(y[:idx + 1])))  # Find slopes - then reverse
+        second_diffs_left = np.nonzero(np.diff(diffs_left) < 0)[0]  # get the first time derivative increases
+        left = idx - second_diffs_left[0] if second_diffs_left.size > 0 else 0  # Get last increasing index
+
+    # Right side search (move right and find first increase)
+    if idx == (max_y or len(y)):
+        right = len(y) - 1  # If idx is at the end, no right search needed
+    else:
+        diffs_right = np.abs(np.diff(y[idx:]))  # Find slopes
+        second_diffs_right = np.nonzero(np.diff(diffs_right) < 0)[0]
+        right = idx + second_diffs_right[0] + 1 if second_diffs_right.size > 0 else len(y) - 1
 
     return left, right
 
@@ -518,3 +602,73 @@ def find_first_change_in_value(y: np.ndarray, idx: int, max_y: int | None = None
         right = idx + diffs[0] - 1 if len(diffs) != 0 else idx
 
     return left, right
+
+
+def find_consecutive_regions(y: np.ndarray) -> np.ndarray | None:
+    """
+    Find the start (left) and end (right) indices of consecutive runs of the same value.
+    * inclusive on the left side; not inclusive on the right side.
+
+    Notes
+    -----
+    * to get a slice with all the values y(bound[0]:bound[1]+1)
+    """
+    if len(y) == 0:
+        return None
+
+    # Find where the value changes
+    diff = np.diff(y)
+    change_indices = np.where(diff != 0)[0]  # Indices where the value changes
+
+    # Left points are +1 after change indices, right points are the change indices
+    left_points = np.concatenate(([0], change_indices + 1))
+    right_points = np.concatenate((change_indices, [len(y) - 1]))
+
+    # Only keep regions where the run is longer than 1
+    mask = (right_points - left_points) > 0
+    if np.sum(mask) == 0:
+        return None
+    return np.column_stack((left_points[mask], right_points[mask]))
+
+
+def get_middle_index(bounds: np.ndarray) -> np.ndarray:
+    """
+
+    Parameters
+    ----------
+    bounds: [n,2]
+
+    Returns
+    -------
+    middle_index[n]
+    """
+    return bounds[:, 0] + np.diff(bounds, axis=1).flatten()//2
+
+
+def find_local_min(y: np.ndarray, index: int) -> int | None:
+    """
+    Finds the local minimum in a 1D signal starting from a given index.
+
+    Parameters:
+    signal (np.ndarray):
+        The 1D signal.
+    start_index (int):
+        The starting index for the search.
+
+    Returns:
+        int: The index of the local minimum.
+    """
+    left = y[index - 1] if index > 0 else np.inf
+    if left < y[index]:
+        for i in range(index, 0, -1):
+            if y[i] > y[i+1]:
+                break
+        return i +1
+    else:
+        for i in range(index, len(y)):
+            if y[i] < y[i+1]:
+                break
+        return i
+
+
+

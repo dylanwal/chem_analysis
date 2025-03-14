@@ -84,3 +84,4 @@ class CUSUM:
             self._prior_state = self._state
             return self._state
         return None  # no event detected
+

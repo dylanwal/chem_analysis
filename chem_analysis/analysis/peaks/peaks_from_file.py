@@ -5,7 +5,6 @@ import numpy as np
 
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.analysis.peak import Peak, PeakContinuousData, PeakContinuousModel
-from chem_analysis.analysis.integration.result_integration import ResultIntegration, ResultIntegration2D
 from chem_analysis.utils.math import get_slice
 
 logger = logging.getLogger(__name__)
@@ -93,7 +92,7 @@ def integrate_from_file(
         signal: Signal,
         file_path: str | pathlib.Path,
         raise_errors: bool = True
-) -> ResultIntegration | ResultIntegration2D:
+):
     """
 
     desecrate peak
@@ -121,7 +120,7 @@ def integrate_from_file(
     -------
 
     """
-    result = ResultIntegration(signal=signal)
+    result = 1
     errors = []
     with open(file_path, mode='r', encoding='utf-8') as file:
         for i, row in enumerate(file.readlines()):
