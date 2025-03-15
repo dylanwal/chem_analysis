@@ -5,11 +5,11 @@ from scipy.signal import find_peaks as scipy_find_peaks
 from scipy.ndimage import grey_dilation, grey_opening
 
 from chem_analysis.processing.baseline.morphological import estimate_window
-from chem_analysis.analysis.peaks.base_classes import Detector
+from chem_analysis.analysis.peaks.base_classes import PeakDetector
 import chem_analysis.utils.math as math_utils
 
 
-class ScipyPeakFinder(Detector):
+class PeakScipy(PeakDetector):
     def __init__(self,
                  height: float | np.ndarray | None = None,
                  threshold: float | np.ndarray | None = None,
@@ -38,7 +38,7 @@ class ScipyPeakFinder(Detector):
         return index
 
 
-class MaxValues(Detector):
+class PeakMaxValues(PeakDetector):
     def __init__(self, n: int = 1):
         """
 
@@ -54,7 +54,7 @@ class MaxValues(Detector):
         return index[:self.n]
 
 
-class LocalMax(Detector):
+class PeakLocalMax(PeakDetector):
     def __init__(self):
         pass
 
@@ -64,7 +64,7 @@ class LocalMax(Detector):
         return index
 
 
-class Derivative(Detector):
+class PeakDerivative(PeakDetector):
     def __init__(self):
         pass
 
@@ -95,7 +95,7 @@ def estimate_scales(y: np.ndarray, window: int | None = None, min_scale: int = 1
 # import pywt
 #
 #
-# class Wavelet(Detector):
+# class Wavelet(PeakDetector):
 #     def __init__(self,
 #                  wavelet: str = 'mexh',
 #                  threshold: float = 0.1,
@@ -134,7 +134,7 @@ def estimate_scales(y: np.ndarray, window: int | None = None, min_scale: int = 1
 #         return peak_apex
 
 
-class Morphological(Detector):
+class PeakMorphological(PeakDetector):
     def __init__(self,
                  min_: int | float = None,
                  max_: int | float = None,
@@ -195,7 +195,7 @@ class Morphological(Detector):
         return index
 
 
-class MovingAverage(Detector):
+class PeakMovingAverage(PeakDetector):
     def __init__(self,
                  lag: int = 5,
                  threshold: float | float = 3,

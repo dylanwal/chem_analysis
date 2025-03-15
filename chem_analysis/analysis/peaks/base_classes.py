@@ -11,8 +11,8 @@ BoundDetector = Callable[[Signal, Optional[Any]], np.ndarray]
 BoundDetector_xy = Callable[[np.ndarray, np.ndarray, np.ndarray, Optional[Any]], np.ndarray]
 
 
-class Detector(MixinSubClassList, abc.ABC):
-    """ Finds possible peaks. """
+class PeakDetector(MixinSubClassList, abc.ABC):
+    """ Finds peaks. """
 
     def run(self, signal: Signal) -> np.ndarray:
         return self.run_xy(signal.x, signal.y)
@@ -32,8 +32,8 @@ class Detector(MixinSubClassList, abc.ABC):
         """
 
 
-class Filter(MixinSubClassList, abc.ABC):
-    """ Evaluates with a given index pass a Filter. """
+class PeakFilter(MixinSubClassList, abc.ABC):
+    """ Evaluates with a given index pass a PeakFilter. """
 
     def run(self, signal: Signal, index: np.ndarray) -> np.ndarray:
         return self.run_xy(signal.x, signal.y, index)
@@ -54,10 +54,33 @@ class Filter(MixinSubClassList, abc.ABC):
         """
 
 
+class BoundDetector(MixinSubClassList, abc.ABC):
+    """ Finds possible peaks. """
+
+    def run(self, signal: Signal, index: np.ndarray) -> np.ndarray:
+        return self.run_xy(signal.x, signal.y, index)
+
+    @abc.abstractmethod
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        x
+        y
+        index:
+            index of peaks
+
+        Returns
+        -------
+        index of bounds np.ndarray[n,2]
+        """
+
+
 def find_peaks(
         signal: Signal,
-        detectors: Detector | list[Detector],
-        filters: Filter | Sequence[Filter] | None = None,
+        detectors: PeakDetector | list[PeakDetector],
+        filters: PeakFilter | Sequence[PeakFilter] | None = None,
         smoother: Smoothing | None = None
 ) -> np.ndarray:
     return find_peaks_xy(signal.x, signal.y, detectors, filters, smoother)
@@ -66,8 +89,8 @@ def find_peaks(
 def find_peaks_xy(
         x: np.ndarray,
         y: np.ndarray,
-        detectors: Detector | list[Detector],
-        filters: Filter | Sequence[Filter] | None = None,
+        detectors: PeakDetector | list[PeakDetector],
+        filters: PeakFilter | Sequence[PeakFilter] | None = None,
         smoother: Smoothing | None = None
 ) -> np.ndarray:
     if not isinstance(detectors, list):
@@ -94,9 +117,9 @@ def find_peaks_xy(
 
 def find_peaks_and_bounds(
         signal: Signal,
-        peak: Detector | list[Detector],
+        peak: PeakDetector | list[PeakDetector],
         bounds: BoundDetector | BoundDetector_xy,
-        filters: Filter | Sequence[Filter] | None = None,
+        filters: PeakFilter | Sequence[PeakFilter] | None = None,
         smoother: Smoothing | None = None
 ) -> tuple[np.ndarray, np.ndarray]:
     return find_peaks_and_bounds_xy(signal.x, signal.y, peak, bounds, filters, smoother)
@@ -105,15 +128,11 @@ def find_peaks_and_bounds(
 def find_peaks_and_bounds_xy(
         x: np.ndarray,
         y: np.ndarray,
-        peak: Detector | list[Detector],
+        peak: PeakDetector | list[PeakDetector],
         bounds: BoundDetector | BoundDetector_xy,
-        filters: Filter | Sequence[Filter] | None = None,
+        filters: PeakFilter | Sequence[PeakFilter] | None = None,
         smoother: Smoothing | None = None
 ) -> tuple[np.ndarray, np.ndarray]:
     index = find_peaks_xy(x, y, peak, filters, smoother)
-    if bounds.__name__.endswith('xy'):
-        bounds = bounds(x, y, index)
-    else:
-        bounds = bounds(Signal(x, y), index)
-
+    bounds = bounds.run_xy(x, y, index)
     return index, bounds

@@ -3,17 +3,15 @@ from chem_analysis.analysis.peaks.base_classes import (
 )
 
 from chem_analysis.analysis.peaks.peak_detectors import (
-    MaxValues, LocalMax, Derivative, ScipyPeakFinder, MovingAverage, Morphological
+    PeakMaxValues, PeakLocalMax, PeakDerivative, PeakScipy, PeakMovingAverage, PeakMorphological
 )
 from chem_analysis.analysis.peaks.peak_filters import (
-    HeightFilter, HeightFilterLocal, WidthFilter, SpacingFilter, Prominence, Spans, Slices,
-    WidthMorphological
+    FilterHeight, FilterHeightLocal, FilterWidth, FilterSpacing, FilterProminence, FilterSpans, FilterSlices,
+    FilterWidthMorphological
 )
 
 from chem_analysis.analysis.peaks.bound_detectors import (
-    bounds_max_slope_xy, bounds_max_slope, bounds_morph_opening_xy, bounds_morph_opening,
-    bounds_morph_dilation_xy, bounds_morph_dilation_xy, bounds_first_increase, bounds_first_increase_xy,
-    bounds_first_increase_zero, bounds_first_increase_zero_xy
+    BoundMaxSlope, BoundFirstIncrease, BoundFirstIncreaseZero, BoundMorphDilation, BoundMorphOpening
 )
 
 from chem_analysis.analysis.peaks.peak_integration import (

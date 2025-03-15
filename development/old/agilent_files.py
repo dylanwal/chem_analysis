@@ -305,7 +305,7 @@ else
 end
 
 % ---------------------------------------
-% Filter unsupported files
+% PeakFilter unsupported files
 % ---------------------------------------
 [~,~,ext] = cellfun(@(x) fileparts(x), {file.Name}, 'uniformoutput', 0);
 
@@ -467,7 +467,7 @@ fc.setFileSelectionMode(fc.FILES_AND_DIRECTORIES);
 fc.setMultiSelectionEnabled(true);
 fc.setAcceptAllFileFilterUsed(false);
 
-% Filter: Agilent (.D, .MS, .CH, .UV)
+% PeakFilter: Agilent (.D, .MS, .CH, .UV)
 agilent = com.mathworks.hg.util.dFilter;
 
 agilent.setDescription('Agilent files (*.D, *.MS, *.CH, *.UV)');

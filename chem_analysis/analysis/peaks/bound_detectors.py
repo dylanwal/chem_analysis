@@ -2,9 +2,9 @@ import numpy as np
 from scipy.ndimage import grey_dilation, grey_opening
 
 import chem_analysis.utils.math as math_utils
-from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.processing.processing_method import Smoothing
 from chem_analysis.processing.baseline.morphological import estimate_window
+from chem_analysis.analysis.peaks.base_classes import BoundDetector
 
 
 def _apply_smoother(
@@ -28,221 +28,164 @@ def _apply_smoother(
     return x, y, index
 
 
-def bounds_max_slope(
-        signal: Signal,
-        index: np.ndarray,
-        smoother: Smoothing = None,
-        adjust_index: bool = True,
-) -> np.ndarray:
-    return bounds_max_slope_xy(signal.x, signal.y, index, smoother, adjust_index)
+class BoundMaxSlope(BoundDetector):
+    def __init__(self,
+                 adjust_index: bool = True,
+                 smoother: Smoothing = None
+                 ):
+        self.smoother = smoother
+        self.adjust_index = adjust_index
+
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        if self.smoother is not None:
+            x, y, index = _apply_smoother(x, y, index, self.smoother, self.adjust_index)
+
+        bounds = np.empty((len(index), 2), dtype=int)
+        for i, idx in enumerate(index):
+            bounds[i] = math_utils.find_max_slope(y, idx, len(y))
+        return bounds
 
 
-def bounds_max_slope_xy(
-        x: np.ndarray,
-        y: np.ndarray,
-        index: np.ndarray,
-        smoother: Smoothing = None,
-        adjust_index: bool = True,
-) -> np.ndarray:
-    if smoother is not None:
-        x, y, index = _apply_smoother(x, y, index, smoother, adjust_index)
+class BoundFirstIncrease(BoundDetector):
+    def __init__(self,
+                 adjust_index: bool = True,
+                 smoother: Smoothing = None
+                 ):
+        self.smoother = smoother
+        self.adjust_index = adjust_index
 
-    bounds = np.empty((len(index), 2), dtype=int)
-    for i, idx in enumerate(index):
-        bounds[i] = math_utils.find_max_slope(y, idx, len(y))
-    return bounds
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        if self.smoother is not None:
+            x, y, index = _apply_smoother(x, y, index, self.smoother, self.adjust_index)
 
-
-def bounds_first_increase(
-        signal: Signal,
-        index: np.ndarray,
-        smoother: Smoothing = None,
-        adjust_index: bool = True,
-) -> np.ndarray:
-    return bounds_first_increase_xy(signal.x, signal.y, index, smoother, adjust_index)
+        bounds = np.empty((len(index), 2), dtype=int)
+        for i, idx in enumerate(index):
+            bounds[i] = math_utils.find_first_increase(y, idx, len(y))
+        return bounds
 
 
-def bounds_first_increase_xy(
-        x: np.ndarray,
-        y: np.ndarray,
-        index: np.ndarray,
-        smoother: Smoothing = None,
-        adjust_index: bool = True,
+class BoundFirstIncreaseZero(BoundDetector):
+    def __init__(self,
+                 adjust_index: bool = True,
+                 smoother: Smoothing = None
+                 ):
+        self.smoother = smoother
+        self.adjust_index = adjust_index
 
-) -> np.ndarray:
-    if smoother is not None:
-        x, y, index = _apply_smoother(x, y, index, smoother, adjust_index)
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        if self.smoother is not None:
+            x, y, index = _apply_smoother(x, y, index, self.smoother, self.adjust_index)
 
-    bounds = np.empty((len(index), 2), dtype=int)
-    for i, idx in enumerate(index):
-        bounds[i] = math_utils.find_first_increase(y, idx, len(y))
-    return bounds
-
-
-def bounds_first_increase_zero(
-        signal: Signal,
-        index: np.ndarray,
-        smoother: Smoothing = None,
-        adjust_index: bool = True,
-) -> np.ndarray:
-    return bounds_first_increase_zero_xy(signal.x, signal.y, index, smoother, adjust_index)
+        bounds = np.empty((len(index), 2), dtype=int)
+        for i, idx in enumerate(index):
+            bounds[i] = math_utils.find_first_increase_zero(y, idx, len(y))
+        return bounds
 
 
-def bounds_first_increase_zero_xy(
-        x: np.ndarray,
-        y: np.ndarray,
-        index: np.ndarray,
-        smoother: Smoothing = None,
-        adjust_index: bool = True,
-) -> np.ndarray:
-    if smoother is not None:
-        x, y, index = _apply_smoother(x, y, index, smoother, adjust_index)
+class BoundMorphDilation(BoundDetector):
+    def __init__(self,
+                 window: int | None = None,
+                 mode: str = "plateau",
+                 auto_div: int | float | None = None,
+                 adjust_index: bool = True,
+                 smoother: Smoothing = None
+                 ):
+        """
 
-    bounds = np.empty((len(index), 2), dtype=int)
-    for i, idx in enumerate(index):
-        bounds[i] = math_utils.find_first_increase_zero(y, idx, len(y))
-    return bounds
+        Parameters
+        ----------
+        window
+
+        mode:
+            "plateau"
+            "max_slope"
+            "first_increase"
+            "first_increase_zero"
+        auto_div
+        """
+        self.window = window
+        self.mode = mode
+        self.auto_div = auto_div
+        self.smoother = smoother
+        self.adjust_index = adjust_index
+
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        if self.smoother is not None:
+            x, y, index = _apply_smoother(x, y, index, self.smoother, self.adjust_index)
+
+        if self.window is None:
+            if self.auto_div is None:
+                self.auto_div = 2
+            self.window = int(estimate_window(y) / self.auto_div)
+
+        y_ = grey_dilation(y, self.window)
+        if self.mode == "plateau":
+            if index is None:
+                bounds = math_utils.find_consecutive_regions(y_)
+            else:
+                bounds = np.empty((len(index), 2), dtype=int)
+                for i, idx in enumerate(index):
+                    bounds[i] = math_utils.find_first_change_in_value(y_, idx, len(y))
+        elif self.mode == "max_slope":
+            if index is None:
+                index = math_utils.get_middle_index(math_utils.find_consecutive_regions(y_))
+
+            bounds = np.empty((len(index), 2), dtype=int)
+            for i, idx in enumerate(index):
+                bounds[i] = math_utils.find_max_slope(y_, idx, len(y))
+        elif self.mode == "first_increase":
+            if index is None:
+                index = math_utils.get_middle_index(math_utils.find_consecutive_regions(y_))
+
+            bounds = np.empty((len(index), 2), dtype=int)
+            for i, idx in enumerate(index):
+                bounds[i] = math_utils.find_first_increase(y_, idx, len(y))
+        elif self.mode == "first_increase_zero":
+            if index is None:
+                index = math_utils.get_middle_index(math_utils.find_consecutive_regions(y_))
+
+            bounds = np.empty((len(index), 2), dtype=int)
+            for i, idx in enumerate(index):
+                bounds[i] = math_utils.find_first_increase_zero(y_, idx, len(y), exclude=True)
+
+        else:
+            raise ValueError("Not supported 'mode'.")
+
+        return bounds
 
 
-def bounds_morph_dilation(
-        signal: Signal,
-        index: np.ndarray | None = None,
-        window: int | None = None,
-        mode: str = "plateau",
-        auto_div: int | float | None = None,
-) -> np.ndarray:
-    return bounds_morph_dilation_xy(signal.x, signal.y, index, window, mode, auto_div)
+class BoundMorphOpening(BoundDetector):
+    def __init__(self,
+                 window: int | None = None,
+                 auto_div: int | float | None = None,
+                 adjust_index: bool = True,
+                 smoother: Smoothing = None
+                 ):
+        self.window = window
+        self.auto_div = auto_div
+        self.smoother = smoother
+        self.adjust_index = adjust_index
 
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        if self.smoother is not None:
+            x, y, index = _apply_smoother(x, y, index, self.smoother, self.adjust_index)
 
-def bounds_morph_dilation_xy(
-        x: np.ndarray,
-        y: np.ndarray,
-        index: np.ndarray | None = None,
-        window: int | None = None,
-        mode: str = "plateau",
-        auto_div: int | float | None = None,
-) -> np.ndarray:
-    """
+        if self.window is None:
+            if self.auto_div is None:
+                self.auto_div = 3
+            self.window = int(estimate_window(y) / self.auto_div)
 
-    Parameters
-    ----------
-    x:
-    y:
-    window
-    index:
-        if you want the bounds for specific peaks; provide the index of peak max
-    mode:
-        "plateau"
-        "max_slope"
-        "first_increase"
-        "first_increase_zero"
-    auto_div
-
-    Returns
-    -------
-    bounds
-    [[left, right], [left, right], ...]
-
-    """
-    if window is None:
-        if auto_div is None:
-            auto_div = 2
-        window = int(estimate_window(y) / auto_div)
-
-    y_ = grey_dilation(y, window)
-    if mode == "plateau":
+        y_ = grey_opening(y, self.window)
         if index is None:
             bounds = math_utils.find_consecutive_regions(y_)
         else:
             bounds = np.empty((len(index), 2), dtype=int)
             for i, idx in enumerate(index):
                 bounds[i] = math_utils.find_first_change_in_value(y_, idx, len(y))
-    elif mode == "max_slope":
-        if index is None:
-            index = math_utils.get_middle_index(math_utils.find_consecutive_regions(y_))
-
-        bounds = np.empty((len(index), 2), dtype=int)
-        for i, idx in enumerate(index):
-            bounds[i] = math_utils.find_max_slope(y_, idx, len(y))
-    elif mode == "first_increase":
-        if index is None:
-            index = math_utils.get_middle_index(math_utils.find_consecutive_regions(y_))
-
-        bounds = np.empty((len(index), 2), dtype=int)
-        for i, idx in enumerate(index):
-            bounds[i] = math_utils.find_first_increase(y_, idx, len(y))
-    elif mode == "first_increase_zero":
-        if index is None:
-            index = math_utils.get_middle_index(math_utils.find_consecutive_regions(y_))
-
-        bounds = np.empty((len(index), 2), dtype=int)
-        for i, idx in enumerate(index):
-            bounds[i] = math_utils.find_first_increase_zero(y_, idx, len(y), exclude=True)
-
-    else:
-        raise ValueError("Not supported 'mode'.")
-
-    return bounds
+        return bounds
 
 
-def bounds_morph_opening(
-        signal: Signal,
-        index: np.ndarray | None = None,
-        window: int | None = None,
-        auto_div: int | float | None = None,
-) -> np.ndarray:
-    return bounds_morph_opening(signal.x, signal.y, index, window, auto_div)
 
-
-def bounds_morph_opening_xy(
-        x: np.ndarray,
-        y: np.ndarray,
-        index: np.ndarray | None = None,
-        window: int | None = None,
-        auto_div: int | float | None = None,
-) -> np.ndarray:
-    """
-
-    Parameters
-    ----------
-    x:
-    y:
-    window
-    index:
-        if you want the bounds for specific peaks; provide the index of peak max
-    auto_div
-
-    Returns
-    -------
-    bounds
-    [[left, right], [left, right], ...]
-
-    """
-    if window is None:
-        if auto_div is None:
-            auto_div = 3
-        window = int(estimate_window(y) / auto_div)
-
-    y_ = grey_opening(y, window)
-    if index is None:
-        bounds = math_utils.find_consecutive_regions(y_)
-    else:
-        bounds = np.empty((len(index), 2), dtype=int)
-        for i, idx in enumerate(index):
-            bounds[i] = math_utils.find_first_change_in_value(y_, idx, len(y))
-    return bounds
-
-
-# def bounds_wavelet(
-#         signal: Signal,
-#         index: np.ndarray | None = None,
-#         wavelet: str = 'mexh',
-#         threshold: float = 0.1,
-#         scales: np.ndarray | None = None,
-# ) -> np.ndarray:
-#     return bounds_wavelet_xy(signal.x, signal.y, index, wavelet, threshold, scales)
-#
-#
 # def bounds_wavelet_xy(
 #         x: np.ndarray,
 #         y: np.ndarray,
