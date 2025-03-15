@@ -47,7 +47,7 @@ class Signal2D:
                  name: str = None,
                  id_: int = None,
                  parameters: Parameters = None,
-                 processed: bool = False,
+                 process_history: bool = False,
                  ):
         """
 
@@ -69,8 +69,8 @@ class Signal2D:
             user defined name
         parameters: Parameters
             various meta-data
-        processed: bool
-            Been through a processing method
+        process_history: list[str]
+            List of processing methods the signal has been through
         """
         validate_input(x, y, z)
 
@@ -84,9 +84,12 @@ class Signal2D:
         self.y_label = y_label or "y_axis"
         self.z_label = z_label or "z_axis"
 
-        self.processed = processed
         self.parameters = parameters
         self.extract_value = None
+
+        if isinstance(process_history, str):
+            process_history = [process_history]
+        self.process_history = process_history or []
 
     def __repr__(self):
         text = f"{self.name}: "
@@ -109,7 +112,7 @@ class Signal2D:
                 y_label=copy_method(self.y_label),
                 z_label=copy_method(self.z_label),
                 parameters=copy_method(self.parameters),
-                processed=copy_method(self.processed)
+                process_history=copy_method(self.process_history)
             )
 
     @property
@@ -129,13 +132,13 @@ class Signal2D:
             self.z = np.delete(self.z, i, axis=0)
             self.y = np.delete(self.y, i)
 
-    def get_signal(self, y_index: int, processed: bool = True, copy_: bool = False) -> Signal:
+    def get_signal(self, y_index: int, process_history: bool = True, copy_: bool = False) -> Signal:
         """
 
         Parameters
         ----------
         y_index
-        processed:
+        process_history:
             True: get x, z
             False: get x, z
         copy_:
@@ -161,7 +164,7 @@ class Signal2D:
 
     def signal_iter(self) -> Iterator[Signal]:
         for i in range(self.number_of_signals):
-            yield self.get_signal(i, processed=True)
+            yield self.get_signal(i, process_history=True)
 
     @classmethod
     def from_signals(cls,

@@ -33,7 +33,7 @@ class Signal:
     A signal is any x-y data.
 
     """
-    __slots__ = "x", "y", "id_", "name", "x_label", "y_label", "parameters", "processed", "extract_value"
+    __slots__ = "x", "y", "id_", "name", "x_label", "y_label", "parameters", "process_history", "extract_value"
     __count = 0
 
     def __init__(self,
@@ -44,7 +44,7 @@ class Signal:
                  name: str = None,
                  id_: int = None,
                  parameters: Parameters = None,
-                 processed: bool = False,
+                 process_history: str | list[str] = False,
                  ):
         """
 
@@ -62,8 +62,8 @@ class Signal:
             user defined name
         parameters: Parameters
             various meta-data
-        processed: bool
-            Been through a processing method
+        process_history: list[str]
+            List of processing methods the signal has been through
         """
         validate_input(x, y)
         x, y = general_math.check_for_flip(x, y)
@@ -75,9 +75,13 @@ class Signal:
         self.name = name or f"signal_{self.id_}"
         self.x_label = x_label or "x_axis"
         self.y_label = y_label or "y_axis"
-        self.processed = processed
+
         self.parameters = parameters
         self.extract_value = None
+
+        if isinstance(process_history, str):
+            process_history = [process_history]
+        self.process_history = process_history or []
 
     def __repr__(self):
         text = f"{self.name}: "
@@ -98,7 +102,7 @@ class Signal:
                 x_label=copy_method(self.x_label),
                 y_label=copy_method(self.y_label),
                 parameters=copy_method(self.parameters),
-                processed=copy_method(self.processed)
+                process_history=copy_method(self.process_history)
             )
 
     def y_normalized_by_max(self, x_range: Sequence[int | float] = None) -> np.ndarray:

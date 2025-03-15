@@ -56,7 +56,7 @@ class Signal3D:
                  name: str = None,
                  id_: int = None,
                  parameters: Parameters = None,
-                 processed: bool = False,
+                 process_history: bool = False,
                  ):
         """
 
@@ -82,8 +82,8 @@ class Signal3D:
             user defined name
         parameters: Parameters
             various meta-data
-        processed: bool
-            Been through a processing method
+        process_history: list[str]
+            List of processing methods the signal has been through
         """
         validate_input(x, y, z, w)
 
@@ -99,9 +99,12 @@ class Signal3D:
         self.z_label = z_label or "z_axis"
         self.w_label = w_label or "w_axis"
 
-        self.processed = processed
         self.parameters = parameters
         self.extract_value = None
+
+        if isinstance(process_history, str):
+            process_history = [process_history]
+        self.process_history = process_history or []
 
     def __repr__(self):
         text = f"{self.name}: "
@@ -126,7 +129,7 @@ class Signal3D:
             z_label=copy_method(self.z_label),
             w_label=copy_method(self.w_label),
             parameters=copy_method(self.parameters),
-            processed=copy_method(self.processed)
+            process_history=copy_method(self.process_history)
         )
 
     def pop(self, index: int) -> Signal2D:
@@ -142,13 +145,13 @@ class Signal3D:
             self.w = np.delete(self.w, i, axis=0)
             self.z = np.delete(self.z, i)
 
-    def get_signal(self, z_index: int, processed: bool = True, copy_: bool = False) -> Signal2D:
+    def get_signal(self, z_index: int, process_history: bool = True, copy_: bool = False) -> Signal2D:
         """
 
         Parameters
         ----------
         z_index
-        processed:
+        process_history:
             True: get x, y, w
             False: get x, y, w
         copy_:
