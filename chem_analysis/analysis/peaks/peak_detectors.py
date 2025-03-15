@@ -274,3 +274,46 @@ class PeakMovingAverage(PeakDetector):
         # remove 0 thin peaks
         index = index[self._bounds[:, 0] != index]
         return index
+
+
+from chem_analysis.processing.weigths.sliding_window_std import sectioned_std, Smoother, gaussian_filter1d
+
+
+class PeakSlidingWindow(PeakDetector):
+    def __init__(self,
+                 window: int = 3,
+                 sections: int = 32,
+                 number_of_deviations: int | float = 2,
+                 smoother: Smoother | None = lambda x: gaussian_filter1d(x, 10),
+                 ):
+        """
+
+        Parameters
+        ----------
+        window:
+            number of points used to compute local variation
+        sections:
+            number of sections used to get minimum standard deviation || noise value
+        number_of_deviations:
+            the number of deviations from the noise value
+            little effect, typically 2 to 4
+        smoother:
+            smoother used before doing min_max analysis
+        """
+        self.window = window
+        self.sections = sections
+        self.number_of_deviations = number_of_deviations
+        self.smoother = smoother
+        self._bounds = None
+
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        mask = sectioned_std(y, window=self.window, smoother=self.smoother, sections=self.sections)
+        mask = np.logical_not(mask, mask)
+
+        bounds = math_utils.find_consecutive_regions(mask)
+        self._bounds = bounds
+        index = math_utils.get_middle_index(self._bounds)
+
+        # remove 0 thin peaks
+        index = index[self._bounds[:, 0] != index]
+        return index

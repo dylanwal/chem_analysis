@@ -231,7 +231,7 @@ class UnifyMethodMS(UnifyMethod):
 #         self.min_ = min_
 #         self.max_ = max_
 #
-#     def run(self, data: Sequence[np.ndarray]) -> tuple[int | float, int | float]:
+#     def run_xy(self, data: Sequence[np.ndarray]) -> tuple[int | float, int | float]:
 #         """
 #
 #         Parameters

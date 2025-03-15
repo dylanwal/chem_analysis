@@ -1,11 +1,14 @@
 from typing import Sequence, Iterable
 import pathlib
+import copy
 
 import numpy as np
 
+from chem_analysis.base_obj.parameters import Parameters
 import chem_analysis.utils.math as math_utils
 from chem_analysis.base_obj.unify_methods_2d import UnifyMethod2D, UnifyMethodStrict2D
 from chem_analysis.base_obj.signal_2d import Signal2D
+from chem_analysis.base_obj.signal_ import check_array_inf_nan
 
 
 def validate_input(x: np.ndarray, y: np.ndarray, z: np.ndarray, w: np.ndarray):
@@ -26,6 +29,10 @@ def validate_input(x: np.ndarray, y: np.ndarray, z: np.ndarray, w: np.ndarray):
     if z.shape[0] != w.shape[0]:
         raise ValueError(f"'z' and 'w[0]' must have same shape. \n\treceived: z:{z.shape} "
                          f"|| w.shape[0]: {w.shape[0]}")
+    check_array_inf_nan(x, name='x')
+    check_array_inf_nan(y, name='y')
+    check_array_inf_nan(z, name='z')
+    check_array_inf_nan(w, name='w')
 
 
 class Signal3D:
@@ -47,7 +54,9 @@ class Signal3D:
                  z_label: str = None,
                  w_label: str = None,
                  name: str = None,
-                 id_: int = None
+                 id_: int = None,
+                 parameters: Parameters = None,
+                 processed: bool = False,
                  ):
         """
 
@@ -71,6 +80,10 @@ class Signal3D:
             4-axis label
         name: str
             user defined name
+        parameters: Parameters
+            various meta-data
+        processed: bool
+            Been through a processing method
         """
         validate_input(x, y, z, w)
 
@@ -86,6 +99,8 @@ class Signal3D:
         self.z_label = z_label or "z_axis"
         self.w_label = w_label or "w_axis"
 
+        self.processed = processed
+        self.parameters = parameters
         self.extract_value = None
 
     def __repr__(self):
@@ -93,6 +108,26 @@ class Signal3D:
         text += f"{self.x_label} vs {self.y_label} vs {self.z_label} vs {self.w_label}"
         text += f" (shape: {self.w.shape})"
         return text
+
+    def copy_with(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, w: np.ndarray, deep: bool = True):
+        if deep:
+            copy_method = copy.deepcopy
+        else:
+            copy_method = copy.copy
+
+        return Signal3D(
+            x,
+            y,
+            z,
+            w,
+            name=copy_method(self.name),
+            x_label=copy_method(self.x_label),
+            y_label=copy_method(self.y_label),
+            z_label=copy_method(self.z_label),
+            w_label=copy_method(self.w_label),
+            parameters=copy_method(self.parameters),
+            processed=copy_method(self.processed)
+        )
 
     def pop(self, index: int) -> Signal2D:
         sig = self.get_signal(index)
@@ -131,7 +166,7 @@ class Signal3D:
         if copy_:
             x, y, z = x.copy(), y.copy(), z.copy()
 
-        sig = self._signal(x=x, y=y, z=z, x_label=self.x_label, y_label=self.y_label,  z_label=self.z_label,
+        sig = self._signal(x=x, y=y, z=z, x_label=self.x_label, y_label=self.y_label, z_label=self.z_label,
                            name=f"slice_{self.z_label}: {self.z[z_index]}", id_=z_index)
         sig.extract_value = self.z[z_index]
         return sig
@@ -187,4 +222,3 @@ class Signal3D:
         x, y, z = npzfile['x'], npzfile['y'], npzfile['z']
         x_label = y_label = z_label = w_label = None
         return cls(x, y, z, w, x_label=x_label, y_label=y_label, z_label=z_label, w_label=w_label)
-

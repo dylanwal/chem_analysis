@@ -1,10 +1,12 @@
 import pathlib
 from typing import Sequence, Iterable, Iterator
+import copy
 
 import numpy as np
 
+from chem_analysis.base_obj.parameters import Parameters
 from chem_analysis.base_obj.unify_methods import UnifyMethod, UnifyMethodStrict
-from chem_analysis.base_obj.signal_ import Signal
+from chem_analysis.base_obj.signal_ import Signal, check_array_inf_nan
 from chem_analysis.utils.math import unpack_signal2D
 
 
@@ -21,6 +23,9 @@ def validate_input(x: np.ndarray, y: np.ndarray, z: np.ndarray):
     if y.shape[0] != z.shape[0]:
         raise ValueError(f"'y' and 'z[0]' must have same shape. \n\treceived: y:{y.shape} "
                          f"|| z.shape[0]: {z.shape[0]}")
+    check_array_inf_nan(x, name="x")
+    check_array_inf_nan(y, name="y")
+    check_array_inf_nan(y, name="z")
 
 
 class Signal2D:
@@ -40,7 +45,9 @@ class Signal2D:
                  y_label: str = None,
                  z_label: str = None,
                  name: str = None,
-                 id_: int = None
+                 id_: int = None,
+                 parameters: Parameters = None,
+                 processed: bool = False,
                  ):
         """
 
@@ -60,6 +67,10 @@ class Signal2D:
             z-axis label
         name: str
             user defined name
+        parameters: Parameters
+            various meta-data
+        processed: bool
+            Been through a processing method
         """
         validate_input(x, y, z)
 
@@ -73,13 +84,33 @@ class Signal2D:
         self.y_label = y_label or "y_axis"
         self.z_label = z_label or "z_axis"
 
-        self.extract_value = None  # value
+        self.processed = processed
+        self.parameters = parameters
+        self.extract_value = None
 
     def __repr__(self):
         text = f"{self.name}: "
         text += f"{self.x_label} vs. {self.y_label} vs. {self.z_label}"
         text += f" (shape: {self.z.shape})"
         return text
+
+    def copy_with(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, deep: bool = True):
+        if deep:
+            copy_method = copy.deepcopy
+        else:
+            copy_method = copy.copy
+
+        return Signal2D(
+                x,
+                y,
+            z,
+                name=copy_method(self.name),
+                x_label=copy_method(self.x_label),
+                y_label=copy_method(self.y_label),
+                z_label=copy_method(self.z_label),
+                parameters=copy_method(self.parameters),
+                processed=copy_method(self.processed)
+            )
 
     @property
     def number_of_signals(self):

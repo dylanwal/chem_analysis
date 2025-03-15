@@ -624,7 +624,7 @@ def find_consecutive_regions(y: np.ndarray) -> np.ndarray | None:
     left_points = np.concatenate(([0], change_indices + 1))
     right_points = np.concatenate((change_indices, [len(y) - 1]))
 
-    # Only keep regions where the run is longer than 1
+    # Only keep regions where the run_xy is longer than 1
     mask = (right_points - left_points) > 0
     if np.sum(mask) == 0:
         return None

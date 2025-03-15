@@ -33,11 +33,11 @@ class CompoundProcessingBaseline(Baseline):
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         x_, y_ = np.copy(x), np.copy(y)
         for method in self.methods[:-1]:
-           x_, y_ = method.run(x, y)
+           x_, y_ = method.run_xy(x, y)
         baseline = self.methods[-1].get_baseline(x_,y_)
         return np.interp(x, x_, baseline)
 
-    # def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    # def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     #
     #
     #     if self.save_result:

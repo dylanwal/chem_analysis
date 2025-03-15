@@ -150,7 +150,7 @@ class Processor:
 
         for op in opList:
             # print(op.name)
-            op.run(nmrData)
+            op.run_xy(nmrData)
 
     def __getitem__(self, index):
         return self.operationStack[index]

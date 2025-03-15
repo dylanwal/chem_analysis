@@ -271,9 +271,9 @@ class ProcessorViewWidget(QtWidgets .QFrame):
             pBox.setLayout(thisProcessorLayout)
 
             # add widgets for operatin
-            # widgets that can initate a run of the processor get the run function as
-            # an optional keyword argument. If they have it, they will run it,
-            # and this function will run the processor within this object.
+            # widgets that can initate a run_xy of the processor get the run_xy function as
+            # an optional keyword argument. If they have it, they will run_xy it,
+            # and this function will run_xy the processor within this object.
             for op in p:
                 print("name: ", op.name)
 

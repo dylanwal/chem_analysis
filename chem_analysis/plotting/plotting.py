@@ -128,7 +128,7 @@ def baseline(
     plot_kwargs = copy.copy(plot_kwargs) or {}
     if isinstance(baseline_, Processor):
         if not baseline_.processed:
-            raise ValueError("Processer has not been used to process a signal yet. Run the 'Processor.run(signal)' method.")
+            raise ValueError("Processer has not been used to process a signal yet. Run the 'Processor.run_xy(signal)' method.")
         baselines = [method_ for method_ in baseline_.methods if isinstance(method_, Baseline) and method_.baseline is not None]
         if len(baselines) == 0:
             raise ValueError("No Baseline methods detected. Ensure 'Baseline.save_result' attribute is set to 'True'. ")

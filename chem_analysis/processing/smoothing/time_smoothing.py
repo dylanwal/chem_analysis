@@ -21,7 +21,7 @@ class ExponentialTime(Smoothing):
         self.a = a
         self._other_a = 1-a
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         raise NotImplementedError("Only valid for SignalArrays")
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -44,7 +44,7 @@ class GaussianTime(Smoothing):
         super().__init__(temporal_processing)
         self.sigma = sigma
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         raise NotImplementedError("Only valid for SignalArrays")
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

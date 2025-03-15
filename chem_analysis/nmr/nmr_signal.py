@@ -85,7 +85,7 @@ class NMRSignal(Signal):
     def x(self) -> np.ndarray:
         self._fid_processing()
         if not self.processor.processed:
-            self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
+            self._x, self._y = self.processor.run_xy(self.x_raw, self.y_raw)
 
         return self._x
 
@@ -93,7 +93,7 @@ class NMRSignal(Signal):
     def y(self) -> np.ndarray:
         self._fid_processing()
         if not self.processor.processed:
-            self._x, self._y = self.processor.run(self.x_raw, self.y_raw)
+            self._x, self._y = self.processor.run_xy(self.x_raw, self.y_raw)
 
         return self._y
 

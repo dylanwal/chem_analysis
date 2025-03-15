@@ -13,24 +13,24 @@ Run this in the terminal:
 `pip install -r .\requirements_dev.txt`
 
 
-## To run tests:
+## To run_xy tests:
 Run this in the terminal:
 
 `pytest`
 
 
-## To run flake8:
+## To run_xy flake8:
 Run this in the terminal:
 
 `flake8 src`
 
 
-## To run mypy:
+## To run_xy mypy:
 Run this in the terminal:
 
 `mypy src`
 
-## To run tox:
+## To run_xy tox:
 Run this in the terminal:
 
 `tox`

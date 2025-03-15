@@ -32,7 +32,7 @@ class SavitzkyGolay(Smoothing):
         self.window_length = window_length
         self.order = order
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if self.window_length > len(y):
             raise ValueError(f"'SavitzkyGolay.window_length'({self.window_length}) must be less than or "
                              f"equal to the size of y ({len(y)}).")

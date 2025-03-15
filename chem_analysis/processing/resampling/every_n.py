@@ -34,7 +34,7 @@ class EveryN(Resampling):
         self.step = step
         self.start_index = start_index
 
-    def run(self, x: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if len(self.step) != 1:
             raise ValueError(f"'{type(self).__name__}.step' needs to length 1.")
         if self.start_index is None:
@@ -47,7 +47,7 @@ class EveryN(Resampling):
 
         return x[self.start_index[0]::self.step[0]], data[self.start_index[0]::self.step[0]]
 
-    def run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def run_xyz(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         if len(self.step) != 2:
             raise ValueError(f"'{type(self).__name__}.step' needs to length 2.")
         if self.start_index is None:
@@ -65,7 +65,7 @@ class EveryN(Resampling):
                data[self.start_index[1]::self.step[1], self.start_index[0]::self.step[0]]
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        raise NotImplementedError("this should never be called as 'run2D' is overloaded")
+        raise NotImplementedError("this should never be called as 'run_xyz' is overloaded")
 
     def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:

@@ -112,7 +112,7 @@ def process_single(data_path: pathlib.Path, label: str, zero):
     # ini_file = data_path / f"{zero}_pre_post.ini"
     # ms_zero, fid_zero = ca.gc_lc.GCParser.from_Agilent_D_files(ini_file, ms_file, fid_file)
     # span_ = ca.p.edit.ReplaceSpans(value=0, x_spans=((None, 3.7), (5.5, None)))
-    # x, y = span_.run(fid_zero.x_raw, fid_zero.y_raw)
+    # x, y = span_.run_xy(fid_zero.x_raw, fid_zero.y_raw)
 
     # fid
     fid.processor.add(

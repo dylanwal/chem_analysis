@@ -19,7 +19,7 @@ class Phase0D(PhaseCorrection):
         self.degree = degree
         self.domain = domain
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if self.degree:
             phaseFactor = np.exp(-1j*float(self.phase)/180.*np.pi)
         else:
@@ -51,7 +51,7 @@ class Phase1D(PhaseCorrection):
         self.unit = unit
         self.scale = scale
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if self.unit == "radian":
             self.phase = self.value
         elif self.unit == "degree":
@@ -66,7 +66,7 @@ class Phase1D(PhaseCorrection):
 
         if self.pivot != 0:
             o = GetIndex(self.pivot, scale=self.scale)
-            i = o.run(nmrData)
+            i = o.run_xy(nmrData)
             phaseValues = phaseValues - phaseValues[i]
 
         spectra = [spec * np.exp(-1j * phaseValues)
@@ -81,7 +81,7 @@ class Phase1D(PhaseCorrection):
 #         self.scale = scale
 #         self.name = "Get Index"
 #
-#     def run(self, nmrData):
+#     def run_xy(self, nmrData):
 #         if self.scale == "Hz":
 #             index = np.argmin(abs(nmrData.frequency - self.value))
 #         elif self.scale == "ppm":

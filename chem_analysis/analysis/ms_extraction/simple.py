@@ -13,8 +13,8 @@ import chem_analysis.utils.math as utils_math
 
 def ms_extract_index(
         signal: GCMSSignal | MSSignal2D,
-        index: int | slice,
-) -> MSSignal:
+        index: int | slice | np.ndarray,
+) -> MSSignal | list[MSSignal]:
     """
 
     Parameters
@@ -22,7 +22,8 @@ def ms_extract_index(
     signal:
         signal you want to extract ms from
     index:
-        index or slice for the ms you want to extract
+        index or slice
+        np.ndarray [n,2]
 
     Returns
     -------
@@ -33,8 +34,14 @@ def ms_extract_index(
 
     if isinstance(index, int):
         return MSSignal(signal.x, signal.z[index, :])
+    elif isinstance(index, slice):
+        return MSSignal(signal.x, np.sum(signal.z[index, :], axis=0))
+    elif isinstance(index, np.ndarray):
+        if index.shape[1] != 2:
+            raise ValueError("Shape issue. Format as: [[left, right], [left, right], ...]")
+        return [MSSignal(signal.x, np.sum(signal.z[bound[0]:bound[1], :], axis=0)) for bound in index]
 
-    return MSSignal(signal.x, np.sum(signal.z_raw[index, :], axis=0))
+    raise ValueError("unsupported index")
 
 
 def ms_extract_span(

@@ -29,7 +29,7 @@ class ResampleDtypeNormalize(Resampling):
     def dtype_min(self):
         return np.iinfo(self.dtype).min
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x, (y / np.max(y) * self.dtype_max).astype(self.dtype)
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

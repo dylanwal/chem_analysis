@@ -18,7 +18,7 @@ class Uniform(Smoothing):
         super().__init__(temporal_processing)
         self.size = size
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x, uniform_filter1d(y, size=self.size)
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -41,7 +41,7 @@ class Gaussian(Smoothing):
         super().__init__(temporal_processing)
         self.std = std
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x, gaussian_filter1d(y, self.std)
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -99,7 +99,7 @@ class Mollify(Smoothing):
         self.kernel_size = kernel_size
         self.std = std
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x, mollify(y, self.kernel_size, self.std)
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -118,7 +118,7 @@ def main_multi():
         else:
             labels[run_num] = [time_]
 
-    # run method on everything
+    # run_xy method on everything
     import multiprocessing
     tasks = [(run_num, times, data_path) for run_num, times in labels.items()]
     with multiprocessing.Pool(multiprocessing.cpu_count()-1) as pool:
@@ -129,10 +129,10 @@ def process_run(args):
     run_num, times, data_path = args
     times = np.array(times)
     times.sort()
-    data_label = f"DJW-11-53-run{run_num}"
+    data_label = f"DJW-11-53-run_xy{run_num}"
     labels = [data_label + f"-t{i}" for i in times]
     process_timeseries(data_path, data_label, labels, times, True)
-    print(f"Finished analyzing run {run_num}")
+    print(f"Finished analyzing run_xy {run_num}")
 
 
 def main():

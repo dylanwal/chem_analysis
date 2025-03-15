@@ -1,5 +1,6 @@
 from typing import Sequence
 import pathlib
+import copy
 
 import numpy as np
 
@@ -83,6 +84,22 @@ class Signal:
         text += f"{self.x_label} vs {self.y_label}"
         text += f" (pts: {len(self.x)})"
         return text
+
+    def copy_with(self, x: np.ndarray, y: np.ndarray, deep: bool = True):
+        if deep:
+            copy_method = copy.deepcopy
+        else:
+            copy_method = copy.copy
+
+        return Signal(
+                x,
+                y,
+                name=copy_method(self.name),
+                x_label=copy_method(self.x_label),
+                y_label=copy_method(self.y_label),
+                parameters=copy_method(self.parameters),
+                processed=copy_method(self.processed)
+            )
 
     def y_normalized_by_max(self, x_range: Sequence[int | float] = None) -> np.ndarray:
         if x_range is None:

@@ -20,7 +20,7 @@ class ScaleMax(Translation):
         self.wrap = wrap
         self.scale = None
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if self.new_max_value is None:
             raise ValueError("Set the 'AlignMax.x_value' you want to align the max to.")
         if self.range_ is not None:

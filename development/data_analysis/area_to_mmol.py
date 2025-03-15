@@ -86,7 +86,7 @@ def main_multi():
             raise ValueError(f'duplicate label {run_num}')
         labels.append(run_num)
 
-    # run method on everything
+    # run_xy method on everything
     import multiprocessing
 
     tasks = [(run_num, data_path, internal_standard, internal_standard_mmol, rf) for run_num in labels]
@@ -96,9 +96,9 @@ def main_multi():
 
 def process_run(args):
     run_num, data_path, internal_standard, internal_standard_mmol, rf = args
-    data_label = f"DJW-11-53-run{run_num}_fid"
+    data_label = f"DJW-11-53-run_xy{run_num}_fid"
     process_areas(data_path, data_label, internal_standard, internal_standard_mmol, rf)
-    print(f"Finished analyzing run {run_num}")
+    print(f"Finished analyzing run_xy {run_num}")
 
 
 def main():

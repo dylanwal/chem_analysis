@@ -4,12 +4,14 @@ from chem_analysis.processing.smoothing.time_smoothing import ExponentialTime, G
 from chem_analysis.processing.smoothing.rolling_window import RollingWindow
 from chem_analysis.processing.smoothing.wavelet import Wavelet
 
-from typing import Callable
+from typing import Protocol
 import numpy as np
 
-# Input || y_old: np.ndarray
-# Return || y_smoothed: np.ndarray
-Smoother = Callable[[np.ndarray], np.ndarray]
+
+class Smoother(Protocol):
+    def __call__(self, y: np.ndarray = ...) -> np.ndarray:
+        ...
+
 
 # TODO:
 # Denoise
@@ -33,7 +35,7 @@ Smoother = Callable[[np.ndarray], np.ndarray]
 #     def y_baseline(self) -> np.ndarray:
 #         return self._y_baseline
 #
-#     def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+#     def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 #         length = len(nmrData.allFid[-1][0])
 #         sp.multiply(nmrData.allFid[-1][:], sp.exp(-nmrData.fidTimeForLB[:length] * self.degree * np.pi))
 #         return x, y

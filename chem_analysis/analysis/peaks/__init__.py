@@ -3,7 +3,7 @@ from chem_analysis.analysis.peaks.base_classes import (
 )
 
 from chem_analysis.analysis.peaks.peak_detectors import (
-    PeakMaxValues, PeakLocalMax, PeakDerivative, PeakScipy, PeakMovingAverage, PeakMorphological
+    PeakMaxValues, PeakLocalMax, PeakDerivative, PeakScipy, PeakMovingAverage, PeakMorphological, PeakSlidingWindow
 )
 from chem_analysis.analysis.peaks.peak_filters import (
     FilterHeight, FilterHeightLocal, FilterWidth, FilterSpacing, FilterProminence, FilterSpans, FilterSlices,

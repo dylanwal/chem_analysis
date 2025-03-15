@@ -36,7 +36,7 @@ def sectioned_std(y,
                   window: int = 3,
                   sections: int = 32,
                   number_of_deviations: int | float = 2,
-                  smoother: Smoother = lambda x: gaussian_filter1d(x, 10),
+                  smoother: Smoother | None = lambda y: gaussian_filter1d(y, 10),
                   ignore_zeros: bool = True,
                   ):
     """
@@ -57,6 +57,7 @@ def sectioned_std(y,
         little effect, typically 2 to 4
     smoother:
         smoother used before doing min_max analysis
+        highly recommended to use one. example: gaussian_filter1d(x, 10)
     ignore_zeros:
         won't apply mask if value is zero
 

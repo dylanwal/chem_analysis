@@ -18,7 +18,7 @@ class AlignMaxIndex(Translation):
         self.x_value = x_value
         self.wrap = wrap
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         range_index = get_slice(x, self.range_[0], self.range_[1])
 
         max_index = np.argmax(y[range_index]) + range_index.start
@@ -26,7 +26,7 @@ class AlignMaxIndex(Translation):
         shift_amount = x_value_index - max_index
 
         translation = HorizontalShift(shift_index=shift_amount, wrap=self.wrap)
-        return translation.run(x, y)
+        return translation.run_xy(x, y)
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         if self.range_ is not None:
@@ -64,7 +64,7 @@ class AlignMaxValue(Translation):
         self.x_value = x_value
         self.min_height = min_height
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         range_index = get_slice(x, self.range_[0], self.range_[1])
         max_index = np.argmax(y[range_index]) + range_index.start
         if y[max_index] < self.min_height:

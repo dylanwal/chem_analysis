@@ -1,14 +1,14 @@
 """
 How to use:
 1) install win32com.client  `pip install pywin32`
-2) run the code (outlook must also be open)
+2) run_xy the code (outlook must also be open)
 3) select our mit account by changing the `account_index` to match order in list
     * order in list changes depending on what is currently open in outlook
-4) run the code
+4) run_xy the code
 5) select the folder with NMR emails by changing `folder_index`
 6) enter a `search_key` for your NMR files. Text that is only in the subject line of only NMR emails
 7) enter a `save_location`
-8) run the code
+8) run_xy the code
 
 Microsoft Reference for COM objects:
 https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.outlook.namespace?view=outlook-pia

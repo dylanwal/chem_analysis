@@ -72,7 +72,7 @@ class Processor:
                 | tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]):
         """
         Run processing methods on passed in x, y, (z), (w) np arrays.
-        Processing.run(signal) is preferred use over run_individual() method.
+        Processing.run_xy(signal) is preferred use over run_individual() method.
         """
         x = np.copy(x)
         y = np.copy(y)
@@ -83,9 +83,9 @@ class Processor:
 
         for method in self._methods:
             if z is None:
-                x, y = method.run(x, y)
+                x, y = method.run_xy(x, y)
             elif w is None:
-                x, y, z = method.run2D(x, y, z)
+                x, y, z = method.run_xyz(x, y, z)
             else:
                 x, y, z, w = method._run3D(x, y, z, w)
 

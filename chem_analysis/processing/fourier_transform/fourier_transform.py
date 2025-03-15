@@ -16,7 +16,7 @@ class FastFourierTransform(FourierTransform):
     def y_baseline(self) -> np.ndarray:
         return self._y_baseline
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return x, fftshift(fft(y))
 
 

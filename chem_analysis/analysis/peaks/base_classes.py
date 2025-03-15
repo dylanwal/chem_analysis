@@ -100,7 +100,7 @@ def find_peaks_xy(
 
     if smoother is not None:
         x, y = np.copy(x), np.copy(y)
-        x, y = smoother.run(x, y)
+        x, y = smoother.run_xy(x, y)
 
     indexes = []
     for detector in detectors:

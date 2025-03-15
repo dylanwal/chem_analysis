@@ -99,7 +99,7 @@ def process_timeseries(data_path: pathlib.Path | str, pattern: str):
 
 def main():
     # data_path = r"C:\Users\nicep\Desktop\research_wis\data\11\11_29\GC_MS"
-    # pattern = "DJW-11-29-GAS-run-*.D"
+    # pattern = "DJW-11-29-GAS-run_xy-*.D"
     data_path = r"C:\Users\nicep\Desktop\research_wis\data\11\11_31\GC_MS"
     pattern = "DJW-11-31-GAS-*.D"
     process_timeseries(data_path, pattern)

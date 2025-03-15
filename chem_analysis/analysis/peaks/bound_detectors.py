@@ -16,7 +16,7 @@ def _apply_smoother(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     if smoother is not None:
         x, y = np.copy(x), np.copy(y)
-        x, y = smoother.run(x, y)
+        x, y = smoother.run_xy(x, y)
 
         # smoothing can cause previous max not to be the peak anymore; so move it
         if adjust_index:

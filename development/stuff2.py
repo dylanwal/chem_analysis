@@ -12,7 +12,7 @@ y = signal + noise
 
 def find_peaks_derivative(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     smoother = ca.p.smoothing.Gaussian(std=10)
-    _, y_smooth = smoother.run(x, y)
+    _, y_smooth = smoother.run_xy(x, y)
     """Find peaks using the first and second derivatives."""
     dy = np.gradient(y_smooth, x)  # First derivative
     ddy = np.gradient(dy, x)  # Second derivative
@@ -24,7 +24,7 @@ def find_peaks_derivative(x: np.ndarray, y: np.ndarray) -> np.ndarray:
 
 
 baseline = ca.p.baseline.MorphologicalAverage()
-x, y = baseline.run(x, y)
+x, y = baseline.run_xy(x, y)
 
 x_peak, y_peak = find_peaks_derivative(x, y)
 

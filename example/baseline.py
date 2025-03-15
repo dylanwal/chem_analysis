@@ -29,35 +29,35 @@ def create_figure(x: np.ndarray, y: np.ndarray) -> tuple[go.Figure, dict]:
 
     start = time.perf_counter()
     method = ca.p.baseline.Polynomial(degree=3, save_result=True)
-    method.run(x,y)
+    method.run_xy(x, y)
     end = time.perf_counter()
     props['Polynomial'] = {'time': end - start}
     fig.add_scatter(x=x, y=method.baseline, name='Polynomial', mode='lines')
 
     start = time.perf_counter()
     method = ca.p.baseline.MorphologicalAverage(save_result=True)
-    method.run(x,y)
+    method.run_xy(x, y)
     end = time.perf_counter()
     props['MorphologicalAverage'] = {'time': end - start}
     fig.add_scatter(x=x, y=method.baseline, name='MorphologicalAverage', mode='lines')
 
     start = time.perf_counter()
     method = ca.p.baseline.SectionMinMax(save_result=True)
-    method.run(x,y)
+    method.run_xy(x, y)
     end = time.perf_counter()
     props['SectionMinMax'] = {'time': end - start}
     fig.add_scatter(x=x, y=method.baseline, name='SectionMinMax', mode='lines')
 
     start = time.perf_counter()
     method = ca.p.baseline.RLOESS(save_result=True)
-    method.run(x,y)
+    method.run_xy(x, y)
     end = time.perf_counter()
     props['RLOESS'] = {'time': end - start}
     fig.add_scatter(x=x, y=method.baseline, name='RLOESS', mode='lines')
 
     start = time.perf_counter()
     method = ca.p.baseline.Wavelet(save_result=True)
-    method.run(x, y)
+    method.run_xy(x, y)
     end = time.perf_counter()
     props['Wavelet'] = {'time': end - start}
     fig.add_scatter(x=x, y=method.baseline, name='Wavelet', mode='lines')

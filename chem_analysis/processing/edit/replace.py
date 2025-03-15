@@ -22,7 +22,7 @@ class ReplaceSlices(Edit):
         self.invert = invert
         self.value = value
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if self.x_slices is None:
             raise ValueError(f"'{type(self).__name__}.x_slices' needs to be defined.")
         slice_ = Slices(self.x_slices, invert=self.invert)
@@ -30,7 +30,7 @@ class ReplaceSlices(Edit):
         y[mask] = self.value
         return x, y
 
-    def run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def run_xyz(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         if self.x_slices is not None:
             slice_x = Slices(self.x_slices, invert=self.invert)
             mask_x = slice_x.get_mask(x, z)
@@ -47,7 +47,7 @@ class ReplaceSlices(Edit):
         return x, y, z
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        raise NotImplementedError("this should never be called as 'run2D' is overloaded")
+        raise NotImplementedError("this should never be called as 'run_xyz' is overloaded")
 
     def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -70,7 +70,7 @@ class ReplaceSpans(Edit):
         self.invert = invert
         self.value = value
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if self.x_spans is None:
             raise ValueError(f"'{type(self).__name__}.x_spans' needs to be defined.")
         slice_ = Spans(self.x_spans, invert=self.invert)
@@ -78,7 +78,7 @@ class ReplaceSpans(Edit):
         y[mask] = self.value
         return x, y
 
-    def run2D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def run_xyz(self, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         if self.x_spans is not None:
             slice_x = Spans(self.x_spans, invert=self.invert)
             mask_x = slice_x.get_mask(x, z)
@@ -92,7 +92,7 @@ class ReplaceSpans(Edit):
         return x, y, z
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        raise NotImplementedError("this should never be called as 'run2D' is overloaded")
+        raise NotImplementedError("this should never be called as 'run_xyz' is overloaded")
 
     def _run3D(self, x: np.ndarray, y: np.ndarray, z: np.ndarray, data: np.ndarray) \
             -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:

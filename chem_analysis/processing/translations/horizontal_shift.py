@@ -42,7 +42,7 @@ class HorizontalShift(Translation):
             index = np.argmin(np.abs(x - new_max)) - len(x)
         return index
 
-    def run(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         if isinstance(self.shift_index, Sequence) or isinstance(self.shift_x, Sequence):
             raise ValueError("For x-y signals, provide single values for 'shift_index' and 'shift_x'.")
         self._get_shift_index(x)

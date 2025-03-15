@@ -45,7 +45,7 @@ class RollingWindow(Smoothing):
         self.window = window
         self.m = m
 
-    def run(self, x: np.ndarray, y: np.ndarray, ) -> tuple[np.ndarray, np.ndarray]:
+    def run_xy(self, x: np.ndarray, y: np.ndarray, ) -> tuple[np.ndarray, np.ndarray]:
         return x, rolling_window_main(self.window, self.m, y)
 
     def _run2D(self, x: np.ndarray, y: np.ndarray, data: np.ndarray) \
