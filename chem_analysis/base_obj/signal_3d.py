@@ -205,9 +205,13 @@ class Signal3D:
             from chem_analysis.utils.sparse_data import numpy_to_sparse
             coords, data, shape = numpy_to_sparse(self.w)
             coords.astype(math_utils.min_uint_dtype(np.max(coords)))
-            np.savez(path, x=self.x, y=self.y, z=self.z, coords=coords, data=data, shape=shape, **kwargs)
+            np.savez(path, x=self.x, y=self.y, z=self.z, coords=coords,
+                     x_label=self.x_label, y_label=self.y_label, z_label=self.z_label, w_label=self.w_label,
+                     data=data, shape=shape, **kwargs)
         else:
-            np.savez(path, x=self.x, y=self.y, z=self.z, w=self.w, **kwargs)
+            np.savez(path, x=self.x, y=self.y, z=self.z, w=self.w,
+                     x_label=self.x_label, y_label=self.y_label, z_label=self.z_label, w_label=self.w_label,
+                     **kwargs)
 
     @classmethod
     def from_npz(cls, path: str | pathlib.Path):
@@ -222,6 +226,8 @@ class Signal3D:
         else:
             w = npzfile['w']
 
+        npzfile = np.load(str(path))
         x, y, z = npzfile['x'], npzfile['y'], npzfile['z']
-        x_label = y_label = z_label = w_label = None
-        return cls(x, y, z, w, x_label=x_label, y_label=y_label, z_label=z_label, w_label=w_label)
+        x_label, y_label, z_label, w_label, name = npzfile['x_label'], npzfile['y_label'], npzfile['z_label'], npzfile[
+            'w_label'], npzfile['name']
+        return cls(x, y, z, w, x_label=x_label, y_label=y_label, z_label=z_label, w_label=w_label, name=name)

@@ -148,6 +148,9 @@ class Signal:
     def to_npy(self, path: str | pathlib.Path, **kwargs):
         np.save(path, np.column_stack((self.x, self.y)), **kwargs)
 
+    def to_npz(self, path: str | pathlib.Path, **kwargs):
+        np.savez(path, x=self.x, y=self.y, name=self.name, x_label=self.x_label, y_label=self.y_label, **kwargs)
+
     def to_feather(self, path: str | pathlib.Path):
         from chem_analysis.utils.feather_format import numpy_to_feather
 
@@ -200,11 +203,10 @@ class Signal:
         return cls(x, y)
 
     @classmethod
-    def from_npz(cls, path: str | pathlib.Path):
-        npzfile = np.load(str(path))
-        x, y = npzfile['x'], npzfile['y']
-        x_label = y_label = None
-        return cls(x, y, x_label=x_label, y_label=y_label)
+    def from_npz(cls, path: str | pathlib.Path, **kwargs):
+        npzfile = np.load(str(path), **kwargs)
+        x, y, name, x_label, y_label = npzfile['x'], npzfile['y'], npzfile['name'], npzfile['x_label'], npzfile['y_label']
+        return cls(x, y, x_label=x_label, y_label=y_label, name=name)
 
     @classmethod
     def from_feather(cls, path: str | pathlib.Path):

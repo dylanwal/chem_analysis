@@ -412,10 +412,22 @@ def set_minimum_dtype(array: np.ndarray) -> np.ndarray:
     raise ValueError("Not supported dtype.")
 
 
-def map_discrete_x_axis(x_new: np.ndarray, x_old: np.ndarray, y_old: np.ndarray, ignore_issues: bool = False) \
-        -> np.ndarray:
+def map_discrete_x_axis(
+        x_new: np.ndarray,
+        x_old: np.ndarray,
+        y_old: np.ndarray,
+        ignore_issues: bool = False
+) -> np.ndarray:
+    if np.max(x_new) < np.max(x_old):
+        index = np.nonzero(np.max(x_new) < x_old)[0]
+        mask = np.ones_like(x_old, dtype=bool)
+        mask[index] = False
+        y_old = y_old[mask]
+        x_old = x_old[mask]
+
     y_new = np.zeros_like(x_new, dtype=y_old.dtype)
     index = get_index_of_values_in_common(x_new, x_old)
+
     if ignore_issues and any(i is None for i in index):
         zip_list = ((y, i) for y, i in zip(y_old, index) if i is not None)
         y_old, index = zip(*zip_list)

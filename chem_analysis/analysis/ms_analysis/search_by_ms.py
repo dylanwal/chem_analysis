@@ -1,50 +1,52 @@
+import abc
 
 import numpy as np
 
-from chem_analysis.analysis.peak import PeakContinuous
-from chem_analysis.analysis.peak_result import ResultPeaks
-from chem_analysis.analysis.ms_analysis.result_search import ResultCompoundSearch, PeakCompound
-from chem_analysis.analysis.ms_analysis.picking_library import PickingLibrary
+import chem_analysis.utils.math as utils_math
+from chem_analysis.mass_spec.ms_signal import MSSignal
+from chem_analysis.analysis.ms_analysis.ms_library import MSLibrary
+import chem_analysis.utils.vector_similarity as vector_similarity
 
 
-def get_top_n_matches(distance: np.ndarray, n: int = 1) -> np.ndarray:
-    indices = np.argpartition(distance, -n)[-n:]
-    return indices[np.argsort(-distance[indices])]
+class MSFilter(abc.ABC):
+    def __init__(self):
+        ...
+
+    @abc.abstractmethod
+    def run(self, lib: MSLibrary, scores: np.ndarray) -> np.ndarray:
+        ...
 
 
-def search_by_retention_time(
-        picking_library: PickingLibrary,
-        peak_result: ResultPeaks,
-        a_tolerance: int | float = 0.1,
-        number_of_matches: int = 1,
-) -> ResultCompoundSearch:
-    peaks = []
-    for peak in peak_result:
-        peaks.append(search_by_retention_time_single(picking_library, peak, a_tolerance, number_of_matches))
+class TopNMatches:
+    def __init__(self, n: int):
+        self.n = n
 
-    return ResultCompoundSearch(peaks)
+    def run(self, lib: MSLibrary, scores: np.ndarray) -> np.ndarray:
+        indices = np.argpartition(scores, -self.n)[-self.n:]
+        return indices[np.argsort(-scores[indices])]
 
 
-def search_by_retention_time_single(
-        picking_library: PickingLibrary,
-        peak: PeakContinuous,
-        a_tolerance: int | float = 0.1,
-        number_of_matches: int = 1,
-) -> PeakCompound:
-    if isinstance(peak, PeakContinuous):
-        raise ValueError("Invalid 'Peak' type.")
+def search_by_ms(
+        library: MSLibrary,
+        ms: MSSignal,
+        scorer_ms: vector_similarity.SimilarityFunction = vector_similarity.dot_cosine_similarity,
+        filter_ms: MSFilter = TopNMatches(n=1),
+) -> list | list[list]:
+    if len(library.ms_mass) == len(ms.x) and np.equal(ms.x, ms.y).all():
+        ms_ = ms.y
+    else:
+        ms_ = utils_math.map_discrete_x_axis(library.ms_mass, ms.x, ms.y)
 
-    distance = np.abs(picking_library.retention_times - peak.x)
-    index = get_top_n_matches(distance, number_of_matches)
-    index = index[distance[index] < a_tolerance]
+    scores = scorer_ms(library.ms_intensity, ms_)
+    index = filter_ms.run(library, scores)
+    labels = []
+    for i in index:
+        if index == -1:
+            labels.append(None)
+        else:
+            if isinstance(i, list):
+                labels.append(library.chemicals[ii] for ii in i)
+            else:
+                labels.append(library.chemicals[i])
 
-    if len(index) == 1:
-        return PeakCompound(peak, picking_library.compounds[index[0]], distance[index[0]])
-    elif len(index) == 0:
-        return PeakCompound(peak, None, None)
-
-    compounds = [picking_library.compounds[i] for i in index]
-    distances = distance[index]
-    return PeakCompound(peak, compounds, distances)
-
-
+    return labels

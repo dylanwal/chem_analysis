@@ -4,7 +4,7 @@ import numpy as np
 from chem_analysis.analysis.peak import PeakContinuous
 from chem_analysis.analysis.peak_result import ResultPeaks
 from chem_analysis.analysis.ms_analysis.result_search import ResultCompoundSearch, PeakCompound
-from chem_analysis.analysis.ms_analysis.picking_library import PickingLibrary
+from chem_analysis.analysis.ms_analysis.ms_library import PickingLibrary
 
 
 def get_top_n_matches(distance: np.ndarray, n: int = 1) -> np.ndarray:

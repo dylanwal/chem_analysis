@@ -104,16 +104,16 @@ class Signal2D:
             copy_method = copy.copy
 
         return Signal2D(
-                x,
-                y,
+            x,
+            y,
             z,
-                name=copy_method(self.name),
-                x_label=copy_method(self.x_label),
-                y_label=copy_method(self.y_label),
-                z_label=copy_method(self.z_label),
-                parameters=copy_method(self.parameters),
-                process_history=copy_method(self.process_history)
-            )
+            name=copy_method(self.name),
+            x_label=copy_method(self.x_label),
+            y_label=copy_method(self.y_label),
+            z_label=copy_method(self.z_label),
+            parameters=copy_method(self.parameters),
+            process_history=copy_method(self.process_history)
+        )
 
     @property
     def number_of_signals(self):
@@ -153,7 +153,7 @@ class Signal2D:
 
         """
         x, y = self.x, self.z[y_index, :]
-  
+
         if copy_:
             x, y = x.copy(), y.copy()
 
@@ -218,7 +218,9 @@ class Signal2D:
 
     def to_npz(self, path: str | pathlib.Path, **kwargs):
         """Save an array to a binary file in NumPy ``.npz`` format."""
-        np.savez(path, x=self.x, y=self.y, z=self.z, **kwargs)
+        np.savez(path, x=self.x, y=self.y, z=self.z, name=self.name,
+                 x_label=self.x_label, y_label=self.y_label, z_label=self.z_label, **kwargs
+                 )
 
     @classmethod
     def from_file(cls, path: str | pathlib.Path):
@@ -266,5 +268,5 @@ class Signal2D:
     def from_npz(cls, path: str | pathlib.Path):
         npzfile = np.load(str(path))
         x, y, z = npzfile['x'], npzfile['y'], npzfile['z']
-        x_label = y_label = z_label = None
-        return cls(x, y, z, x_label=x_label, y_label=y_label, z_label=z_label)
+        x_label, y_label, z_label, name = npzfile['x_label'], npzfile['y_label'], npzfile['z_label'], npzfile['name']
+        return cls(x, y, z, x_label=x_label, y_label=y_label, z_label=z_label, name=name)

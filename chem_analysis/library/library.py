@@ -58,12 +58,13 @@ class Library:
     def chemicals(self) -> list[Chemical]:
         return self._chemicals
 
-    def add_chemical(self, chemicals: Chemical):
-        if chemicals in self:
+    def add_chemical(self, chemical: Chemical):
+        if chemical in self:
             logging.warning(f"Can't add duplicate chemicals. The original chemicals in {self} is retained. "
-                            f"\n Chemical: {chemicals}")
-
-        self.chemicals.append(chemicals)
+                            f"\n Chemical: {chemical}")
+        if chemical.id_ is None:
+            chemical.id_ = len(self.chemicals)
+        self.chemicals.append(chemical)
 
     def delete_chemical(self, chemical: Chemical | str | int):
         index = None
@@ -134,11 +135,13 @@ class Library:
         lib_dict["encoding_numpy"] = numpy_encoding
         lib_dict["name"] = self.name
         lib_dict["datetime_created"] = self.datetime_created.isoformat()
-        lib_dict["datetime_updated"] = datetime.datetime.now().isoformat()
+        lib_dict["datetime_modified"] = datetime.datetime.now().isoformat()
 
         chems = []
         for chem in self.chemicals:
-            chems.append(chem.to_json(numpy_encoding))
+            chems.append(chem.to_json(numpy_encoding=numpy_encoding))
+
+        lib_dict['chemicals'] = chems
 
         if json_kwargs is None:
             json_kwargs = {}
@@ -180,6 +183,6 @@ class Library:
         lib.pop("encoding")
         numpy_encoding = lib.pop("encoding_numpy")
 
-        lib["compounds"] = [Chemical._from_JSON(chem, numpy_encoding) for chem in lib["chemical"]]
+        lib["chemicals"] = [Chemical._from_JSON(chem, numpy_encoding=numpy_encoding) for chem in lib["chemicals"]]
 
         return cls(**lib)

@@ -6,12 +6,13 @@ from chem_analysis.library.identifiers import Identifier
 
 
 class Chemical:
-    __slots__ = "name", "identifiers", "attributes", "id_", "datetime_created", "datetime_modified"
+    __slots__ = "name", "identifiers", "attributes", "id_"
 
     def __init__(self,
                  name: str,
                  identifiers: list[Identifier] | None = None,
                  attributes: list[Attribute] | None = None,
+                 id_: int | None = None,
                  ):
         """
 
@@ -22,9 +23,9 @@ class Chemical:
         attributes:
         """
         self.name = name
-        self.id_ = id
-        self.attributes = attributes or None
-        self.identifiers = identifiers or None
+        self.attributes = attributes or []
+        self.identifiers = identifiers or []
+        self.id_ = id_
 
     def __str__(self):
         text = f"{self.name}"
@@ -42,19 +43,19 @@ class Chemical:
         dict_["identifiers"] = [iden.to_dict() for iden in self.identifiers]
         return dict_
 
-    def to_json(self, numpy_encoding: str = 'list') -> OrderedDict[str, Any]:
+    def to_json(self, /, **kwargs) -> OrderedDict[str, Any]:
         dict_ = OrderedDict()
         dict_["name"] = self.name
         dict_["id_"] = self.id_
-        dict_["attributes"] = [attr.to_json(numpy_encoding) for attr in self.attributes]
-        dict_["identifiers"] = [iden.to_json(numpy_encoding) for iden in self.identifiers]
+        dict_["attributes"] = [attr.to_json(**kwargs) for attr in self.attributes]
+        dict_["identifiers"] = [iden.to_json(**kwargs) for iden in self.identifiers]
 
         return dict_
 
     @classmethod
-    def _from_JSON(cls, dict_: dict, numpy_encoding: str = 'list'):
-        dict_["attributes"] = [Attribute._from_JSON(attr, numpy_encoding) for attr in dict_["attributes"]]
-        dict_["identifiers"] = [Identifier._from_JSON(iden, numpy_encoding) for iden in dict_["identifiers"]]
+    def _from_JSON(cls, dict_: dict, /, **kwargs):
+        dict_["attributes"] = [Attribute._from_JSON(attr, **kwargs) for attr in dict_["attributes"]]
+        dict_["identifiers"] = [Identifier._from_JSON(iden, **kwargs) for iden in dict_["identifiers"]]
         return cls(**dict_)
 
     def match_identifier(self,

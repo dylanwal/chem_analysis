@@ -2,6 +2,7 @@ import abc
 import base64
 from typing import Any
 from collections import OrderedDict
+import inspect
 
 import numpy as np
 
@@ -11,21 +12,19 @@ from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 
 def numpy_to_JSON(array: np.ndarray, encoding: str = "list") -> str:
     if encoding == "binary":
-        return f"{array.shape}|{array.dtype}|" + base64.b64encode(array.tobytes()).decode('ASCII')
+        return f"b'{','.join(str(i) for i in array.shape)}|{array.dtype}|" + base64.b64encode(array.tobytes()).decode('ASCII')
     if encoding == "list":
         return array.tolist()
 
     raise ValueError("encoding not supported.")
 
 
-def parse_shape(shape: str) -> list[int]:
-    return [int(i) for i in shape[1:-1].split(",") if i]
-
-
 def JSON_to_numpy(input_: str, encoding: str = "list") -> np.ndarray:
-    if encoding == "binary":
+    if encoding == "binary" or input_.startswith("b'"):
+        input_ = input_.replace("b'", "")
         shape,  dtype, data = input_.split("|", maxsplit=2)
-        return np.frombuffer(base64.b64decode(input_), dtype=dtype).reshape(parse_shape(shape))
+        shape = [int(i) for i in shape.split(",")]
+        return np.frombuffer(base64.b64decode(data), dtype=dtype).reshape(shape)
     if encoding == "list":
         return np.array(input_)
 
@@ -33,8 +32,9 @@ def JSON_to_numpy(input_: str, encoding: str = "list") -> np.ndarray:
 
 
 def get_class_instance_attributes(class_) -> dict[str, Any]:
-    attrs = class_.__dict__.items()
-    return {k: v for k, v in list(attrs) if v is not None}
+    attrs = inspect.getmembers(class_, lambda a: not (inspect.isroutine(a)))
+    list_of_attrs = [a for a in attrs if not (a[0].startswith('_'))]
+    return {k: v for k, v in list_of_attrs}
 
 
 class Attribute(MixinSubClassList, abc.ABC):
@@ -44,7 +44,7 @@ class Attribute(MixinSubClassList, abc.ABC):
     def __init__(self,
                  value: Any,
                  unit: str | None = None,
-                 uncertainty: Any | None = None,
+                 uncertainty: int | float | None = None,
                  conditions: Condition | list[Condition] = None,
                  ):
         self.value = value
@@ -54,157 +54,175 @@ class Attribute(MixinSubClassList, abc.ABC):
             conditions = [conditions]
         self.conditions = conditions or []
 
-    def to_dict(self) -> OrderedDict[str, Any]:
+    def __str__(self):
+        text = str(self.value)
+        if self.unit:
+            text += f" {self.unit}"
+        if self.uncertainty:
+            text += f" ({self.uncertainty})"
+        return text
+
+    def __repr__(self):
+        return self.__str__()
+
+    def to_dict(self, remove_nones: bool = False) -> OrderedDict[str, Any]:
         dict_ = OrderedDict()
         dict_["type"] = type(self).__name__
-        dict_["value"] = self.value
-        dict_["unit"] = self.unit
 
         attrs = get_class_instance_attributes(self)
-        attrs.pop('value')
+        dict_["value"] = attrs.pop('value')
         attrs.pop('unit')
-        for attr in attrs:
-            dict_[attr[0]] = attr[1]
+
+        if remove_nones:
+            if self.unit is not None:
+                dict_["unit"] = self.unit
+            attrs = {k: v for k, v in attrs.items() if v}
+        else:
+            dict_["unit"] = self.unit
+
+        for k, v in attrs.items():
+            if isinstance(v, (list, tuple)) and len(v) >= 1:
+                v_ = [0]*len(v)
+                for i, value in enumerate(v):
+                    if hasattr(value, "to_dict"):
+                        v_[i] = value.to_dict(remove_nones=remove_nones)
+                    else:
+                        v_[i] = value
+                v = v_
+            dict_[k] = v
         return dict_
 
-    def to_json(self, *args, **kwargs) -> OrderedDict[str, Any]:
-        return self.to_dict()
+    def to_json(self, /, **kwargs) -> OrderedDict[str, Any]:
+        dict_ = self.to_dict(remove_nones=True)
+        if isinstance(self.value, np.ndarray):
+            dict_["value"] = numpy_to_JSON(dict_["value"], kwargs.get("numpy_encoding", "list"))
+        return dict_
 
     @classmethod
-    def _from_JSON(cls, dict_: OrderedDict[str, Any], *args, **kwargs):
+    def _from_JSON(cls, dict_: OrderedDict[str, Any], /, **kwargs):
         class_ = dict_.pop("type")
         for k in cls.sub_classes():
             if k.__name__ == class_:
                 class_ = k
-        return class_._from_JSON_(dict_, *args, **kwargs)
+        return class_._from_JSON_(dict_, **kwargs)
 
     @classmethod
-    def _from_JSON_(cls, dict_: OrderedDict[str, Any], *args, **kwargs):
+    def _from_JSON_(cls, dict_: OrderedDict[str, Any], /, **kwargs):
+        if isinstance(dict_["value"], str) and dict_["value"].startswith("b'"):
+            dict_["value"] = JSON_to_numpy(dict_["value"], encoding=kwargs.get("numpy_encoding", "binary"))
+        if isinstance(dict_["value"], list):
+            try:
+                dict_["value"] = np.array(dict_["value"])
+            except ValueError:
+                pass
+
         return cls(**dict_)
 
 
-class MolarMass(Attribute):
-    MINI_KEY = "mw"
+class UserDefined(Attribute):
+    def __init__(self,
+                 value: Any,
+                 class_: str,
+                 unit: str = None,
+                 uncertainty: int | float | None = None,
+                 conditions: Condition | list[Condition] = None,
+                 ):
+        super().__init__(value, unit, uncertainty, conditions)
+        self.class_ = class_
 
+
+class MolarMass(Attribute):
     def __init__(self,
                  value: float | int,
                  unit: str = 'g/mol',
                  uncertainty: Any | None = None,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, uncertainty, conditions)
 
 
 class Color(Attribute):
-    MINI_KEY = "color"
-
     def __init__(self,
                  value: str,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, conditions=conditions)
 
 
 class BoilingTemperature(Attribute):
-    MINI_KEY = "btemp"
-
     def __init__(self,
                  value: float | int,
                  unit: str = 'degC',
                  uncertainty: Any | None = None,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, uncertainty, conditions)
 
 
 class MeltingTemperature(Attribute):
-    MINI_KEY = "mtemp"
-
     def __init__(self,
                  value: float | int,
                  unit: str = 'degC',
                  uncertainty: Any | None = None,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, uncertainty, conditions)
 
 
 class Density(Attribute):
-    MINI_KEY = "den"
-
     def __init__(self,
                  value: float | int,
                  unit: str = 'degC',
                  uncertainty: Any | None = None,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, uncertainty, conditions)
 
 
 class MassSpectrum(Attribute):
-    MINI_KEY = "ms"
-
     def __init__(self,
                  value: np.ndarray,  # [m,2]  first col is m/z; second is intensity.
                  unit: str = 'Da',
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, conditions=conditions)
 
-    def to_json(self, numpy_encoding: str = "list") -> OrderedDict[str, Any]:
-        dict_ = self.to_dict()
-        dict_["value"] = numpy_to_JSON(dict_["value"])
-        return dict_
-
-    @classmethod
-    def _from_JSON_(cls, dict_: OrderedDict[str, Any], **kwargs):
-        dict_["value"] = JSON_to_numpy(dict_["value"], encoding=kwargs["numpy_encoding"])
-        return cls(**dict_)
-
 
 class RetentionTime(Attribute):
-    MINI_KEY = "rt"
-
     def __init__(self,
                  value: float | int,
                  unit: str = 'min',
                  uncertainty: Any | None = None,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, uncertainty, conditions)
 
 
 class ResponseFactor(Attribute):
-    MINI_KEY = "rt"
-
     def __init__(self,
                  value: float | int,
                  unit: str = 'min',
                  uncertainty: Any | None = None,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, uncertainty, conditions)
 
 
 class VaporPressure(Attribute):
-    MINI_KEY = "vp"
-
     def __init__(self,
                  value: float | int,
                  unit: str = 'kPa',
                  uncertainty: Any | None = None,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, uncertainty, conditions)
 
 
 class Solubility(Attribute):
-    MINI_KEY = "vp"
-
     def __init__(self,
                  value: float | int,
                  unit: str = 'g/ml',
                  uncertainty: Any | None = None,
-                 conditions: Condition = None
+                 conditions: Condition | list[Condition] = None,
                  ):
         super().__init__(value, unit, uncertainty, conditions)
