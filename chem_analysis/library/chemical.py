@@ -60,9 +60,9 @@ class Chemical:
 
     def match_identifier(self,
                          label: str,
-                         class_: type[Identifier],
+                         type_: type[Identifier],
                          ) -> bool:
-        idens = [iden for iden in self.identifiers if isinstance(iden, class_)]
+        idens = [iden for iden in self.identifiers if isinstance(iden, type_)]
         if len(idens) == 0:
             return False
 
@@ -71,3 +71,21 @@ class Chemical:
                 return True
 
         return False
+
+    def get_identifier(self, type_: type[Identifier], class_: str | None = None) -> Identifier:
+        for iden in self.identifiers:
+            if isinstance(iden, type_):
+                if hasattr(iden, class_):
+                    if class_ is not None and class_ == iden.class_:
+                        return iden
+                else:
+                    return iden
+
+    def get_attribute(self, type_: type[Attribute], class_: str | None = None) -> Attribute:
+        for attr in self.attributes:
+            if isinstance(attr, type_):
+                if hasattr(attr, class_):
+                    if class_ is not None and class_ == attr.class_:
+                        return attr
+                else:
+                    return attr

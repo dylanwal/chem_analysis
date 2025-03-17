@@ -76,7 +76,7 @@ class MSLibrary:
                 chemicals.append(chem)
 
         if len(chemicals) == 0:
-            raise ValueError("No mass_specs or retention_times found and thus no PickingLibrary was built.")
+            raise ValueError("No mass_specs found and thus no Library was built.")
 
         # sort for ms to make algorithms efficient
         none_count = sum(True for ms in mass_specs if ms is None)

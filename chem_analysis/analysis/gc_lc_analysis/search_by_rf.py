@@ -1,21 +1,42 @@
-def search_by_retention_time_single(
-        picking_library: PickingLibrary,
-        peak: PeakContinuous,
-        a_tolerance: int | float = 0.1,
-        number_of_matches: int = 1,
-) -> PeakCompound:
-    if isinstance(peak, PeakContinuous):
-        raise ValueError("Invalid 'Peak' type.")
+import abc
 
-    distance = np.abs(picking_library.retention_times - peak.x)
-    index = get_top_n_matches(distance, number_of_matches)
-    index = index[distance[index] < a_tolerance]
+import numpy as np
 
-    if len(index) == 1:
-        return PeakCompound(peak, picking_library.compounds[index[0]], distance[index[0]])
-    elif len(index) == 0:
-        return PeakCompound(peak, None, None)
+from chem_analysis.analysis.gc_lc_analysis.retention_library import RetentionTimeLibrary
 
-    compounds = [picking_library.compounds[i] for i in index]
-    distances = distance[index]
-    return PeakCompound(peak, compounds, distances)
+
+class RetentionTimeMethods(abc.ABC):
+    @abc.abstractmethod
+    def __call__(self, lib_times: np.ndarray, r_times: np.ndarray) -> np.ndarray:
+        ...
+
+
+class RTMethodATolerance(RetentionTimeMethods):
+    def __init__(self, tol: int | float):
+        self.tol = tol
+
+    def __call__(self, lib_times: np.ndarray, r_times: np.ndarray) -> np.ndarray:
+        mask = -1*np.ones_like(lib_times, dtype=int)
+        for i, t in enumerate(r_times):
+            index = np.argmin(np.abs(lib_times - t))
+            off = np.abs(lib_times[index] - t)
+            if off < self.tol:
+                mask[i] = index
+
+        return mask
+
+
+def search_by_retention(
+        library: RetentionTimeLibrary,
+        retention_times: float | np.ndarray,
+        method: RetentionTimeMethods = RTMethodATolerance(0.1),
+) -> list:
+    mask = method(library.times, retention_times)
+
+    labels = []
+    for i, m in enumerate(mask):
+        if m:
+            labels.append(library.chemicals[i])
+        else:
+            labels.append(None)
+    return labels

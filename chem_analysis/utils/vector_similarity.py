@@ -1,17 +1,20 @@
-from typing import Callable
+from typing import Protocol
 
 import numpy as np
-from scipy.stats import entropy
+from scipy.stats import entropy, wasserstein_distance
 
 
-SimilarityFunction = Callable[[np.ndarray, np.ndarray], float]
+class SimilarityFunction(Protocol):
+    def __call__(self, vector1: np.ndarray, vector2: np.ndarray, *args, **kwargs) -> float | np.ndarray:
+        ...
 
 
 def normalize_vector(vector: np.ndarray) -> np.ndarray:
-    return vector / np.linalg.norm(vector)
+    norm = np.linalg.norm(vector, axis=-1, keepdims=True)  # Keep dimensions consistent
+    return vector / norm  # Safe broadcasting
 
 
-def dot_cosine_similarity(vec1: np.ndarray, vec2: np.ndarray, normalize: bool = True) -> float:
+def dot_cosine_similarity(vec1: np.ndarray, vec2: np.ndarray, normalize: bool = True) -> float | np.ndarray:
     """
     Larger Dot Product values indicate greater similarity.
         Dot Product is influenced by the length.
@@ -42,7 +45,24 @@ def dot_cosine_similarity(vec1: np.ndarray, vec2: np.ndarray, normalize: bool = 
     return np.dot(vec1, vec2)
 
 
-def euclidean_distance(vec1: np.ndarray, vec2: np.ndarray) -> float:
+def earth_movers_distance(mz1: np.ndarray, mz2: np.ndarray, vec1: np.ndarray, vec2: np.ndarray, normalize: bool = True) -> float |np.ndarray:
+    """
+    Compute the Earth Mover's Distance (EMD) between two mass spectra.
+
+    Parameters:
+    - mz1, intensity1: Arrays representing the m/z values and intensities of spectrum 1.
+    - mz2, intensity2: Arrays representing the m/z values and intensities of spectrum 2.
+
+    Returns:
+    - EMD distance between the two spectra.
+    """
+    if normalize:
+        vec1 = normalize_vector(vec1)
+        vec2 = normalize_vector(vec2)
+    return np.array([wasserstein_distance(mz1, mz2, u_weights=row, v_weights=vec2) for row in vec1])
+
+
+def euclidean_distance(vec1: np.ndarray, vec2: np.ndarray, normalize: bool = True) -> float | np.ndarray:
     """
     Measures the straight-line (L2) distance between two vectors.
 
@@ -50,13 +70,17 @@ def euclidean_distance(vec1: np.ndarray, vec2: np.ndarray) -> float:
     ----------
     vec1: np.ndarray
     vec2: np.ndarray
+    normalize: bool
 
     Returns
     -------
     value: float
 
     """
-    return np.sqrt(np.sum((vec1 - vec2) ** 2))
+    if normalize:
+        vec1 = normalize_vector(vec1)
+        vec2 = normalize_vector(vec2)
+    return np.sqrt(np.sum((vec1 - vec2) ** 2, axis=1))
 
 
 def manhattan_distance(vec1: np.ndarray, vec2: np.ndarray) -> float:
