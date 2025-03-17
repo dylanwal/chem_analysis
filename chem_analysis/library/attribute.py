@@ -104,6 +104,8 @@ class Attribute(MixinSubClassList, abc.ABC):
         for k in cls.sub_classes():
             if k.__name__ == class_:
                 class_ = k
+        if "conditions" in dict_:
+            dict_["conditions"] = [Condition._from_JSON(cond, **kwargs) for cond in dict_["conditions"]]
         return class_._from_JSON_(dict_, **kwargs)
 
     @classmethod

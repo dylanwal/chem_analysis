@@ -67,4 +67,10 @@ class RetentionTimeLibrary:
         if len(chemicals) == 0:
             raise ValueError("No retention_times found and thus no Library was built.")
 
-        return cls(chemicals, times)
+        # sort
+        times = np.array(times)
+        index = np.argsort(times)
+        times = times[index]
+        chemicals_sorted = [chemicals[i] for i in index]
+
+        return cls(chemicals_sorted, times)

@@ -16,14 +16,31 @@ class RTMethodATolerance(RetentionTimeMethods):
         self.tol = tol
 
     def __call__(self, lib_times: np.ndarray, r_times: np.ndarray) -> np.ndarray:
-        mask = -1*np.ones_like(lib_times, dtype=int)
+        indexes = -1*np.ones_like(r_times, dtype=int)
         for i, t in enumerate(r_times):
             index = np.argmin(np.abs(lib_times - t))
             off = np.abs(lib_times[index] - t)
             if off < self.tol:
-                mask[i] = index
+                indexes[i] = index
 
-        return mask
+        return indexes
+
+
+class RTMethodNearestN(RetentionTimeMethods):
+    def __init__(self, max_matches: int = 2, tol: int | float = 0.1):
+        self.max_matches = max_matches
+        self.tol = tol
+
+    def __call__(self, lib_times: np.ndarray, r_times: np.ndarray) -> np.ndarray:
+        indexes = -1*np.ones((r_times.size, self.max_matches), dtype=int)
+        for i, t in enumerate(r_times):
+            index = np.argsort(np.abs(lib_times - t))
+            off = np.abs(lib_times[index[:self.max_matches]] - t)
+            for ii, off_ in enumerate(off):
+                if off_ < self.tol:
+                    indexes[i, ii] = index[ii]
+
+        return indexes
 
 
 def search_by_retention(
@@ -31,12 +48,21 @@ def search_by_retention(
         retention_times: float | np.ndarray,
         method: RetentionTimeMethods = RTMethodATolerance(0.1),
 ) -> list:
-    mask = method(library.times, retention_times)
+    indexes = method(library.times, retention_times)
 
     labels = []
-    for i, m in enumerate(mask):
-        if m:
-            labels.append(library.chemicals[i])
-        else:
-            labels.append(None)
+    if len(indexes.shape) == 1:
+        for i, index in enumerate(indexes):
+            if index != -1:
+                labels.append(library.chemicals[i])
+            else:
+                labels.append(None)
+    else:
+        for i, row in enumerate(indexes):
+            sub_labels = []
+            for ii, index in enumerate(row):
+                if index != -1:
+                    sub_labels.append(library.chemicals[index])
+            labels.append(sub_labels)
+
     return labels
