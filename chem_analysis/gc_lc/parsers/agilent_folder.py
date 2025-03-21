@@ -34,6 +34,12 @@ def parse_D_folder(folder_path: pathlib.Path) -> tuple[dict | None, dict | None,
     return parse_D_files(folder_path / 'pre_post.ini', folder_path / 'data.ms', folder_path / 'FID1A.ch')
 
 
+def check_if_file_exists(file_path: pathlib.Path):
+    if os.path.exists(file_path):
+        return
+    raise ValueError(f"File not found: {file_path}")
+
+
 def parse_D_files(
         ini_path: pathlib.Path | None = None,
         ms_path: pathlib.Path | None = None,
@@ -41,16 +47,19 @@ def parse_D_files(
 ) -> tuple[dict | None, dict | None, dict | None]:
         ini_dict, ms_dict, fid_dict = None, None, None
         if ini_path is not None:
+            check_if_file_exists(ini_path)
             try:
                 ini_dict = parse_pre_post_ini(ini_path)
             except Exception as e:
                 raise ValueError(f"Error parsing: {ini_path}\n") from e
         if ms_path is not None:
+            check_if_file_exists(ms_path)
             try:
                 ms_dict = parse_gcms(ms_path)
             except Exception as e:
                 raise ValueError(f"Error parsing: {ms_path}\n") from e
         if fid_path is not None:
+            check_if_file_exists(fid_path)
             try:
                 fid_dict = parse_fid(fid_path)
             except Exception as e:

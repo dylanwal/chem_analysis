@@ -1,15 +1,14 @@
 import numpy as np
-import plotly.graph_objs as go
+import matplotlib.pyplot as plt
 
-from chem_analysis.plotting.plotly_plots.plotly_utils import input_check
-from chem_analysis.plotting.plot_format import bold_in_html
+from chem_analysis.plotting.matplotlib_plots.matplotlib_utils import input_check
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.utils.math import get_slice
 from chem_analysis.sec.sec_signal import SECSignal
 
 
-def plotly_xy(
-        fig: go.Figure | None,
+def matplotlib_xy(
+        fig: plt.Figure | None,
         plot_kwargs: dict,
         x: np.array,
         y: np.array,
@@ -17,20 +16,22 @@ def plotly_xy(
         x_label: str,
         y_label: str,
         signal_: Signal
-) -> go.Figure:
+) -> plt.Figure:
     fig = input_check(fig)
+    ax = fig.axes[0] if fig.axes else fig.add_subplot(111)
 
-    kwargs = dict(x=x, y=y, mode="lines", name=name)
+    kwargs = dict(linestyle="-", label=name)
     plot_kwargs = kwargs | plot_kwargs  # plot_kwargs overwrite kwargs
-    fig.add_scatter(**plot_kwargs)
-    fig.layout.xaxis.title = bold_in_html(x_label)
-    fig.layout.yaxis.title = bold_in_html(y_label)
+    ax.plot(x, y, **plot_kwargs)
+
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
     if isinstance(signal_, SECSignal):
-        plotly_signal_sec(x, y, signal_, fig)
+        matplotlib_sec(x, y, signal_, ax)
     return fig
 
 
-def plotly_signal_sec(x: np.ndarray, y: np.ndarray, signal: SECSignal, fig: go.Figure):
+def matplotlib_sec(x: np.ndarray, y: np.ndarray, signal: SECSignal, ax: plt.axes):
     if signal.calibration is not None:
         bounds = signal.calibration.x_bounds
         if bounds[0] > bounds[1]:
@@ -39,12 +40,12 @@ def plotly_signal_sec(x: np.ndarray, y: np.ndarray, signal: SECSignal, fig: go.F
         max_ = np.max([2, np.max(y[slice_])])
         min_ = np.min([0, np.min(y[slice_])])
         span = (max_ - min_) * 0.05
-        fig.layout.yaxis.range = [min_ - span, max_ + span]
-        fig.layout.xaxis.domain = [0, 0.95]  # avoid overlap of legend and right y-axis
+        ax.ybound = [min_ - span, max_ + span]
+        # ax.xbound = [0, 0.95]  # avoid overlap of legend and right y-axis
 
 
-def plotly_discrete(
-        fig: go.Figure | None,
+def matplotlib_discrete(
+        fig: plt.Figure | None,
         plot_kwargs: dict,
         x: np.array,
         y: np.array,
@@ -52,12 +53,14 @@ def plotly_discrete(
         x_label: str,
         y_label: str,
         class_: type(Signal)
-) -> go.Figure:
+) -> plt.Figure:
     fig = input_check(fig)
+    ax = fig.axes[0] if fig.axes else fig.add_subplot(111)
 
     kwargs = dict(x=x, y=y, name=name)
     plot_kwargs = kwargs | plot_kwargs  # plot_kwargs overwrite kwargs
-    fig.add_bar(**plot_kwargs)
-    fig.layout.xaxis.title = bold_in_html(x_label)
-    fig.layout.yaxis.title = bold_in_html(y_label)
+    ax.add_bar(**plot_kwargs)
+
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
     return fig

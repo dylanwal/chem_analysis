@@ -12,6 +12,10 @@ class RetentionTimeMethods(abc.ABC):
 
 
 class RTMethodATolerance(RetentionTimeMethods):
+    """
+    returns the closest compound within tolerance; otherwise it will return None
+
+    """
     def __init__(self, tol: int | float):
         self.tol = tol
 
@@ -27,6 +31,9 @@ class RTMethodATolerance(RetentionTimeMethods):
 
 
 class RTMethodNearestN(RetentionTimeMethods):
+    """
+    returns multiple compounds within tolerance; otherwise it will return None
+    """
     def __init__(self, max_matches: int = 2, tol: int | float = 0.1):
         self.max_matches = max_matches
         self.tol = tol
@@ -48,6 +55,22 @@ def search_by_retention(
         retention_times: float | np.ndarray,
         method: RetentionTimeMethods = RTMethodATolerance(0.1),
 ) -> list:
+    """
+    Searches library by retention times.
+
+    Parameters
+    ----------
+    library:
+
+    retention_times:
+        x-values of retention times.
+    method:
+        method to use for searching.
+
+    Returns
+    -------
+    list[library compounds] or list[list[library compounds]]
+    """
     indexes = method(library.times, retention_times)
 
     labels = []

@@ -52,8 +52,8 @@ def ensure_directories(file_path: pathlib.Path) -> None:
 
 def main():
     # Usage
-    src_directory = pathlib.Path(r"C:\Users\nicep\Desktop\GC\11_76")
-    dst_directory = pathlib.Path(r"C:\Users\nicep\Desktop\research_wis\data\11\11_76\GCMS")
+    src_directory = pathlib.Path(r"J:\11_81")
+    dst_directory = pathlib.Path(r"C:\Users\nicep\Desktop\research_wis\data\11\11_81\GCMS")
     ensure_directories(dst_directory)
     print(dst_directory)
     files = ['data.ms', 'FID1A.ch', 'pre_post.ini']

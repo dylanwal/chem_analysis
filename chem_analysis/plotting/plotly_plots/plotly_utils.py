@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Iterable, Sequence
+from typing import Iterable
 
 import plotly.graph_objs as go
+import plotly.io as pio
 
 
 def input_check(fig: go.Figure | None) -> go.Figure:
     if fig is None:
         fig = go.Figure()
-    else:
-        if not (isinstance(fig, go.Figure) or (isinstance(fig, Sequence) and isinstance(fig[0], go.Figure))):
-            raise ValueError("'fig' must be a plotly 'go.Figure'.")
-
+    if not isinstance(fig, go.Figure):
+        raise ValueError("'fig' must be a plotly 'go.Figure'.")
     return fig
 
 
@@ -22,9 +21,9 @@ def layout() -> dict:
 
 def template() -> go.Template:
     template = go.layout.Template()
-    template.layout.font = dict(family="Arial", size=18, color="black")
+    template.layout.font = dict(family="Arial", color="black")
     template.layout.plot_bgcolor = "white"
-    template.layout.width, template.layout.height = 1200, 600
+    # template.layout.width, template.layout.height = 1200, 600
     template.layout.xaxis.tickprefix = "<b>"
     template.layout.xaxis.ticksuffix = "<b>"
     template.layout.xaxis.showline = True
@@ -48,6 +47,8 @@ def template() -> go.Template:
     template.layout.hoverlabel.font.family = "Arial"
 
     return template
+
+pio.templates.default = template()
 
 
 def merge_figures(

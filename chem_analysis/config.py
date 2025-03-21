@@ -1,18 +1,18 @@
 import enum
 
 
-class PlottingLibraries(enum.Enum):
-    PLOTLY = 0
-    MATPLOTLIB = 1
-    PYGRAPHQT = 2
+class PlottingLibrary(enum.Enum):
+    plotly = 0
+    matplotlib = 1
+    pygraphqt = 2
 
 
 class Configuration:
-    PLOTTING_LIBRARIES = PlottingLibraries
+    PLOTTING_LIBRARIES = PlottingLibrary
 
     def __init__(self):
-        self.preferred_plot = PlottingLibraries.PLOTLY
-        self._plotting_libraries = []
+        self._preferred_plot = PlottingLibrary.plotly
+        self._plotting_libraries: list[PlottingLibrary] = []
         self._find_available_plotting_libraries()
 
         self.sig_fig: int = 4
@@ -20,10 +20,25 @@ class Configuration:
         self.processing_save_intermediates: bool = False
         self.max_mz: int = 1000
 
+    @property
+    def preferred_plot(self):
+        return self._preferred_plot
+
+    @preferred_plot.setter
+    def preferred_plot(self, value: str | PlottingLibrary):
+        if isinstance(value, str):
+            value = [i for i in PlottingLibrary if i.name == value.lower()]
+            if len(value) == 0:
+                raise ValueError(f"Plotting library not recognized: {value}.from "
+                                 f"Try one of the following: {[f'{i.name}' for i in PlottingLibrary]}.")
+            value = value[0]
+
+        self._preferred_plot = value
+
     def load_from_env(self):
         pass  # TODO: add support    this should include plot config too
 
-    def get_plotting_options(self) -> list[PlottingLibraries]:
+    def get_plotting_lib(self) -> PlottingLibrary:
         self._find_available_plotting_libraries()
         if self._plotting_libraries is None:
             raise RuntimeError("No plotting libraries installed. Please install one of the following:"
@@ -31,28 +46,36 @@ class Configuration:
                                "\n\tmatplotlib: 'pip install matplotlib'"
                                "\n\tpygraphqt: 'pip install pygraphqt'")
 
-        if self.preferred_plot in self._plotting_libraries:
-            self._plotting_libraries.remove(self.preferred_plot)
-            self._plotting_libraries.insert(0, self.preferred_plot)
+        if self._preferred_plot in self._plotting_libraries:
+            return self.preferred_plot
 
-        return self._plotting_libraries
+        return self._plotting_libraries[0]
+
+    def get_plotting_lib_from_fig(self, fig) -> PlottingLibrary:
+        for i in self._plotting_libraries:
+            if i is PlottingLibrary.plotly:
+                import plotly.graph_objects as go
+                if isinstance(fig, go.Figure):
+                    return i
+            if i is PlottingLibrary.matplotlib:
+                import matplotlib.pyplot as plt
+                if isinstance(fig, plt.Figure):
+                    return i
+            if i is PlottingLibrary.pygraphqt:
+                import pyqtgraph
+                if isinstance(fig, pyqtgraph.PlotWidget): #GraphicsLayoutWidget
+
+                    return i
+        raise ValueError(f"No plotting library found for figure: {type(fig)}")
 
     def _find_available_plotting_libraries(self):
-        try:
-            import plotly
-            self._plotting_libraries.append(PlottingLibraries.PLOTLY)
-        except ImportError:
-            pass
-        try:
-            import matplotlib
-            self._plotting_libraries.append(PlottingLibraries.MATPLOTLIB)
-        except ImportError:
-            pass
-        try:
-            import pyqtgraph
-            self._plotting_libraries.append(PlottingLibraries.PYGRAPHQT)
-        except ImportError:
-            pass
+        if not self._plotting_libraries:
+            for plot_method in PlottingLibrary:
+                try:
+                    __import__(plot_method.name)
+                    self._plotting_libraries.append(plot_method)
+                except ImportError:
+                    pass
 
 
 global_config = Configuration()
