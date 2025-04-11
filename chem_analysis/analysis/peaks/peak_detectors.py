@@ -1,15 +1,55 @@
 from typing import Any
+import abc
 
 import numpy as np
 from scipy.signal import find_peaks as scipy_find_peaks
 from scipy.ndimage import grey_dilation, grey_opening
 
+from chem_analysis.utils.code_for_subclassing import MixinSubClassList
+from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.processing.baseline.morphological import estimate_window
-from chem_analysis.analysis.peaks.base_classes import PeakDetector
 import chem_analysis.utils.math as math_utils
 
 
-class PeakScipy(PeakDetector):
+class PeakDetectorBase(MixinSubClassList, abc.ABC):
+    """ Finds peaks. (some methods also compute bounds at the same time) """
+
+    def __init__(self):
+        self.bounds: np.ndarray | None = None
+
+    def __call__(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        x:
+        y:
+
+        Returns
+        -------
+        peak index: np.ndarray
+        [peak 1, peak 2, ...]
+        """
+        return self.run_xy(x, y)
+
+    def run(self, signal: Signal) -> np.ndarray:
+        return self.run_xy(signal.x, signal.y)
+
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        x
+        y
+
+        Returns
+        -------
+        index of peaks
+        """
+
+
+class PeakScipy(PeakDetectorBase):
     def __init__(self,
                  height: float | np.ndarray | None = None,
                  threshold: float | np.ndarray | None = None,
@@ -20,6 +60,7 @@ class PeakScipy(PeakDetector):
                  rel_height: float | None = None,
                  plateau_size: float | np.ndarray | None = None,
                  ):
+        super().__init__()
         self.height = height
         self.threshold = threshold
         self.distance = distance
@@ -38,7 +79,7 @@ class PeakScipy(PeakDetector):
         return index
 
 
-class PeakMaxValues(PeakDetector):
+class PeakMaxValues(PeakDetectorBase):
     def __init__(self, n: int = 1):
         """
 
@@ -47,6 +88,7 @@ class PeakMaxValues(PeakDetector):
         n: number of max values
 
         """
+        super().__init__()
         self.n = n
 
     def run_xy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -54,9 +96,9 @@ class PeakMaxValues(PeakDetector):
         return index[:self.n]
 
 
-class PeakLocalMax(PeakDetector):
+class PeakLocalMax(PeakDetectorBase):
     def __init__(self):
-        pass
+        super().__init__()
 
     def run_xy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         from scipy.signal._peak_finding_utils import _local_maxima_1d
@@ -64,9 +106,9 @@ class PeakLocalMax(PeakDetector):
         return index
 
 
-class PeakDerivative(PeakDetector):
+class PeakDerivative(PeakDetectorBase):
     def __init__(self):
-        pass
+        super().__init__()
 
     def run_xy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Find peaks using the first and second derivatives."""
@@ -74,7 +116,7 @@ class PeakDerivative(PeakDetector):
         ddy = np.gradient(dy, x)  # Second derivative
 
         zero_crossings = np.where(np.diff(np.sign(dy)) < 0)[0]  # First derivative crosses zero downward
-        peaks = [i for i in zero_crossings if ddy[i] < 0]
+        peaks = [i if y[i] > y[i+1] else i+1 for i in zero_crossings if ddy[i] < 0]
 
         return np.array(peaks, dtype=int)  # Peak x and y values
 
@@ -95,12 +137,13 @@ def estimate_scales(y: np.ndarray, window: int | None = None, min_scale: int = 1
 # import pywt
 #
 #
-# class Wavelet(PeakDetector):
+# class Wavelet(PeakDetectorBase):
 #     def __init__(self,
 #                  wavelet: str = 'mexh',
 #                  threshold: float = 0.1,
 #                  scales: np.ndarray | None = None,
 #                  ):
+#         super().__init__()
 #         self.wavelet = wavelet
 #         self.threshold = abs(threshold)
 #         self.scales = scales
@@ -134,7 +177,7 @@ def estimate_scales(y: np.ndarray, window: int | None = None, min_scale: int = 1
 #         return peak_apex
 
 
-class PeakMorphological(PeakDetector):
+class PeakMorphological(PeakDetectorBase):
     def __init__(self,
                  min_: int | float = None,
                  max_: int | float = None,
@@ -155,6 +198,7 @@ class PeakMorphological(PeakDetector):
         auto_div:
             divisor for auto window algorithm
         """
+        super().__init__()
         if not (mode == 'span' or mode == 'index'):
             raise ValueError("Type must be 'span' or 'index'")
         self.min_ = min_
@@ -162,7 +206,6 @@ class PeakMorphological(PeakDetector):
         self.window = window
         self.mode = mode
         self.auto_div = auto_div or 5
-        self._bounds = None
 
     def run_xy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         if self.window is None:
@@ -185,17 +228,17 @@ class PeakMorphological(PeakDetector):
         if self.max_ is not None:
             mask &= span <= self.max_
         bounds = bounds[mask]
-        self._bounds = bounds
+        self.bounds = bounds
 
         # get middle index
-        index = math_utils.get_middle_index(self._bounds)
+        index = math_utils.get_middle_index(self.bounds)
 
         # remove 0 thin peaks
-        index = index[self._bounds[:, 0] != index]
+        index = index[self.bounds[:, 0] != index]
         return index
 
 
-class PeakMovingAverage(PeakDetector):
+class PeakMovingAverage(PeakDetectorBase):
     def __init__(self,
                  lag: int = 5,
                  threshold: float | float = 3,
@@ -214,10 +257,10 @@ class PeakMovingAverage(PeakDetector):
             "negative": only negative peaks
             "both": both positive and negative peaks
         """
+        super().__init__()
         self.lag = lag
         self.threshold = threshold
         self.influence = influence
-        self._bounds = None
         self.mode = mode
 
     def run_xy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -268,18 +311,18 @@ class PeakMovingAverage(PeakDetector):
 
         up = np.nonzero(np.diff(signals) > 0)[0]
         downs = np.nonzero(np.diff(signals) < 0)[0]
-        self._bounds = np.column_stack((up, downs))
-        index = math_utils.get_middle_index(self._bounds)
+        self.bounds = np.column_stack((up, downs))
+        index = math_utils.get_middle_index(self.bounds)
 
         # remove 0 thin peaks
-        index = index[self._bounds[:, 0] != index]
+        index = index[self.bounds[:, 0] != index]
         return index
 
 
 from chem_analysis.processing.weigths.sliding_window_std import sectioned_std, Smoother, gaussian_filter1d
 
 
-class PeakSlidingWindow(PeakDetector):
+class PeakSlidingWindow(PeakDetectorBase):
     def __init__(self,
                  window: int = 3,
                  sections: int = 32,
@@ -300,20 +343,20 @@ class PeakSlidingWindow(PeakDetector):
         smoother:
             smoother used before doing min_max analysis
         """
+        super().__init__()
         self.window = window
         self.sections = sections
         self.number_of_deviations = number_of_deviations
         self.smoother = smoother
-        self._bounds = None
 
     def run_xy(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         mask = sectioned_std(y, window=self.window, smoother=self.smoother, sections=self.sections)
         mask = np.logical_not(mask, mask)
 
         bounds = math_utils.find_consecutive_regions(mask)
-        self._bounds = bounds
-        index = math_utils.get_middle_index(self._bounds)
+        self.bounds = bounds
+        index = math_utils.get_middle_index(self.bounds)
 
         # remove 0 thin peaks
-        index = index[self._bounds[:, 0] != index]
+        index = index[self.bounds[:, 0] != index]
         return index

@@ -1,11 +1,54 @@
+import abc
+
 import numpy as np
 from scipy.ndimage import grey_dilation, grey_opening
 
 import chem_analysis.utils.math as math_utils
+from chem_analysis.utils.code_for_subclassing import MixinSubClassList
+from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.processing.processing_method import Smoothing
 from chem_analysis.processing.baseline.morphological import estimate_window
-from chem_analysis.analysis.peaks.base_classes import BoundDetector
 
+
+class BoundDetectorBase(MixinSubClassList, abc.ABC):
+    """ Finds edges of peaks. """
+
+    def __call__(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        x:
+        y:
+        index: np.ndarray
+            index of peak max
+
+        Returns
+        -------
+        bounds: np.ndarray
+        [[left_index, right_index], [left_index, right_index], ...]
+        """
+        return self.run_xy(x, y, index)
+
+    def run(self, signal: Signal, index: np.ndarray) -> np.ndarray:
+        return self.run_xy(signal.x, signal.y, index)
+
+    @abc.abstractmethod
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        x
+        y
+        index:
+            index of peaks
+
+        Returns
+        -------
+        index of bounds np.ndarray[n,2]
+        """
+        
 
 def _apply_smoother(
         x: np.ndarray,
@@ -28,7 +71,7 @@ def _apply_smoother(
     return x, y, index
 
 
-class BoundMaxSlope(BoundDetector):
+class BoundMaxSlope(BoundDetectorBase):
     def __init__(self,
                  adjust_index: bool = True,
                  smoother: Smoothing = None
@@ -46,7 +89,7 @@ class BoundMaxSlope(BoundDetector):
         return bounds
 
 
-class BoundFirstIncrease(BoundDetector):
+class BoundFirstIncrease(BoundDetectorBase):
     def __init__(self,
                  adjust_index: bool = True,
                  smoother: Smoothing = None
@@ -64,7 +107,7 @@ class BoundFirstIncrease(BoundDetector):
         return bounds
 
 
-class BoundFirstIncreaseZero(BoundDetector):
+class BoundFirstIncreaseZero(BoundDetectorBase):
     def __init__(self,
                  adjust_index: bool = True,
                  smoother: Smoothing = None
@@ -82,7 +125,7 @@ class BoundFirstIncreaseZero(BoundDetector):
         return bounds
 
 
-class BoundMorphDilation(BoundDetector):
+class BoundMorphDilation(BoundDetectorBase):
     def __init__(self,
                  window: int | None = None,
                  mode: str = "plateau",
@@ -154,7 +197,7 @@ class BoundMorphDilation(BoundDetector):
         return bounds
 
 
-class BoundMorphOpening(BoundDetector):
+class BoundMorphOpening(BoundDetectorBase):
     def __init__(self,
                  window: int | None = None,
                  auto_div: int | float | None = None,

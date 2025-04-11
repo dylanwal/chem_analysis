@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Sequence, TypeVar
+from typing import Sequence, Any, Protocol
 import abc
 
 import numpy as np
@@ -8,17 +8,32 @@ from scipy.special import voigt_profile
 from chem_analysis.utils.math import rescale_array
 
 
-class PeakModel(abc.ABC):
+class PeakModel(Protocol):
+    def __call__(self, x: np.ndarray, *args) -> np.ndarray:
+        ...
+
+
+class PeakModelBase(abc.ABC):
+    # __slots__ required
+
     def __str__(self):
         args_text = ','.join([arg + f": {getattr(self, arg):0.3f}" for arg in self.__slots__])
         return f"{type(self).__name__}({args_text})"
 
     @abc.abstractmethod
-    def __call__(self, x: np.ndarray) -> np.ndarray:
+    def __call__(self, x: np.ndarray, *args) -> np.ndarray:
         ...
 
     def number_of_params(self) -> int:
         return len(self.__slots__)
+
+    def set_params(self, params: Sequence[float] | dict[str, Any]):
+        if isinstance(params, dict):
+            for k, v in params.items():
+                setattr(self, k, v)
+        if isinstance(params, Sequence):
+            for i, k in enumerate(self.__slots__):
+                setattr(self, k, params[i])
 
     @classmethod
     def initial_guess_generator(cls,
@@ -26,11 +41,26 @@ class PeakModel(abc.ABC):
                                 y: np.ndarray,
                                 trials: Sequence[str] | str | None = None,
                                 number_trials: int = 5,
-                                ) -> Sequence[np.ndarray]:
-        raise NotImplementedError()
+                                ) -> Sequence[np.ndarray] | None:
+        """
+
+        Parameters
+        ----------
+        x
+        y
+        trials:
+            a "str" for the variable that the trial to be run over.
+            None: all variables will be changed in the trials
+        number_trials
+
+        Returns
+        -------
+
+        """
+        return None
 
 
-class DistributionNormal(PeakModel):
+class DistributionNormal(PeakModelBase):
     __slots__ = ("scale", "mean", "sigma")
 
     def __init__(self,
@@ -38,7 +68,78 @@ class DistributionNormal(PeakModel):
                  mean: int | float,
                  sigma: int | float,
                  ):
-        super().__init__()
+        self.scale = scale
+        self.mean = mean
+        self.sigma = sigma
+
+    def __call__(self, x: np.ndarray, *args) -> np.ndarray:
+        if len(args) == 0:
+            scale, mean, sigma = self.scale, self.mean, self.sigma
+        elif len(args) == 3:
+            scale, mean, sigma = args
+        else:
+            raise ValueError("Incorrect number of arguments")
+        return scale / (sigma * np.sqrt(2 * np.pi)) * np.exp(-(x - mean) ** 2 / (2 * sigma ** 2))
+
+    @classmethod
+    def initial_guess_generator(cls,
+                                x: np.ndarray,
+                                y: np.ndarray,
+                                trials: Sequence[str] | str | None = None,
+                                num_trials: int = 5,
+                                ) -> list[np.ndarray] | None:
+
+        # get trial variables
+        if trials is None:
+            trials = cls.__slots__
+        else:
+            if isinstance(trials, str):
+                trials = [trials]
+            if not all([t not in cls.__slots__ for t in trials]):
+                raise ValueError(f"Invalid trial provided. "
+                                 f"\n\tprovided trials: {trials} "
+                                 f"\n\taccepted trials: {cls.__slots__}."
+                                 )
+
+        from scipy.stats import qmc
+        sampler = qmc.LatinHypercube(d=len(trials))
+        sample = sampler.random(num_trials)
+
+        counter = 0
+        if "scale" in trials:
+            y_max = y.max()
+            bounds = (y_max-0.2*(y_max-y.min()), y_max)
+            scale = rescale_array(sample[:, counter], bounds[0], bounds[1])
+            counter += 1
+        else:
+            scale = np.ones(num_trials) * np.max(y)
+
+        if "mean" in trials:
+            span = x.max() - x.min()
+            bounds = (x.min()+0.15*span, x.max()-0.15*span)  # 0.15 is to move bounds more center
+            mean = rescale_array(sample[:, counter], bounds[0], bounds[1])
+            counter += 1
+        else:
+            mean = np.ones(num_trials) * np.mean(x)
+
+        if "sigma" in trials:
+            span = x.max() - x.min()
+            bounds = (span*0.01, span)
+            sigma = rescale_array(sample[:, counter], bounds[0], bounds[1])
+        else:
+            sigma = np.ones(num_trials) * 0.5*(x.max() - x.min())
+
+        return [np.array([scale[i], mean[i], sigma[i]]) for i in range(num_trials)]
+
+
+class DistributionNormalSkew(PeakModelBase):
+    __slots__ = ("scale", "mean", "sigma")
+
+    def __init__(self,
+                 scale: int | float,
+                 mean: int | float,
+                 sigma: int | float,
+                 ):
         self.scale = scale
         self.mean = mean
         self.sigma = sigma
@@ -95,24 +196,7 @@ class DistributionNormal(PeakModel):
         return [np.array([scale[i], mean[i], sigma[i]]) for i in range(num_trials)]
 
 
-class DistributionNormal2(PeakModel):
-    __slots__ = ("scale", "mean", "sigma")
-
-    def __init__(self,
-                 scale1: int | float,
-                 mean1: int | float,
-                 sigma: int | float,
-                 ):
-        super().__init__()
-        self.scale = scale
-        self.mean = mean
-        self.sigma = sigma
-
-    def __call__(self, x: np.ndarray) -> np.ndarray:
-        return self.scale / (self.sigma * np.sqrt(2 * np.pi)) * np.exp(-(x - self.mean) ** 2 / (2 * self.sigma ** 2))
-
-
-class DistributionCauchy(PeakModel):
+class DistributionCauchy(PeakModelBase):
     __slots__ = ("scale", "mean", "gamma")
 
     def __init__(self,
@@ -120,7 +204,6 @@ class DistributionCauchy(PeakModel):
                  mean: int | float,
                  gamma: int | float,
                  ):
-        super().__init__()
         self.scale = scale
         self.mean = mean
         self.gamma = gamma
@@ -129,7 +212,7 @@ class DistributionCauchy(PeakModel):
         return self.scale / (np.pi * self.gamma * (1 + ((x - self.mean) / 2) ** 2))
 
 
-class DistributionVoigt(PeakModel):
+class DistributionVoigt(PeakModelBase):
     __slots__ = ("scale", "mean", "gamma")
 
     def __init__(self,
@@ -142,7 +225,6 @@ class DistributionVoigt(PeakModel):
         gamma = 0 normal
         sigma = 0 cauchy distribution
         """
-        super().__init__()
         self.scale = scale
         self.mean = mean
         self.sigma = sigma
@@ -152,8 +234,8 @@ class DistributionVoigt(PeakModel):
         return self.scale * voigt_profile(x - self.mean, sigma=self.sigma, gamma=self.gamma)
 
 
-class DistributionMultinomial(PeakModel):
-    def __init__(self, models: list[PeakModel]):
+class DistributionMultinomial(PeakModelBase):
+    def __init__(self, models: list[PeakModelBase]):
         super().__init__()
         self.models = models
 

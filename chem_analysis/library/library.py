@@ -163,6 +163,46 @@ class Library:
         with open(file_path, 'wb') as file:
             pickle.dump(self, file)
 
+    def to_dataframe(self):
+        import polars as pl
+        from collections import defaultdict, Counter
+
+        def merge_df(dfs: list[pl.DataFrame]) -> pl.DataFrame:
+            # Collect all column names and their observed types
+            col_types = defaultdict(list)
+            for df in dfs:
+                for name, dtype in zip(df.columns, df.dtypes):
+                    col_types[name].append(dtype)
+
+            # Decide on the common dtype for each column (most frequent type wins)
+            common_types = {}
+            for col, types in col_types.items():
+                most_common = Counter(types).most_common(1)[0][0]
+                common_types[col] = most_common
+
+            all_columns = set(common_types.keys())
+
+            def pad_and_cast(df: pl.DataFrame) -> pl.DataFrame:
+                # Add missing columns with correct dtype
+                missing = [
+                    pl.lit(None, dtype=common_types[col]).alias(col)
+                    for col in all_columns if col not in df.columns
+                ]
+                df = df.with_columns(missing)
+
+                # Cast existing columns to common types if needed
+                for col in df.columns:
+                    if df[col].dtype != common_types[col]:
+                        df = df.with_columns([df[col].cast(common_types[col])])
+
+                return df.select(sorted(all_columns))  # Optional: sort for consistent order
+
+            dfs_padded = [pad_and_cast(df) for df in dfs]
+            return pl.concat(dfs_padded, how="vertical")
+
+        dfs = [chem.to_dataframe() for chem in self.chemicals]
+        return merge_df(dfs)
+
     @classmethod
     def from_pickle(cls, file_path: str | pathlib.Path) -> Library:
         import pickle

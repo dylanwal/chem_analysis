@@ -1,9 +1,55 @@
 from typing import Iterable, Sequence
+import abc
+
 import numpy as np
 
-from chem_analysis.analysis.peaks.base_classes import PeakFilter
 import chem_analysis.utils.math as math_utils
+from chem_analysis.utils.code_for_subclassing import MixinSubClassList
+from chem_analysis.base_obj.signal_ import Signal
 
+
+class PeakFilterBase(MixinSubClassList, abc.ABC):
+    """ Evaluates with a given index pass a PeakFilterBase. """
+    def __call__(self, x: np.ndarray, y: np.ndarray, index: np.ndarray, bounds: np.ndarray | None = None) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        x:
+        y:
+        index: np.ndarray
+            index of peak max
+        bounds:
+            bound of peak
+            [[left_index, right_index], [left_index, right_index], ...]
+
+        Returns
+        -------
+        mask: np.ndarray [bool]
+            True: pass filter
+            False: don't pass filter
+
+        """
+        return self.run_xy(x, y, index)
+
+    def run(self, signal: Signal, index: np.ndarray) -> np.ndarray:
+        return self.run_xy(signal.x, signal.y, index)
+
+    @abc.abstractmethod
+    def run_xy(self, x: np.ndarray, y: np.ndarray, index: np.ndarray) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        x
+        y
+        index
+
+        Returns
+        -------
+        index of peaks
+        """
+        
 
 def _slice_to_mask(slice_: slice, index: np.ndarray, max_index: int) -> np.ndarray:
     if slice_.start is None:
@@ -20,7 +66,7 @@ def _slice_to_mask(slice_: slice, index: np.ndarray, max_index: int) -> np.ndarr
     return sub_mask
 
 
-class FilterSlices(PeakFilter):
+class FilterSlices(PeakFilterBase):
     def __init__(self, slices: slice | Iterable[slice], invert: bool = False):
         """
 
@@ -32,7 +78,7 @@ class FilterSlices(PeakFilter):
             False: slices are valid locations for peaks
             True: slices are invalid locations for peaks
         """
-        if not isinstance(slices[0], Iterable):
+        if not isinstance(slices, Iterable):
             slices = [slices]
 
         self.slices = slices
@@ -45,10 +91,10 @@ class FilterSlices(PeakFilter):
 
         if self.invert:
             mask = np.logical_not(mask)
-        return index[mask]
+        return mask
 
 
-class FilterSpans(PeakFilter):
+class FilterSpans(PeakFilterBase):
     def __init__(self,
                  spans: Sequence[float | None] | Iterable[Sequence[float | None]],  # Sequence of length 2
                  invert: bool = False
@@ -81,10 +127,10 @@ class FilterSpans(PeakFilter):
 
         if self.invert:
             mask = np.logical_not(mask)
-        return index[mask]
+        return mask
 
 
-class FilterHeight(PeakFilter):
+class FilterHeight(PeakFilterBase):
     def __init__(self,
                  min_abs: float = None,
                  max_abs: float = None,
@@ -126,10 +172,10 @@ class FilterHeight(PeakFilter):
         if self.max_rel is not None:
             np.logical_and(heights <= self.max_rel * np.max(y), mask, out=mask)
 
-        return index[mask]
+        return mask
 
 
-class FilterHeightLocal(PeakFilter):
+class FilterHeightLocal(PeakFilterBase):
     def __init__(self,
                  min_abs: float = None,
                  max_abs: float = None,
@@ -193,10 +239,10 @@ class FilterHeightLocal(PeakFilter):
             if self.max_rel is not None:
                 mask[i] &= np.all(distance <= self.max_rel * np.max(y))
 
-        return index[mask]
+        return mask
 
 
-class FilterSpacing(PeakFilter):
+class FilterSpacing(PeakFilterBase):
     def __init__(self,
                  min_: float = None,
                  max_: float = None  # not sure if we need max??
@@ -239,10 +285,10 @@ class FilterSpacing(PeakFilter):
                         if self.max_ is not None and abs(x_peak - x_right) > self.max_:
                             mask[sort_index] = False
 
-        return index[mask]
+        return mask
 
 
-class FilterProminence(PeakFilter):
+class FilterProminence(PeakFilterBase):
     def __init__(self,
                  min_: float = None,
                  max_: float = None,
@@ -274,10 +320,10 @@ class FilterProminence(PeakFilter):
         if self.max_ is not None:
             mask &= (prominences <= self.max_)
 
-        return index[mask]
+        return mask
 
 
-class FilterWidth(PeakFilter):
+class FilterWidth(PeakFilterBase):
     def __init__(self,
                  min_: float = None,
                  max_: float = None,
@@ -341,14 +387,14 @@ class FilterWidth(PeakFilter):
             if self.max_ is not None and span > self.max_:
                 mask[i] &= False
 
-        return index[mask]
+        return mask
 
 
 from chem_analysis.processing.baseline.morphological import estimate_window
 from scipy.ndimage import grey_opening
 
 
-class FilterWidthMorphological(PeakFilter):
+class FilterWidthMorphological(PeakFilterBase):
     def __init__(self,
                  min_: float = None,
                  max_: float = None,
@@ -404,4 +450,4 @@ class FilterWidthMorphological(PeakFilter):
             if self.max_ is not None and span > self.max_:
                 mask[i] &= False
 
-        return index[mask]
+        return mask

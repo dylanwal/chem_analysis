@@ -226,3 +226,60 @@ def dice_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
     """
     intersection = np.sum(vec1 * vec2)
     return (2 * intersection) / (np.sum(vec1) + np.sum(vec2)) if (np.sum(vec1) + np.sum(vec2)) != 0 else 0
+
+
+def weighted_recall_score(expected: np.ndarray, observed: np.ndarray, beta=0.1) -> np.ndarray | float:
+    """
+    Computes a weighted recall-based score.
+    This function measures how much of the expected signal is present while applying a soft penalty for extra elements.
+
+    Parameters:
+        expected (set or list): The expected elements.
+        observed (set or list): The observed elements.
+        beta (float): Penalty factor for extra elements.
+
+    Returns:
+        float: The weighted recall-based score.
+    """
+    expected = set(expected)
+    observed = set(observed)
+
+    true_positive = len(expected & observed)  # Elements in both
+    false_positive = len(observed - expected)  # Extra elements in observed
+
+    recall = true_positive / len(expected) if expected else 1  # Avoid division by zero
+    penalty = beta * (false_positive / len(observed) if observed else 0)
+
+    return recall - penalty
+
+
+def dot_product_soft_norm(expected, observed, gamma=0.1):
+    """
+    Computes a dot product similarity with soft normalization.
+    This function evaluates similarity while softly penalizing excess signal.
+
+    Parameters:
+        expected (numpy array): Expected vector.
+        observed (numpy array): Observed vector.
+        gamma (float): Penalty factor for extra signal.
+
+    Returns:
+        float: The similarity score.
+    """
+    expected = np.array(expected, dtype=float)
+    observed = np.array(observed, dtype=float)
+
+    if expected.shape != observed.shape:
+        raise ValueError("Vectors must have the same shape")
+
+    dot_product = np.dot(expected, observed)
+    norm_expected = np.linalg.norm(expected)
+    norm_observed = np.linalg.norm(observed)
+
+    if norm_expected == 0:
+        return 1 if norm_observed == 0 else 0  # If both are zero, perfect match, otherwise zero score
+
+    alignment_score = dot_product / norm_expected
+    penalty = gamma * (np.linalg.norm(observed - expected) / norm_observed if norm_observed else 0)
+
+    return alignment_score - penalty

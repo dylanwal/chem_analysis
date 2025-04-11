@@ -2,6 +2,7 @@ import abc
 from typing import Any
 from collections import OrderedDict
 import inspect
+import re
 
 from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 
@@ -109,6 +110,19 @@ class SMILES(Identifier):
 class ChemicalFormula(Identifier):
     def __init__(self, value: str):
         super().__init__(value)
+
+    def element_count(self, element: str) -> int:
+        pattern = re.escape(element) + r'\D*(\d+)'  # look for target, optional non-digits, then digits
+        match = re.search(pattern, self.value)
+        if match:
+            return int(match.group(1))
+
+        # look for target only
+        match = re.search(re.escape(element), self.value)
+        if match:
+            return 1
+
+        return 0
 
 
 class INCHI(Identifier):

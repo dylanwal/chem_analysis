@@ -1,13 +1,23 @@
-from typing import Callable
+from typing import Callable, Protocol, Sequence, Any
 
 import numpy as np
 
-Criteria = Callable[[np.ndarray, np.ndarray, np.ndarray, int], int | float]
+from chem_analysis.analysis.line_fitting.peak_models import PeakModel
 
 
-def BIC(x: np.ndarray, y: np.ndarray, x_model: np.ndarray, num_params: int) -> int | float:
-    residuals = y - x_model
+class CriteriaFit(Protocol):
+    def __call__(self, x: np.ndarray, y: np.ndarray, model: PeakModel, params: Sequence[Any]) -> int | float:
+        ...
+
+## goodness of fit
+
+
+
+## Choosing between models
+
+def BIC(x: np.ndarray, y: np.ndarray, model: PeakModel, params: Sequence[Any]) -> int | float:
+    y_model = model(x, *params)
+    residuals = y - y_model
     sse = np.sum(residuals ** 2)
-    k = num_params
     n = len(x)
-    return n * np.log(sse / n) + k * np.log(n)  # BIC formula
+    return n * np.log(sse / n) + len(params) * np.log(n)  # BIC formula

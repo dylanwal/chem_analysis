@@ -38,6 +38,15 @@ class Configuration:
     def load_from_env(self):
         pass  # TODO: add support    this should include plot config too
 
+    def get_plotting_options(self) -> list[PlottingLibrary]:
+        self._find_available_plotting_libraries()
+        if self._plotting_libraries is None:
+            raise RuntimeError("No plotting libraries installed. Please install one of the following:"
+                               "\n\tplotly: `pip install plotly'"
+                               "\n\tmatplotlib: 'pip install matplotlib'"
+                               "\n\tpygraphqt: 'pip install pygraphqt'")
+        return self._plotting_libraries
+
     def get_plotting_lib(self) -> PlottingLibrary:
         self._find_available_plotting_libraries()
         if self._plotting_libraries is None:

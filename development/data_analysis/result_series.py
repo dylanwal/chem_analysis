@@ -45,7 +45,7 @@ def results_to_timeseries(data: Sequence[ResultPeaks], times: Sequence[float]) -
 
 
 class CompoundTimeSeries:
-    def __init__(self, compound: ca.library.Compound):
+    def __init__(self, compound: ca.library.Chemical):
         self.compound = compound
         self.areas = []
         self.times = []

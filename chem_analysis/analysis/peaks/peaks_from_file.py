@@ -98,7 +98,7 @@ def integrate_from_file(
     desecrate peak
     'trap': trapezoidal integration
         provide: left bound [int|float], right bound [int|float]
-    'fitnormal': fit normal distribution
+    'fit_normal': fit normal distribution
         provide: left bound [int|float], right bound [int|float], guess of mean Optional[int|float], guess of std Optional[int|float]
     # 'fitmultinormal': fit multi-normal distribution
     #     provide: left bound [int|float], right bound [int|float], range of normals to consider [int], guess of mean Optional[list[int|float]], guess of std Optional[list[int|float]]

@@ -23,6 +23,9 @@ class Processor:
         self._methods: list[ProcessingMethod] = methods
         self.processed = False
 
+    def __getitem__(self, item):
+        return self._methods[item]
+
     def __repr__(self):
         return f"Processor: {len(self)} methods"
 

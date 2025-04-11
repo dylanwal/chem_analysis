@@ -1,5 +1,6 @@
-from chem_analysis.analysis.peaks.base_classes import (
-    find_peaks, find_peaks_xy, find_peaks_and_bounds, find_peaks_and_bounds_xy
+from chem_analysis.analysis.peaks.convenience_methods import (
+    find_peaks, find_peaks_xy, find_peaks_and_bounds, find_peaks_and_bounds_xy, find_peaks_and_bounds_recursively,
+    find_peaks_and_bounds_recursively_xy
 )
 
 from chem_analysis.analysis.peaks.peak_detectors import (

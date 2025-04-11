@@ -200,6 +200,8 @@ def baseline(
         fig=None,
         plot_kwargs: dict | None = None,
 ):
+    plotting_lib = global_config.get_plotting_lib() if fig is None else global_config.get_plotting_lib_from_fig(fig)
+
     plot_kwargs = copy.copy(plot_kwargs) or {}
     if isinstance(baseline_, Processor):
         if not baseline_.processed:
@@ -214,15 +216,8 @@ def baseline(
     if baseline_.baseline is None:
         raise RuntimeError("No baseline detected.\n The 'Baseline.save_result' attribute was likely not set to 'True'.")
 
-    for option in global_config.get_plotting_options():
-        if option == global_config.PLOTTING_LIBRARIES.PLOTLY:
+    if plotting_lib == global_config.PLOTTING_LIBRARIES.plotly:
             from chem_analysis.plotting.plotly_plots.plotly_baseline import plotly_baseline
             return plotly_baseline(baseline_, plot_kwargs, fig)
-
-        if option == global_config.PLOTTING_LIBRARIES.MATPLOTLIB:
-            pass
-
-        if option == global_config.PLOTTING_LIBRARIES.PYGRAPHQT:
-            pass
 
     raise NotImplementedError()
