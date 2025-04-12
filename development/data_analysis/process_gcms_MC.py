@@ -90,10 +90,10 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
     # saving data
     if multiple:
         ca.plotting.plotly_utils.merge_figures(figs, filename=data_path / "figs" / (data_label + '_figs.html'))
-        data = fid_timeseries.to_csv(data_path / "areas" / (data_label + '_fid.csv'))
+        data = fid_timeseries.write_csv(data_path / "areas" / (data_label + '_fid.csv'))
     else:
         ca.plotting.plotly_utils.merge_figures(figs, filename=data_path / (data_label + '_figs.html'))
-        data = fid_timeseries.to_csv(data_path / (data_label + '_fid.csv'))
+        data = fid_timeseries.write_csv(data_path / (data_label + '_fid.csv'))
 
     with open(data_path.parent / (data_label + "_params.txt"), mode='w') as f:
         f.write(parameters)

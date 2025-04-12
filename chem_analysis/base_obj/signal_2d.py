@@ -200,7 +200,7 @@ class Signal2D:
 
         numpy_to_feather(pack_time_series(self.x, self.y, self.z), path, headers=headers)
 
-    def to_csv(self, path: str | pathlib.Path, **kwargs):
+    def write_csv(self, path: str | pathlib.Path, **kwargs):
         from chem_analysis.utils.math import pack_time_series
 
         if "encodings" not in kwargs:
@@ -210,13 +210,13 @@ class Signal2D:
 
         np.savetxt(path, pack_time_series(self.x, self.time, self.z), **kwargs)  # noqa
 
-    def to_npy(self, path: str | pathlib.Path, **kwargs):
+    def write_npy(self, path: str | pathlib.Path, **kwargs):
         """Save an array to a binary file in NumPy ``.npy`` format."""
         from chem_analysis.utils.math import pack_time_series
 
         np.save(path, pack_time_series(self.x, self.y, self.z), **kwargs)
 
-    def to_npz(self, path: str | pathlib.Path, **kwargs):
+    def write_npz(self, path: str | pathlib.Path, **kwargs):
         """Save an array to a binary file in NumPy ``.npz`` format."""
         np.savez(path, x=self.x, y=self.y, z=self.z, name=self.name,
                  x_label=self.x_label, y_label=self.y_label, z_label=self.z_label, **kwargs

@@ -10,7 +10,7 @@ from chem_analysis.library.condition import Condition
 from chem_analysis.utils.code_for_subclassing import MixinSubClassList
 
 
-def numpy_to_JSON(array: np.ndarray, encoding: str = "list") -> str:
+def numpy_write_json(array: np.ndarray, encoding: str = "list") -> str:
     if encoding == "binary":
         return f"b'{','.join(str(i) for i in array.shape)}|{array.dtype}|" + base64.b64encode(array.tobytes()).decode('ASCII')
     if encoding == "list":
@@ -92,10 +92,10 @@ class Attribute(MixinSubClassList, abc.ABC):
             dict_[k] = v
         return dict_
 
-    def to_json(self, /, **kwargs) -> OrderedDict[str, Any]:
+    def write_json(self, /, **kwargs) -> OrderedDict[str, Any]:
         dict_ = self.to_dict(remove_nones=True)
         if isinstance(self.value, np.ndarray):
-            dict_["value"] = numpy_to_JSON(dict_["value"], kwargs.get("numpy_encoding", "list"))
+            dict_["value"] = numpy_write_json(dict_["value"], kwargs.get("numpy_encoding", "list"))
         return dict_
 
     @classmethod

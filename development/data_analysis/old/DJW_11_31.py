@@ -136,7 +136,7 @@ def process_timeseries(data_path: str, pattern: str):
     ca.plotting.plotly_utils.merge_figures(fid_figs, filename=figure_folder / "fid")
     ca.plotting.plotly_utils.merge_figures(ms_figs, filename=figure_folder / "ms")
 
-    data = ms_timeseries.to_csv_str()
+    data = ms_timeseries.write_csv_str()
     print(data)
 
 

@@ -1,4 +1,6 @@
 import logging
+import pathlib
+
 import numpy as np
 
 from chem_analysis.base_obj.signal_ import Signal
@@ -57,3 +59,34 @@ class MSSignal(Signal):
             return self.y[index]
 
         return 0
+
+    def update_mz(self, mz: np.ndarray):
+        if len(mz.shape) != 1:
+            raise ValueError("Mass spectrum must have exactly one mass spectrum")
+        if mz[0] > mz[-1]:
+            mz = np.flip(mz)
+
+        indexes = np.nonzero(self.y != 0)[0]
+        if np.max(mz) < self.mz[indexes[-1]] or np.min(mz) > self.mz[indexes[0]]:
+            logger.warning("The new 'mz' is smaller than the old 'mz' and some signal may be lost.")
+
+        y = np.zeros_like(mz, dtype=self.y.dtype)
+        min_, max_ = np.min(mz), np.max(mz)
+        for i, mz_ in enumerate(self.mz):
+            if min_ <= mz_ <= max_:
+                index = np.nonzero(mz == mz_)[0][0]
+                y[index] = self.y[i]
+
+        self.y = y
+        self.x = mz
+
+    def write_csv(self,
+               path: str | pathlib.Path,
+               headers: bool = False,
+               encoding: str = "utf-8",
+               **kwargs
+               ):
+        if "fmt" not in kwargs:
+            kwargs["fmt"] = ("%.0i", "%.0f")
+
+        super().write_csv(path, headers, encoding, **kwargs)

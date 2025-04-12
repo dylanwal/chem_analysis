@@ -2,7 +2,6 @@ import abc
 from typing import Sequence
 
 import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline
 
 import chem_analysis.utils.math as ca_math
 from chem_analysis.base_obj.signal_ import Signal
@@ -172,6 +171,8 @@ class UnifyMethodExpandInterpolate(UnifyMethod):
         return np.linspace(min_, max_, max_data_points)
 
     def run(self, signals: Sequence[Signal]) -> tuple[np.ndarray, np.ndarray]:
+        from scipy.interpolate import InterpolatedUnivariateSpline
+
         x = self.get_x(signals)
 
         z = np.ones((len(signals), len(x)), dtype=signals[0].y.dtype)*self.value

@@ -59,19 +59,19 @@ def process_one(data_path: pathlib.Path, label: str):
     labels_rt = ca.a.gc_lc.search_by_retention(rt_lib, fid.x[peaks], ca.a.gc_lc.RTMethodNearestN(3, 0.3))
 
     # ms compare
-    # ms_bounds = translate_bounds(bounds, fid.x, ms.x, offset=29.675 - 29.58)
-    # ms_peak_data = ca.a.ms_analysis.ms_extract_index(ms, ms_bounds)
-    #
-    # labels_ms = []
-    # for labels_, ms_ in zip(labels_rt, ms_peak_data):
-    #     labels_ms.append(
-    #         ca.a.ms.search_by_ms_chemicals(
-    #             labels_,
-    #             ms_,
-    #             scorer_ms=ca.a.ms_analysis.ScorerMultiple([ca.a.ms_analysis.ScorerDot(), offset_scorer]),
-    #             filter_ms=[ca.a.ms_analysis.FilterMinScore(0.5), ca.a.ms_analysis.FilterTopNMatches(n=1)]
-    #         )
-    #     )
+    ms_bounds = translate_bounds(bounds, fid.x, ms.x, offset=29.675 - 29.58)
+    ms_peak_data = ca.a.ms_analysis.ms_extract_index(ms, ms_bounds)
+
+    labels_ms = []
+    for labels_, ms_ in zip(labels_rt, ms_peak_data):
+        labels_ms.append(
+            ca.a.ms.search_by_ms_chemicals(
+                labels_,
+                ms_,
+                scorer_ms=ca.a.ms.similarity.earth_movers_distance,
+                filter_ms=[ca.a.ms_analysis.FilterTopNMatches(n=1)]
+            )
+        )
 
     labels = [l[0] if l else None for l in labels_rt]
     label_dict = OrderedDict()

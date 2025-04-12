@@ -129,33 +129,79 @@ class Signal:
 
         return dict_
 
+    def to_numpy(self) -> np.ndarray:
+        return np.column_stack([self.x, self.y])
+
+    def to_dataframe(self):
+        import sys
+        imported_modules = list(sys.modules.keys())
+        if "pandas" in imported_modules:
+            import pandas as pd
+            return pd.DataFrame(self.to_numpy(), columns=[self.x_label, self.y_label])
+        elif "polars" in imported_modules:
+            import polars as pl
+            return pl.DataFrame({self.x_label: self.x, self.y_label: self.y})
+        else:
+            try:
+                import pandas as pd
+                return pd.DataFrame(self.to_numpy(), columns=[self.x_label, self.y_label])
+            except ImportError:
+                pass
+            try:
+                import polars as pl
+                return pl.DataFrame({self.x_label: self.x, self.y_label: self.y})
+            except ImportError:
+                pass
+
+        raise ModuleNotFoundError("No pandas or polars installed.")
+
     ####################################################################################################################
     ## Save/Load from file #############################################################################################
     ####################################################################################################################
-    def to_json(self, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
+    def write_json(self, path: str | pathlib.Path, encoding: str = "utf-8", **kwargs):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+        if path.suffix != ".json":
+            path = path.with_suffix(".json")
+
         import json
 
         kwargs = kwargs or dict()
         with open(path, 'w', encoding=encoding) as file:
             json.dump(self.to_dict(data_as_list=True), file, **kwargs)
 
-    def to_csv(self, path: str | pathlib.Path, headers: bool = False, encoding: str = "utf-8"):
-        kwargs = {"encoding": encoding}
+    def write_csv(self, path: str | pathlib.Path, headers: bool = False, encoding: str = "utf-8", **kwargs):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+        if path.suffix != ".csv":
+            path = path.with_suffix(".csv")
+
+        kwargs = {"encoding": encoding} | kwargs
         if headers:
             kwargs["headers"] = [self.x_label, self.y_label]
         np.savetxt(path, np.column_stack((self.x, self.y)), delimiter=",", **kwargs)
 
-    def to_npy(self, path: str | pathlib.Path, **kwargs):
+    def write_npy(self, path: str | pathlib.Path, **kwargs):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+        if path.suffix != ".npy":
+            path = path.with_suffix(".npy")
+
         np.save(path, np.column_stack((self.x, self.y)), **kwargs)
 
-    def to_npz(self, path: str | pathlib.Path, **kwargs):
+    def write_npz(self, path: str | pathlib.Path, **kwargs):
+        if isinstance(path, str):
+            path = pathlib.Path(path)
+        if path.suffix != ".npz":
+            path = path.with_suffix(".npz")
+
         np.savez(path, x=self.x, y=self.y, name=self.name, x_label=self.x_label, y_label=self.y_label, **kwargs)
 
-    def to_feather(self, path: str | pathlib.Path):
-        from chem_analysis.utils.feather_format import numpy_to_feather
-
-        headers = [self.x_label, self.y_label]
-        numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
+    # def to_feather(self, path: str | pathlib.Path):
+    #     from chem_analysis.utils.feather_format import numpy_to_feather
+    #
+    #     headers = [self.x_label, self.y_label]
+    #     numpy_to_feather(np.column_stack((self.x, self.y)), path, headers=headers)
 
     @classmethod
     def from_file(cls, path: str | pathlib.Path):
@@ -163,8 +209,8 @@ class Signal:
             path = pathlib.Path(path)
         if path.suffix == ".npz":
             return cls.from_npz(path)
-        elif path.suffix == ".feather":
-            return cls.from_feather(path)
+        # elif path.suffix == ".feather":
+        #     return cls.from_feather(path)
         elif path.suffix == ".csv":
             return cls.from_csv(path)
         elif path.suffix == ".npy":
@@ -208,21 +254,21 @@ class Signal:
         x, y, name, x_label, y_label = npzfile['x'], npzfile['y'], npzfile['name'], npzfile['x_label'], npzfile['y_label']
         return cls(x, y, x_label=x_label, y_label=y_label, name=name)
 
-    @classmethod
-    def from_feather(cls, path: str | pathlib.Path):
-        if isinstance(path, str):
-            path = pathlib.Path(path)
-
-        from chem_analysis.utils.feather_format import feather_to_numpy
-        data, headers = feather_to_numpy(path)
-        x, y = data[:, 0], data[:, 1]
-        if headers[0] != "0":
-            x_label = headers[0]
-            y_label = headers[1]
-        else:
-            x_label = y_label = None
-
-        return cls(x, y, x_label=x_label, y_label=y_label)
+    # @classmethod
+    # def from_feather(cls, path: str | pathlib.Path):
+    #     if isinstance(path, str):
+    #         path = pathlib.Path(path)
+    #
+    #     from chem_analysis.utils.feather_format import feather_to_numpy
+    #     data, headers = feather_to_numpy(path)
+    #     x, y = data[:, 0], data[:, 1]
+    #     if headers[0] != "0":
+    #         x_label = headers[0]
+    #         y_label = headers[1]
+    #     else:
+    #         x_label = y_label = None
+    #
+    #     return cls(x, y, x_label=x_label, y_label=y_label)
 
 
 def _load_csv(path: pathlib) -> tuple[np.ndarray, np.ndarray, str | None, str | None]:

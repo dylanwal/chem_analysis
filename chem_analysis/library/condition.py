@@ -55,7 +55,7 @@ class Condition(MixinSubClassList, abc.ABC):
             dict_[k] = v
         return dict_
 
-    def to_json(self, /, **kwargs) -> OrderedDict[str, Any]:
+    def write_json(self, /, **kwargs) -> OrderedDict[str, Any]:
         return self.to_dict(remove_nones=True)
 
     @classmethod

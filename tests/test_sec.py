@@ -22,7 +22,7 @@ def compute_mn_d(signal: ca.sec.SECSignal):
     # signal.processor.add(ca.processing.baseline_correction.Polynomial(degree=3))
     peaks = ca.analysis.peak_picking.max_find_peaks(signal, weights=ca.processing.weigths.Spans((13, 30), invert=True))
     peaks = ca.analysis.boundary_detection.rolling_ball(peaks, n=10, min_height=0.0001, n_points_with_pos_slope=1)
-    print(peaks.stats_table().to_csv_str())
+    print(peaks.stats_table().write_csv_str())
 
     fig = ca.plot.calibration(signal.calibration)
     fig = ca.plot.peaks(peaks, fig=fig)

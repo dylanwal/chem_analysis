@@ -199,7 +199,7 @@ class Signal3D:
     ####################################################################################################################
     ## Save/Load from file #############################################################################################
     ####################################################################################################################
-    def to_npz(self, path: str | pathlib.Path, sparse: bool = False, **kwargs):
+    def write_npz(self, path: str | pathlib.Path, sparse: bool = False, **kwargs):
         """Save an array to a binary file in NumPy ``.npz`` format."""
         if sparse:
             from chem_analysis.utils.sparse_data import numpy_to_sparse

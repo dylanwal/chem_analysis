@@ -61,7 +61,7 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
     # saving data
     ca.plotting.plotly_utils.merge_figures(fid_figs, filename=data_path / (data_label + '_fid.html'))
     ca.plotting.plotly_utils.merge_figures(ms_figs, filename=data_path / (data_label + '_ms.html'))
-    data = fid_timeseries.to_csv(data_path / (data_label + '_fid.csv'))
+    data = fid_timeseries.write_csv(data_path / (data_label + '_fid.csv'))
     print(data)
 
 

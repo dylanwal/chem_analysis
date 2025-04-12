@@ -86,7 +86,7 @@ class StatsTable:
 
         return tabulate(rows, headers, **kwargs)
 
-    def to_csv_str(self,
+    def write_csv_str(self,
                    limit_to: Sequence[str] = None,
                    exclude: Sequence[str] = None,
                    with_headers: bool = True,

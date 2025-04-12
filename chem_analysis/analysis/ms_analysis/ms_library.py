@@ -41,7 +41,7 @@ class MSLibrary:
     def __getitem__(self, item: int | slice) -> Chemical:
         return self.chemicals[item]
 
-    def to_npz(self, path: str | pathlib.Path, **kwargs):
+    def write_npz(self, path: str | pathlib.Path, **kwargs):
         chemicals = [chem.name for chem in self.chemicals]
         np.savez(path, ms_mass=self.ms_mass, ms_intensity=self.ms_intensity, chemicals=chemicals, **kwargs)
 

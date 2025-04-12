@@ -116,7 +116,7 @@ def main():
         )
         lib.add_compound(comp)
 
-    lib.to_JSON(fr"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\nist20_{i}.json", overwrite=True, binary=True, optimize=True)
+    lib.write_json(fr"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\nist20_{i}.json", overwrite=True, binary=True, optimize=True)
 
 
 if __name__ == "__main__":

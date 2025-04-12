@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import Sequence
+from typing import Sequence, Protocol
 
 import numpy as np
 
@@ -14,21 +14,20 @@ import chem_analysis.utils.vector_similarity as vector_similarity
 logger = logging.getLogger(__name__)
 
 
-class MSScorer(abc.ABC):
-    @abc.abstractmethod
-    def __call__(self, mz: np.ndarray, library: np.ndarray, ms: np.ndarray) -> np.ndarray:
+class MSScorer(Protocol):
+    def __call__(self, library: np.ndarray, signal: np.ndarray) -> float:
         ...
 
 
-class ScorerMultiple(MSScorer):
+class ScorerMultiple:
     def __init__(self, scorers: list[MSScorer], mode: str = 'max'):
         self.scorers = scorers
         self.mode = mode
 
-    def __call__(self, mz: np.ndarray, library: np.ndarray, ms: np.ndarray) -> np.ndarray:
+    def __call__(self, library: np.ndarray, signal: np.ndarray) -> np.ndarray:
         scores = []
         for scorer in self.scorers:
-            scores.append(scorer(mz, library, ms))
+            scores.append(scorer(library, signal))
 
         if self.mode == 'max':
             return np.max(scores, axis=0)
@@ -42,44 +41,11 @@ class ScorerMultiple(MSScorer):
         raise ValueError(f'Unknown mode {self.mode}')
 
 
-class ScorerDot(MSScorer):
-    def __init__(self, normalize: bool = True):
-        """
-        Larger Dot Product values indicate greater similarity.
-        Dot Product is influenced by the length.
-        If normalized; it is Cosine similarity.
-        Cosine Similarity only considers the angle between vectors, regardless of their length/ magnitude.
-
-            -1 = opposite directions
-            0 = orthogonal directions
-            1 = the identical
-        """
-        self.normalize = normalize
-
-    def __call__(self, mz: np.ndarray, library: np.ndarray, ms: np.ndarray) -> np.ndarray:
-        return vector_similarity.dot_cosine_similarity(library, ms, normalize=self.normalize)
-
-
-class ScorerEarthMover(MSScorer):
-    def __init__(self, normalize: bool = True):
-        self.normalize = normalize
-
-    def __call__(self, mz: np.ndarray, library: np.ndarray, ms: np.ndarray) -> np.ndarray:
-        return vector_similarity.earth_movers_distance(mz, mz, library, ms, normalize=self.normalize)
-
-
-class ScorerEuclidDistance(MSScorer):
-    def __init__(self, normalize: bool = True):
-        self.normalize = normalize
-
-    def __call__(self, mz: np.ndarray, library: np.ndarray, ms: np.ndarray) -> np.ndarray:
-        return vector_similarity.euclidean_distance(library, ms, self.normalize)
-
-
 class MSFilter(abc.ABC):
 
     @abc.abstractmethod
     def __call__(self, chemicals: Sequence[Chemical], scores: np.ndarray) -> np.ndarray:
+        """ returns mask True: keep False: delete"""
         ...
 
 
@@ -90,26 +56,25 @@ class FilterTopNMatches(MSFilter):
 
     def __call__(self, chemicals: Sequence[Chemical], scores: np.ndarray) -> np.ndarray:
         sorted_score_index = np.argsort(-scores)
-        scores[sorted_score_index[self.n:]] = 0
-        return scores
+        out = np.zeros_like(scores, dtype=bool)
+        out[sorted_score_index[:self.n]] = 1
+        return out
 
 
-class FilterMinScore(MSFilter):
+class FilterMaxDistance(MSFilter):
     def __init__(self, score: int | float):
         """ set all scores less than provided score to zero. """
         self.score = score
 
     def __call__(self, chemicals: Sequence[Chemical], scores: np.ndarray) -> np.ndarray:
-        mask = scores <= self.score
-        scores[mask] = 0
-        return scores
+        return scores <= self.score
 
 
 def search_by_ms(
         library: MSLibrary,
         ms: MSSignal,
-        scorer_ms: MSScorer = ScorerDot,
-        filter_ms: MSFilter | Sequence[MSFilter] = FilterMinScore(1),
+        scorer_ms: MSScorer,
+        filter_ms: MSFilter | Sequence[MSFilter] = FilterTopNMatches(1),
 ) -> list:
     if not isinstance(filter_ms, list):
         filter_ms = [filter_ms]
@@ -135,8 +100,8 @@ def search_by_ms(
 def search_by_ms_chemicals(
         chemicals: Sequence[Chemical],
         ms: MSSignal,
-        scorer_ms: MSScorer = ScorerDot,
-        filter_ms: MSFilter | Sequence[MSFilter] = FilterMinScore(1),
+        scorer_ms: MSScorer,
+        filter_ms: MSFilter | Sequence[MSFilter] = FilterTopNMatches(1),
 ) -> list:
     if not isinstance(filter_ms, list):
         filter_ms = [filter_ms]
@@ -157,20 +122,21 @@ def search_by_ms_chemicals(
         else:
             mz, ms_1, ms_2 = map_discrete_x_axis(chem_ms[:, 0], chem_ms[:, 1], ms.x, ms.y)
 
-        scores.append(scorer_ms(mz, ms_1, ms_2))
+        scores.append(scorer_ms(ms_1, ms_2))
 
     if len(scores) == 0:
         return []
 
     scores = np.array(scores)
 
+    mask = np.ones_like(scores, dtype=bool)
     for filter_ in filter_ms:
-        scores = filter_(chemicals, scores)
+        mask &= filter_(chemicals, scores)
 
     labels = []
-    sorted_score_index = np.argsort(-scores)
+    sorted_score_index = np.argsort(scores)
     for index in sorted_score_index:
-        if scores[index] > 0:
+        if mask[index]:
             labels.append(chemicals[index])
     return labels
 

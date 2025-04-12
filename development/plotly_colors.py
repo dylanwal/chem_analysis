@@ -90,7 +90,7 @@ def main():
     # for color, compound in zip(colors, LIBRARY.compounds):
     #     compound.color = color
     #
-    # LIBRARY.to_JSON(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json",
+    # LIBRARY.write_json(r"C:\Users\nicep\Desktop\research_wis\data\reference_data\gc_ms\decane\library_color.json",
     #                 binary=True, optimize=True, json_kwargs={"indent": 2}, overwrite=True)
 
 

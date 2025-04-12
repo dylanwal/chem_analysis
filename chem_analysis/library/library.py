@@ -114,7 +114,7 @@ class Library:
         dict_["chemicals"] = [chem.to_dict() for chem in self.chemicals]
         return dict_
 
-    def to_JSON(self,
+    def write_json(self,
                 file_path: str | pathlib.Path,
                 *,
                 numpy_encoding: str = "list",
@@ -139,7 +139,7 @@ class Library:
 
         chems = []
         for chem in self.chemicals:
-            chems.append(chem.to_json(numpy_encoding=numpy_encoding))
+            chems.append(chem.write_json(numpy_encoding=numpy_encoding))
 
         lib_dict['chemicals'] = chems
 

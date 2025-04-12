@@ -46,7 +46,7 @@ def get_time_series(folder_path: str, pattern: str) -> ca.gc_lc.GCMSSignal2D:
 def first_load(folder_: str, pattern: str):
     data = get_time_series(folder_, pattern)
     print(data)
-    data.to_npy(folder_ + r"\data")
+    data.write_npy(folder_ + r"\data")
 
 
 def process_single(signal):
@@ -63,7 +63,7 @@ def process_single(signal):
     picking_lib = chemistry_lib.to_picking_library()
     peaks_compounds = ca.analysis.peak_picking.library_search.find_peaks_retention_time_library(peak_result, picking_lib)
     # print(peaks_compounds)
-    # print(peaks_compounds.stats_table().to_csv_str())
+    # print(peaks_compounds.stats_table().write_csv_str())
 
     return peaks_compounds
 

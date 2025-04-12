@@ -89,9 +89,9 @@ class GCMSSignal2D(Signal2D):
         ms = MSSignal3D.from_signals([sig.ms_raw for sig in signals], y, y_label, unify_method)
         return cls(ms=ms, x_label=x_label, y_label=y_label, z_label=z_label)
 
-    def to_npz(self, path: str | pathlib.Path, sparse: bool = True, **kwargs):
+    def write_npz(self, path: str | pathlib.Path, sparse: bool = True, **kwargs):
         """Save an array to a binary file in NumPy ``.npz`` format."""
-        self.ms.to_npz(path, sparse=sparse, **kwargs)
+        self.ms.write_npz(path, sparse=sparse, **kwargs)
 
     @classmethod
     def from_npz(cls, path: str | pathlib.Path):

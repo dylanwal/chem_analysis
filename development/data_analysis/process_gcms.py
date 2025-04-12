@@ -83,7 +83,7 @@ class ResultTimeSeries:
 
         return compounds, times, areas
 
-    def to_csv(self, filename: pathlib.Path = None) -> str:
+    def write_csv(self, filename: pathlib.Path = None) -> str:
         compounds, times, mmols = self.to_numpy()
 
         text = ""
@@ -181,8 +181,8 @@ def process_timeseries(data_path: pathlib.Path, data_label: str, labels: list[st
     # saving data
     ca.plotting.plotly_utils.merge_figures(fid_figs, filename=data_path / (data_label + '_fid.html'))
     ca.plotting.plotly_utils.merge_figures(ms_figs, filename=data_path / (data_label + '_ms.html'))
-    ms_timeseries.to_csv(data_path / (data_label + '_ms.csv'))
-    data = fid_timeseries.to_csv(data_path / (data_label + '_fid.csv'))
+    ms_timeseries.write_csv(data_path / (data_label + '_ms.csv'))
+    data = fid_timeseries.write_csv(data_path / (data_label + '_fid.csv'))
     print(data)
     with open(data_path / (data_label + "_params.txt"), mode='w') as f:
         f.write(parameters)

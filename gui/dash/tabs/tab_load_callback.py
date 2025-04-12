@@ -16,7 +16,7 @@ def upload_file(list_of_contents, filename):
         result, df = load_csv(list_of_contents, filename)
         if df is not None:
             print(df.head())
-            df = df.to_json(orient='split')
+            df = df.write_json(orient='split')
         return result, df
     return None, {}
 

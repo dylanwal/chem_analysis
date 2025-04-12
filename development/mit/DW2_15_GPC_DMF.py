@@ -34,7 +34,7 @@ def process_one(sig: ca.sec.SECSignal, *, output: bool = False, save_img: bool =
 
     if output:
         stats_table = peaks.stats_table()
-        print(stats_table.to_csv_str(limit_to=["max_x", "mw_d", "mw_n"]))
+        print(stats_table.write_csv_str(limit_to=["max_x", "mw_d", "mw_n"]))
 
         fig_base = ca.plotting.signal(sig, raw=True)
         fig_base = ca.plot.signal(sig, fig=fig_base)
@@ -67,7 +67,7 @@ def process_many(signals: list[ca.sec.SECSignal], *, output: bool = False, save_
             table.join(process_one(sig, output=output, save_img=save_img))
         print(f"{sig.id_} done")
 
-    print(table.to_csv_str(limit_to=["max_x", "mw_d", "mw_n"]))
+    print(table.write_csv_str(limit_to=["max_x", "mw_d", "mw_n"]))
 
 
 def main():

@@ -43,12 +43,12 @@ class Chemical:
         dict_["identifiers"] = [iden.to_dict() for iden in self.identifiers]
         return dict_
 
-    def to_json(self, /, **kwargs) -> OrderedDict[str, Any]:
+    def write_json(self, /, **kwargs) -> OrderedDict[str, Any]:
         dict_ = OrderedDict()
         dict_["name"] = self.name
         dict_["id_"] = self.id_
-        dict_["attributes"] = [attr.to_json(**kwargs) for attr in self.attributes]
-        dict_["identifiers"] = [iden.to_json(**kwargs) for iden in self.identifiers]
+        dict_["attributes"] = [attr.write_json(**kwargs) for attr in self.attributes]
+        dict_["identifiers"] = [iden.write_json(**kwargs) for iden in self.identifiers]
 
         return dict_
 

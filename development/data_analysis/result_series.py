@@ -14,7 +14,7 @@ class TimeSeries:
         self.compounds = compounds
         self.values = values
 
-    def to_csv(self, filename: pathlib.Path = None) -> str:
+    def write_csv(self, filename: pathlib.Path = None) -> str:
         text = ""
         times = np.insert(self.times, 0, 0)
         text = ",".join([str(i) for i in times]) + "\n"
@@ -116,7 +116,7 @@ class ResultTimeSeries:
 
         return compounds, times, areas
 
-    def to_csv(self, filename: pathlib.Path = None) -> str:
+    def write_csv(self, filename: pathlib.Path = None) -> str:
         compounds, times, mmols = self.to_numpy()
 
         text = ""
