@@ -2,6 +2,7 @@ from typing import Protocol
 
 import numpy as np
 from scipy.stats import entropy, wasserstein_distance
+from scipy.optimize import linear_sum_assignment
 
 
 class SimilarityFunction(Protocol):
@@ -469,3 +470,202 @@ def dtw_distance(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
         return np.array([_dtw_1d(row, vec2) for row in vec1])
     else:
         raise ValueError("vec1 must be a 1D or 2D numpy array")
+
+
+def frechet_distance(vec1: np.ndarray, vec2: np.ndarray) -> float | np.ndarray:
+    """
+    Compute the discrete Fréchet distance between two curves.
+
+    Parameters
+    ----------
+    vec1: np.ndarray [n, m] or [n]
+        This should be the library of curves you want to compare.
+    vec2: np.ndarray [n]
+        The vector you want to compare.
+
+    Returns
+    -------
+    distance
+    """
+    curve1 = np.atleast_2d(vec1)
+    curve2 = np.atleast_2d(vec2)
+    if curve1.shape[1] != curve2.shape[1]:
+        raise ValueError("Both curves must have the same dimensionality")
+
+    n, m = len(curve1), len(curve2)
+    ca = np.full((n, m), -1.0)
+
+    def recurse(i, j):
+        if ca[i, j] > -1:
+            return ca[i, j]
+        d = euclidean_distance(curve1[i], curve2[j])
+        if i == 0 and j == 0:
+            ca[i, j] = d
+        elif i == 0:
+            ca[i, j] = max(recurse(0, j - 1), d)
+        elif j == 0:
+            ca[i, j] = max(recurse(i - 1, 0), d)
+        else:
+            ca[i, j] = max(min(recurse(i - 1, j),
+                               recurse(i - 1, j - 1),
+                               recurse(i, j - 1)), d)
+        return ca[i, j]
+
+    return recurse(n - 1, m - 1)
+
+
+def greedy_cosine_distance(intens1: np.ndarray, intens2: np.ndarray, tolerance: float = 1) -> np.ndarray:
+    """
+    Greedy cosine similarity between two spectra.
+
+    Parameters
+    ----------
+    vec1: np.ndarray [n, m] or [n]
+        This should be the library of curves you want to compare.
+    vec2: np.ndarray [n]
+        The vector you want to compare.
+
+    tolerance : float
+        Maximum allowed m/z difference for peaks to be considered a match.
+
+
+    Returns
+    -------
+    distance
+    """
+    # Normalize intensities
+    intens1 = intens1 / np.linalg.norm(intens1) if np.linalg.norm(intens1) else intens1
+    intens2 = intens2 / np.linalg.norm(intens2) if np.linalg.norm(intens2) else intens2
+
+    # Create a list of candidate matches
+    matches = []
+    for i, (mz_i, inten_i) in enumerate(zip(mz1, intens1)):
+        for j, (mz_j, inten_j) in enumerate(zip(mz2, intens2)):
+            if abs(mz_i - mz_j) <= tolerance:
+                contribution = inten_i * inten_j
+                matches.append((contribution, i, j))
+
+    # Sort matches by contribution (descending)
+    matches.sort(reverse=True)
+
+    used_1 = set()
+    used_2 = set()
+    score = 0.0
+
+    # Greedily match peaks with highest contributions
+    for contribution, i, j in matches:
+        if i not in used_1 and j not in used_2:
+            score += contribution
+            used_1.add(i)
+            used_2.add(j)
+
+    return 1 - score
+
+
+def cosine_hungarian_distance(
+    vec1: np.ndarray, vec2: np.ndarray, tolerance: int = 1
+) -> float | np.ndarray:
+    """
+    Computes cosine similarity using the Hungarian algorithm for optimal peak matching.
+
+    Parameters
+    ----------
+    vec1: np.ndarray [n, m] or [n]
+        This should be the library of curves (spectra) you want to compare.
+    vec2: np.ndarray [n]
+        The vector you want to compare.
+    tolerance: int
+        Index distance tolerance for matching peaks.
+
+    Returns
+    -------
+    similarity : float | np.ndarray
+        Cosine similarity score(s).
+    """
+
+    def compute_single_similarity(x: np.ndarray, y: np.ndarray) -> float:
+        # Find non-zero (or significant) indices for potential matching
+        x_peaks = np.nonzero(x)[0]
+        y_peaks = np.nonzero(y)[0]
+
+        pairs = []
+        scores = []
+
+        for i in x_peaks:
+            for j in y_peaks:
+                if abs(i - j) <= tolerance:
+                    pairs.append((i, j))
+                    scores.append(-(x[i] * y[j]))  # negative for minimization
+
+        if not pairs:
+            return 0.0
+
+        cost_matrix = np.full((len(x), len(y)), np.inf)
+        for (i, j), score in zip(pairs, scores):
+            cost_matrix[i, j] = score
+
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+
+        matches = [
+            (i, j) for i, j in zip(row_ind, col_ind)
+            if abs(i - j) <= tolerance and not np.isinf(cost_matrix[i, j])
+        ]
+
+        if not matches:
+            return 0.0
+
+        dot_product = sum(x[i] * y[j] for i, j in matches)
+        norm_x = np.linalg.norm(x)
+        norm_y = np.linalg.norm(y)
+        return dot_product / (norm_x * norm_y) if norm_x > 0 and norm_y > 0 else 0.0
+
+    vec1 = np.atleast_2d(vec1)  # Ensure 2D for iteration
+
+    return 1 - np.array([compute_single_similarity(v, vec2) for v in vec1])
+
+
+def zscore(x: np.ndarray) -> np.ndarray:
+    mean = np.mean(x)
+    std = np.std(x)
+    return (x - mean) / std if std > 0 else x - mean
+
+
+def sliding_cosine_distance(vec1: np.ndarray, vec2: np.ndarray, window: int = 10, step: int = 1) -> float:
+    """
+    Compute maximum local similarity between two vectors using Z-score normalization and sliding windows.
+
+    Parameters
+    ----------
+    vec1 : np.ndarray [n]
+        First input vector (e.g. library).
+    vec2 : np.ndarray [n]
+        Second input vector (e.g. query).
+    window : int
+        Size of sliding window.
+    step : int
+        Step size to slide over vec1.
+
+    Returns
+    -------
+    float
+        Best local similarity score (cosine-based, 1 is perfect).
+    """
+    vec1 = zscore(vec1)
+    vec2 = zscore(vec2)
+
+    best_score = -np.inf
+    n = len(vec1)
+    for start in range(0, n - window + 1, step):
+        window_vec1 = vec1[start:start+window]
+        window_vec2 = vec2[start:start+window]
+
+        if np.std(window_vec1) == 0 or np.std(window_vec2) == 0:
+            continue  # Skip if flat window
+
+        score = 1 - cosine_distance(window_vec1, window_vec2)
+        best_score = max(best_score, score)
+
+    return 1 - (best_score if best_score != -np.inf else 0.0)
+
+#TODO: add weighting to higher MW
+#TODO: look at min hieght, or other filters
