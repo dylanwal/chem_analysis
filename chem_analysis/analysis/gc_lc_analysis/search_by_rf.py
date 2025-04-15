@@ -50,6 +50,34 @@ class RTMethodNearestN(RetentionTimeMethods):
         return indexes
 
 
+class RTMethodNearestNoDuplicate(RetentionTimeMethods):
+    """
+    returns compound within tolerance; otherwise it will return None
+    """
+    def __init__(self, tol: int | float = 0.1):
+        self.tol = tol
+
+    def __call__(self, lib_times: np.ndarray, r_times: np.ndarray) -> np.ndarray:
+        possible = []  # lib options for r_times
+        for i, t in enumerate(r_times):
+            index = np.argsort(np.abs(lib_times - t))
+            off = np.abs(lib_times[index] - t)
+            index = index[off <= self.tol]
+            possible.append(index)
+
+        indexes = -1*np.ones(r_times.size, dtype=int)
+        for i, index in enumerate(possible):
+            if len(index) == 0:
+                continue
+
+            if index[0] in indexes:
+                pass #TODO: fix choose closest
+            else:
+                indexes[i] = index[0]
+
+        return indexes.reshape((indexes.size, 1))
+
+
 def search_by_retention(
         library: RetentionTimeLibrary,
         retention_times: float | np.ndarray,
@@ -69,23 +97,16 @@ def search_by_retention(
 
     Returns
     -------
-    list[library compounds] or list[list[library compounds]]
+    list[list[library compounds]]
     """
     indexes = method(library.times, retention_times)
 
     labels = []
-    if len(indexes.shape) == 1:
-        for i, index in enumerate(indexes):
+    for i, row in enumerate(indexes):
+        sub_labels = []
+        for ii, index in enumerate(row):
             if index != -1:
-                labels.append(library.chemicals[i])
-            else:
-                labels.append(None)
-    else:
-        for i, row in enumerate(indexes):
-            sub_labels = []
-            for ii, index in enumerate(row):
-                if index != -1:
-                    sub_labels.append(library.chemicals[index])
-            labels.append(sub_labels)
+                sub_labels.append(library.chemicals[index])
+        labels.append(sub_labels)
 
     return labels

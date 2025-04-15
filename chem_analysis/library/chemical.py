@@ -82,14 +82,17 @@ class Chemical:
     def match_identifier(self,
                          label: str,
                          type_: type[Identifier],
+                         class_: str | None = None
                          ) -> bool:
-        idens = [iden for iden in self.identifiers if isinstance(iden, type_)]
-        if len(idens) == 0:
-            return False
-
-        for iden in idens:
-            if label in iden:
-                return True
+        for iden in self.identifiers:
+            if isinstance(iden, type_):
+                if class_ is None:
+                    if label == iden.value:
+                        return True
+                else:
+                    if hasattr(iden, "class_") and iden.class_ == class_:
+                        if label == iden.value:
+                            return True
 
         return False
 

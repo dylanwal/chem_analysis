@@ -92,16 +92,18 @@ class Library:
 
     def find_by_identifier(self,
                            label: str,
-                           class_: type[Identifier],
+                           type_: type[Identifier],
+                           class_: str | None = None,
                            count: int = 1
                            ) \
             -> list[Chemical]:
         matches = []
         for i, chem in enumerate(self.chemicals):
-            chem.match_identifier(label, class_)
+            if chem.match_identifier(label, type_, class_):
+                matches.append(chem)
 
             if len(matches) == count:
-                logger.info(f"Reached count limit {count}. Searched {i}/{len(self.chemicals)}")
+                logger.info(f"Reached count limit {count} for search '{type_.__name__}.{label}'. Searched {i}/{len(self.chemicals)}")
                 break
 
         return matches
