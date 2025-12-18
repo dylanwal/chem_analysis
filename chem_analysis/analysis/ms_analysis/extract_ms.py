@@ -2,7 +2,7 @@ from typing import Sequence
 
 import numpy as np
 
-from chem_analysis.analysis.peak import PeakContinuous
+from chem_analysis.analysis.peak import PeakData
 from chem_analysis.gc_lc.gc_ms_signal import GCMSSignal
 from chem_analysis.mass_spec.ms_signal_2D import MSSignal2D
 from chem_analysis.mass_spec.ms_signal import MSSignal
@@ -75,7 +75,7 @@ def ms_extract_span(
 
 
 def ms_extract_peak(
-        peak: PeakContinuous,
+        peak: PeakData,
 ) -> MSSignal:
     signal: GCMSSignal = peak.parent
     if not isinstance(signal, GCMSSignal):

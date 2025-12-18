@@ -1,4 +1,2 @@
-from chem_analysis.analysis.line_fitting.fitting import peak_deconvolution, peak_deconvolution_with_n_peaks, \
-    peak_deconvolution_auto
 from chem_analysis.analysis.line_fitting.peak_models import DistributionNormal, DistributionCauchy, DistributionVoigt, DistributionMultinomial
 from chem_analysis.analysis.line_fitting.fitting_main import (fitting_adaptive, fitting_simple)

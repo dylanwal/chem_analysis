@@ -24,7 +24,7 @@ def main():
     peak = ca.analysis.peak_picking.find_peak_largest(sec_signal,
                                                       mask=ca.processing.weigths.Spans((10, 12.2), invert=True)
                                                       )
-    result = ca.analysis.integration.rolling_ball(peak, n=45, min_height=0.02, n_points_with_pos_slope=1)
+    result = chem_analysis.analysis.peaks.integration.rolling_ball(peak, n=45, min_height=0.02, n_points_with_pos_slope=1)
 
     # plotting
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())

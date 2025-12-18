@@ -50,9 +50,9 @@ class Signal:
 
         Parameters
         ----------
-        x: np.ndarray[i]
+        x: np.ndarray
             raw x data, i length
-        y: np.ndarray[i]
+        y: np.ndarray
             raw y data, i length
         x_label: str
             x-axis label

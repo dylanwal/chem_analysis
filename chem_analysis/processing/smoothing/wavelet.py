@@ -1,6 +1,6 @@
 
 import numpy as np
-import pywt
+
 
 from chem_analysis.processing.smoothing.savitzky_golay import Smoothing
 
@@ -58,7 +58,14 @@ class Wavelet(Smoothing):
         self.threshold = threshold
         self.level = level
 
-    def run(self, x: np.ndarray, y: np.ndarray, ) -> tuple[np.ndarray, np.ndarray]:
+        try:
+            import pywt
+        except ImportError:
+            raise ImportError("Please install pywt with `pip install pywt` to use Wavlet")
+
+    def run_xy(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        import pywt
+
         coeffs = pywt.wavedec(y, self.wavelet, level=self.level)
 
         # Apply soft thresholding to the detail coefficients

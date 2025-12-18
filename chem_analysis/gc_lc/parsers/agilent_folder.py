@@ -147,7 +147,7 @@ def parse_gcms(file_path: str | pathlib.Path):
         data["operator"] = f_pascal(file, 148, 'UTF-8')
         data["date_time"] = datetime.strptime(f_pascal(file, 178, 'UTF-8'), '%d %b %y  %I:%M %p')
         data["instmodel"] = f_pascal(file, 208, 'UTF-8')
-        data["inlet"] = f_pascal(file, 218, 'UTF-8')
+        data["inlet"] = f_pascal(file, 218, 'UTF-8') # 220 long?
         data["method_name"] = f_pascal(file, 228, 'UTF-8')
         data["seqindex"] = f_numeric(file, 252, '>h')
         data["vial"] = f_numeric(file, 254, '>h')
@@ -186,7 +186,7 @@ def f_pascal(f, offset, encoding: str = 'UTF-8') -> str:
     if len(str_) > 512:
         str_ = ''
     else:
-        str_ = str_.strip()
+        str_ = str_.rstrip()
 
     return str_
 

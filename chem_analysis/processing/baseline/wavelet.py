@@ -1,10 +1,11 @@
 import numpy as np
-import pywt
 
 from chem_analysis.processing.processing_method import Baseline
 
 
 def wavelet_baseline_correction(y, wavelet='sym6', level=6):
+    import pywt
+
     coeffs = pywt.wavedec(y, wavelet, mode='smooth', level=level)
 
     # Zero out detail coefficients to retain only the approximation (baseline)
@@ -24,6 +25,11 @@ class Wavelet(Baseline):
         super().__init__(temporal_processing, save_result)
         self.wavelet = wavelet
         self.level = level
+
+        try:
+            import pywt
+        except ImportError:
+            raise ImportError("Please install pywt with `pip install pywt` to use Wavlet")
 
     def get_baseline(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         return wavelet_baseline_correction(y, self.wavelet, self.level)

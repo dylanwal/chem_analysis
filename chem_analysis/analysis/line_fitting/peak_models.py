@@ -8,12 +8,12 @@ from scipy.special import voigt_profile
 from chem_analysis.utils.math import rescale_array
 
 
-class PeakModel(Protocol):
+class CurveModel(Protocol):
     def __call__(self, x: np.ndarray, *args) -> np.ndarray:
         ...
 
 
-class PeakModelBase(abc.ABC):
+class CurveModelBase(abc.ABC):
     # __slots__ required
 
     def __str__(self):
@@ -40,7 +40,7 @@ class PeakModelBase(abc.ABC):
                                 x: np.ndarray,
                                 y: np.ndarray,
                                 trials: Sequence[str] | str | None = None,
-                                number_trials: int = 5,
+                                num_trials: int = 5,
                                 ) -> Sequence[np.ndarray] | None:
         """
 
@@ -51,7 +51,7 @@ class PeakModelBase(abc.ABC):
         trials:
             a "str" for the variable that the trial to be run over.
             None: all variables will be changed in the trials
-        number_trials
+        num_trials
 
         Returns
         -------
@@ -60,13 +60,13 @@ class PeakModelBase(abc.ABC):
         return None
 
 
-class DistributionNormal(PeakModelBase):
+class DistributionNormal(CurveModelBase):
     __slots__ = ("scale", "mean", "sigma")
 
     def __init__(self,
-                 scale: int | float,
-                 mean: int | float,
-                 sigma: int | float,
+                 scale: int | float = None,
+                 mean: int | float = None,
+                 sigma: int | float = None,
                  ):
         self.scale = scale
         self.mean = mean
@@ -132,7 +132,7 @@ class DistributionNormal(PeakModelBase):
         return [np.array([scale[i], mean[i], sigma[i]]) for i in range(num_trials)]
 
 
-class DistributionNormalSkew(PeakModelBase):
+class DistributionNormalSkew(CurveModelBase):
     __slots__ = ("scale", "mean", "sigma")
 
     def __init__(self,
@@ -196,7 +196,7 @@ class DistributionNormalSkew(PeakModelBase):
         return [np.array([scale[i], mean[i], sigma[i]]) for i in range(num_trials)]
 
 
-class DistributionCauchy(PeakModelBase):
+class DistributionCauchy(CurveModelBase):
     __slots__ = ("scale", "mean", "gamma")
 
     def __init__(self,
@@ -212,7 +212,7 @@ class DistributionCauchy(PeakModelBase):
         return self.scale / (np.pi * self.gamma * (1 + ((x - self.mean) / 2) ** 2))
 
 
-class DistributionVoigt(PeakModelBase):
+class DistributionVoigt(CurveModelBase):
     __slots__ = ("scale", "mean", "gamma")
 
     def __init__(self,
@@ -234,8 +234,8 @@ class DistributionVoigt(PeakModelBase):
         return self.scale * voigt_profile(x - self.mean, sigma=self.sigma, gamma=self.gamma)
 
 
-class DistributionMultinomial(PeakModelBase):
-    def __init__(self, models: list[PeakModelBase]):
+class DistributionMultinomial(CurveModelBase):
+    def __init__(self, models: list[CurveModelBase]):
         super().__init__()
         self.models = models
 

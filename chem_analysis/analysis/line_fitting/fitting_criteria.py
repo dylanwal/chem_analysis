@@ -2,11 +2,11 @@ from typing import Callable, Protocol, Sequence, Any
 
 import numpy as np
 
-from chem_analysis.analysis.line_fitting.peak_models import PeakModel
+from chem_analysis.analysis.line_fitting.peak_models import CurveModel
 
 
 class CriteriaFit(Protocol):
-    def __call__(self, x: np.ndarray, y: np.ndarray, model: PeakModel, params: Sequence[Any]) -> int | float:
+    def __call__(self, x: np.ndarray, y: np.ndarray, model: CurveModel, params: Sequence[Any]) -> int | float:
         ...
 
 ## goodness of fit
@@ -15,7 +15,7 @@ class CriteriaFit(Protocol):
 
 ## Choosing between models
 
-def BIC(x: np.ndarray, y: np.ndarray, model: PeakModel, params: Sequence[Any]) -> int | float:
+def BIC(x: np.ndarray, y: np.ndarray, model: CurveModel, params: Sequence[Any]) -> int | float:
     y_model = model(x, *params)
     residuals = y - y_model
     sse = np.sum(residuals ** 2)

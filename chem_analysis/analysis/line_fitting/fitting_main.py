@@ -6,7 +6,7 @@ import numpy as np
 from scipy.optimize import curve_fit, OptimizeWarning
 from sklearn.metrics import r2_score
 
-from chem_analysis.analysis.line_fitting.peak_models import PeakModel, PeakModelBase
+from chem_analysis.analysis.line_fitting.peak_models import CurveModel, CurveModelBase
 from chem_analysis.analysis.line_fitting.fitting_criteria import CriteriaFit, BIC
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class ResultFit:
 
 
 class ResultFitting:
-    def __init__(self, model: PeakModelBase, results: list[ResultFit] = None):
+    def __init__(self, model: CurveModelBase, results: list[ResultFit] = None):
         self.model = model
         self.results = results or []
         self._best_index: int | None = None
@@ -72,19 +72,19 @@ def check_fit(y: np.ndarray, y_new: np.ndarray):
 
 
 def fitting_simple(
-        model: PeakModel,
+        model: CurveModelBase,
         x: np.ndarray, 
         y: np.ndarray, 
         initial_guess: Sequence[Any] = None,
         **kwargs
 ) -> np.ndarray:
-    if isinstance(model, PeakModelBase):
-        initial_guess = model.initial_guess_generator(x, y, number_trials=1)
+    if isinstance(model, CurveModelBase):
+        initial_guess = model.initial_guess_generator(x, y, num_trials=1)
         if initial_guess is None:
             initial_guess = None
 
     if initial_guess is not None:
-        kwargs['initial'] = initial_guess
+        kwargs['p0'] = initial_guess
 
     popt, _ = curve_fit(model, x, y, **kwargs)
     check_fit(y, model(x, *popt))
@@ -92,7 +92,7 @@ def fitting_simple(
     
 
 def fitting_adaptive(
-        model: PeakModelBase,
+        model: CurveModelBase,
         x: np.ndarray,
         y: np.ndarray,
         trials: Sequence[str] | str | None = None,
@@ -100,7 +100,7 @@ def fitting_adaptive(
         criteria: CriteriaFit = None,
         full_output: bool = False,
 ) -> np.ndarray | ResultFitting:
-    initial_guess = model.initial_guess_generator(x, y, number_trials=1)
+    initial_guess = model.initial_guess_generator(x, y, num_trials=1)
     if initial_guess is None:
         initial_guess = None
     criteria = criteria or BIC
@@ -127,7 +127,7 @@ def fitting_adaptive(
 
 
 def fitting_multiple_adaptive(
-        models: Sequence[PeakModelBase],
+        models: Sequence[CurveModelBase],
         x: np.ndarray,
         y: np.ndarray,
         trials: Sequence[str] | str | None = None,
@@ -147,5 +147,3 @@ def fitting_multiple_adaptive(
     if full_output:
         return results
     return results.best_params
-
-

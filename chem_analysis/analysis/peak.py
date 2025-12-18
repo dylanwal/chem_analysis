@@ -1,6 +1,6 @@
 from __future__ import annotations
 import abc
-from typing import Protocol, Callable
+from typing import Protocol, Callable, Sequence
 from collections import OrderedDict
 
 import numpy as np
@@ -23,35 +23,25 @@ class PeakParent2D(Protocol):
 
 # TODO: add Peak2D give PeakParent2D
 class Peak(abc.ABC):
-    def __new__(cls, *args, **kwargs):
-        if "parent" in kwargs:
-            parent = kwargs["parent"]
-        else:
-            parent = args[0]
-        if hasattr(parent, "_" + cls.__name__):
-            # intersect class instantiation and redirect it to another variant of peak integration, eg. SEC version
-            return super().__new__(parent._PeakIntegration)
-
-        return super().__new__(cls)
-
+    __slots__ = "id_", "parent", "label"
     def __init__(self, parent: PeakParent, label=None, id_: int = None):
         self.id_ = id_
         self.parent = parent
         self.label = label
 
-    def to_dict(self) -> OrderedDict:
-        attrs = [i for i in self.__dir__() if not i.startswith("_")]
-
-        attrs.sort()
-        dict_ = OrderedDict()
-        for attr in attrs:
-            attr_ = getattr(self, attr)
-            if isinstance(attr_, Callable):
-                dict_[attr] = attr_()
-            else:
-                dict_[attr] = attr_
-
-        return dict_
+    # def to_dict(self) -> OrderedDict:
+    #     attrs = [i for i in self.__dir__() if not i.startswith("_")]
+    #
+    #     attrs.sort()
+    #     dict_ = OrderedDict()
+    #     for attr in attrs:
+    #         attr_ = getattr(self, attr)
+    #         if isinstance(attr_, Callable):
+    #             dict_[attr] = attr_()
+    #         else:
+    #             dict_[attr] = attr_
+    #
+    #     return dict_
 
 
 class PeakDiscrete(Peak):
@@ -60,7 +50,7 @@ class PeakDiscrete(Peak):
         self.index = index
 
     def __str__(self):
-        return f"PeakDiscrete(index:{self.index}, x:{self.parent.x[self.index]:.3f}, y:{self.parent.y[self.index]:.3f})"
+        return f"{self.__class__.__name__} (index:{self.index}, x:{self.parent.x[self.index]:.3f}, y:{self.parent.y[self.index]:.3f})"
 
     def __repr__(self):
         return self.__str__()
@@ -70,47 +60,27 @@ class PeakDiscrete(Peak):
         return self.parent.y[self.index]
 
 
-class PeakContinuous(Peak, abc.ABC):
-    def __init__(self, parent: PeakParent, properties: PeakProperties = None, label=None, id_: int = None):
+class PeakData(Peak):
+    __slots__ = "properties", "slice_", "to_zero"
+    def __init__(self,
+                 parent: PeakParent,
+                 slice_: slice,
+                 to_zero: bool = False,
+                 properties: PeakPropertiesData = None,
+                 label=None,
+                 id_: int = None
+                 ):
         super().__init__(parent, label, id_)
         if properties is None:
-            if hasattr(parent, '_peak_properties'):
-                properties = getattr(parent, '_peak_properties')()
-            else:
                 properties = PeakPropertiesData()
         self.properties = properties
         self.properties.set_parent(self)
 
-    def __str__(self):
-        return f"PeakContinuous"
-
-    def __repr__(self):
-        return self.__str__()
-
-    @property
-    @abc.abstractmethod
-    def x(self) -> np.ndarray:
-        ...
-
-    @property
-    @abc.abstractmethod
-    def y(self) -> np.ndarray:
-        ...
-
-
-class PeakContinuousData(PeakContinuous):
-    def __init__(self,
-                 parent: PeakParent,
-                 slice_: slice,
-                 properties: PeakProperties = None,
-                 label=None,
-                 id_: int = None
-                 ):
-        super().__init__(parent, properties, label, id_)
         self.slice_ = slice_
+        self.to_zero = to_zero
 
     def __str__(self):
-        return f"PeakContinuousData | {self.slice_}"
+        return f"{self.__class__.__name__} | {self.slice_}"
 
     @property
     def x(self) -> np.ndarray:
@@ -120,35 +90,52 @@ class PeakContinuousData(PeakContinuous):
     def y(self) -> np.ndarray:
         return self.parent.y[self.slice_]
 
+    @property
+    def span(self) -> tuple[float | int]:
+        return (self.x[self.slice_.start or 0], self.x[self.slice_.stop or -1])
 
-class PeakContinuousModel(PeakContinuous):
-    CUTOFF = 0.001
+
+class PeakModel(Peak):
+    # CUTOFF = 0.001
 
     def __init__(self,
                  parent: PeakParent,
                  model: Callable,
+                 slice_: slice,
+                 parameters: Sequence[int | float],
                  properties: PeakProperties = None,
                  label=None,
-                 id_: int = None,
-                 slice_: slice = None
+                 to_zero: bool = False,
+                 id_: int = None
                  ):
-        super().__init__(parent, properties, label, id_)
+        super().__init__(parent, label, id_)
+        if properties is None:
+            if hasattr(parent, '_peak_properties'):
+                properties = getattr(parent, '_peak_properties')()
+            else:
+                properties = PeakPropertiesData()
+        self.properties = properties
+        self.properties.set_parent(self)
         self.model = model
         self.slice_ = slice_
+        self.parameters = parameters
+        self.to_zero = to_zero
 
     def __str__(self):
-        return f"PeakContinuousModel | {self.model}"
-
-    def _get_slice(self):
-        self.slice_ = utils_math.get_slice_by_nearest_y(self.model(self.parent.x), self.CUTOFF)
+        return f"{self.__class__.__name__} | {self.model}"
 
     @property
     def x(self) -> np.ndarray:
-        if self.slice_ is None:
-            self._get_slice()
-
         return self.parent.x[self.slice_]
 
     @property
     def y(self) -> np.ndarray:
-        return self.model(self.x)
+        return self.model(self.x, *self.parameters)
+
+    @property
+    def y_parent(self) -> np.ndarray:
+        return self.parent.y[self.slice_]
+
+    @property
+    def span(self) -> tuple[float | int]:
+        return (self.x[self.slice_.start or 0], self.x[self.slice_.stop or -1])

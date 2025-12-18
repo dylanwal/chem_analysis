@@ -53,11 +53,11 @@ class Signal2D:
 
         Parameters
         ----------
-        x: np.ndarray[i]
+        x: np.ndarray
             raw x data, length i
-        y: np.ndarray[j]
+        y: np.ndarray
             raw y data, length j
-        z: np.ndarray[j,i]
+        z: np.ndarray
             raw z data, shape j,i
         x_label: str
             x-axis label

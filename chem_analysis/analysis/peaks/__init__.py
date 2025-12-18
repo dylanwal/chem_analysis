@@ -16,6 +16,7 @@ from chem_analysis.analysis.peaks.bound_detectors import (
 )
 
 from chem_analysis.analysis.peaks.peak_integration import (
-    integrate_trapz, integrate_trapz_xy, integrate_trapz_slice, integrate_trapz_slice_xy,
-    integrate_simpson, integrate_simpson_xy
+    integrate, integrate_xy, integrate_slice, integrate_slice_xy
 )
+
+from chem_analysis.analysis.peaks.peak_creators import (peak_from_span, peak_from_model)

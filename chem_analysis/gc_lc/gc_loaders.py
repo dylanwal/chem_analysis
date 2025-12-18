@@ -19,6 +19,11 @@ def raw_agilent_to_obj(ini_data: dict, ms_data: None | dict, fid_data: None | di
                 data[i] = [np.array([0]), np.array([0])]
 
         ms_list = [MSSignal(x=ms[0], y=ms[1]) for ms in data]
+        if len(ms_list) == 0:
+            raise RuntimeError('No MS signal found. It is likely a parsing error. '
+                               'Agilent can randomly change file format and is the cause of this error.')
+            # null can be replaced with space in data file
+
         ms_data_2d = MSSignal2D.from_signals(ms_list, y=ms_data.pop('time'))
         ms_data_2d.name = ms_data.pop('sample_name')
         gc_signal = GCMSSignal(ms=ms_data_2d)
@@ -57,4 +62,9 @@ class GCParser:
             fid_file = pathlib.Path(fid_file)
         if isinstance(ini_file, str):
             ini_file = pathlib.Path(ini_file)
-        return raw_agilent_to_obj(*parse_D_files(ini_file, ms_file, fid_file))
+
+        try:
+            data = parse_D_files(ini_file, ms_file, fid_file)
+            return raw_agilent_to_obj(*data)
+        except Exception as e:
+            raise RuntimeError(f"Error parsing files. \n\t{ini_file}\n\t{ms_file}\n\t{fid_file}") from e

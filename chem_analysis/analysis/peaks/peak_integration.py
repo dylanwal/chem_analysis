@@ -1,52 +1,154 @@
+from typing import Sequence
+import logging
+
 import numpy as np
-from scipy.integrate import simpson
 
 from chem_analysis.utils.math import get_slice
 from chem_analysis.base_obj.signal_ import Signal
-from chem_analysis.base_obj.signal_2d import Signal2D
+
+logger = logging.getLogger(__name__)
+
+_integral_warning = "Integration includes both positive and negative values which can lead to errors in area calculation."
+
+def base_integrate(x: np.ndarray, y: np.ndarray, to_zero: bool, checks: bool) -> float:
+    area = np.trapezoid(x=x, y=y)
+    if to_zero:
+        if checks and ((y.min() >= 0) or (y.max() <= 0)):
+            logger.warning(_integral_warning + f"\n\trange ({x[0]}, {x[-1]})")
+    else:
+        area_sub = 0.5*(x[-1] - x[0]) *(y[0] + y[-1])
+        area -= area_sub
+        if checks:
+            slope = (y[-1] - y[0]) / (x[-1] - x[0])
+            y_baseline = y[0] + slope * (x[-1] - x[0])
+            y_corrected = y - y_baseline
+            if (y_corrected.min() >= 0) or (y_corrected.max() <= 0):
+                logger.warning(_integral_warning + f"\n\trange ({x[0]}, {x[-1]})")
+
+    return area
 
 
-def integrate_trapz(signal: Signal, bounds: np.ndarray) -> float | np.ndarray:
-    return integrate_trapz_xy(signal.x, signal.y, bounds)
+def integrate_slice_xy(
+        x: np.ndarray,
+        y: np.ndarray,
+        slice_: Sequence[int] | slice,
+        to_zero: bool = False,
+        checks: bool = True
+) -> float | np.ndarray:
+    """
+
+    Parameters
+    ----------
+    x:
+    y:
+    slice_:
+        [left index, right index], slice
+    to_zero:
+        True: integrate down to zero
+        False: draw a line between the left and right bound and integrate down to that
+    checks:
+        True: checks for positive and negative values in the integral which may cancel each-other out leading to errors.
+        False: removes checks; slight performance boost
+        provides logger.warning
+
+    Returns
+    -------
+    area under the curve
+    """
+    if isinstance(slice_, Sequence) and len(slice_) == 2:
+        slice_ = slice(slice_[0], slice_[1])
+    x_slice = x[slice_]
+    y_slice = y[slice_]
+    return base_integrate(x_slice, y_slice, to_zero, checks)
 
 
-def integrate_trapz_xy(x: np.ndarray, y: np.ndarray, bounds: np.ndarray) -> float | np.ndarray:
-    I = np.empty(bounds.shape[0])
-    for i, pair in enumerate(bounds):
-        I[i] = np.trapz(x=x[pair[0]:pair[1]], y=y[pair[0]:pair[1]])
-    return I
+def integrate_slice(
+        signal: Signal,
+        slice_: np.ndarray | Sequence[int] | slice,
+        to_zero: bool = False,
+        checks: bool = True
+) -> float | np.ndarray:
+    """
+    Integrate area under the curve given index
+
+    Parameters
+    ----------
+    signal:
+    slice_:
+        [left, right] index or slice
+    to_zero:
+        True: integrate down to zero
+        False: draw a line between the left and right bound and integrate down to that
+    checks:
+        True: checks for positive and negative values in the integral which may cancel each-other out leading to errors.
+        False: removes checks; slight performance boost
+        provides logger.warning
+
+    Returns
+    -------
+    area under the curve
+    """
+    return integrate_slice_xy(signal.x, signal.y, slice_, to_zero, checks)
 
 
-def integrate_trapz_slice(signal: Signal, bounds: np.ndarray) -> float | np.ndarray:
-    return integrate_trapz_xy(signal.x, signal.y, bounds)
+
+def integrate(
+        signal: Signal,
+        span: Sequence[int],
+        to_zero: bool = False,
+        checks: bool = True
+) -> float | np.ndarray:
+    """
+
+    Parameters
+    ----------
+    signal:
+    span:
+        [left 'x', right 'x']
+    to_zero:
+        True: integrate down to zero
+        False: draw a line between the left and right bound and integrate down to that
+    checks:
+        True: checks for positive and negative values in the integral which may cancel each-other out leading to errors.
+        False: removes checks; slight performance boost
+        provides logger.warning
+
+    Returns
+    -------
+    area under the curve
+    """
+    return integrate_xy(signal.x, signal.y, span, to_zero, checks)
 
 
-def integrate_trapz_slice_xy(x: np.ndarray, y: np.ndarray, bounds: np.ndarray) -> float | np.ndarray:
-    I = np.empty(bounds.shape[0])
-    for i, pair in enumerate(bounds):
-        slice_ = get_slice(x, pair[0], pair[1])
-        I[i] = np.trapz(x=x[slice_], y=y[slice_])
-    return I
+def integrate_xy(
+        x: np.ndarray,
+        y: np.ndarray,
+        span: Sequence[int],
+        to_zero: bool = False,
+        checks: bool = True
+) -> float | np.ndarray:
+    """
 
+    Parameters
+    ----------
+    x:
+    y:
+    span:
+        [left 'x', right 'x']
+    to_zero:
+        True: integrate down to zero
+        False: draw a line between the left and right bound and integrate down to that
+    checks:
+        True: checks for positive and negative values in the integral which may cancel each-other out leading to errors.
+        False: removes checks; slight performance boost
+        provides logger.warning
 
-def integrate_simpson(signal: Signal, bounds: np.ndarray) -> float | np.ndarray:
-    return integrate_simpson_xy(signal.x, signal.y, bounds)
+    Returns
+    -------
+    area under the curve
+    """
+    if len(span) != 2:
+        raise ValueError(f"'span' must have length 2. Given: {len(span)}")
+    slice_ = get_slice(x, *span)
+    return integrate_slice_xy(x, y, slice_, to_zero, checks)
 
-
-def integrate_simpson_xy(x: np.ndarray, y: np.ndarray, bounds: np.ndarray) -> float | np.ndarray:
-    I = np.empty(bounds.shape[0])
-    for i, pair in enumerate(bounds):
-        I[i] = simpson(x=x[pair[0]:pair[1]], y=y[pair[0]:pair[1]])
-    return I
-
-
-# def integrate_trapz2D(signal: Signal2D, x_range: tuple[float, float]) -> float | np.ndarray:
-#     """ along axis 1 """
-#     slice_ = get_slice(signal.x, x_range[0], x_range[1])
-#     return np.trapz(x=signal.x[slice_], y=signal.data[:, slice_], axis=1)
-#
-#
-# def integrate_simpson2D(signal: Signal2D, x_range: tuple[float, float]) -> float | np.ndarray:
-#     """ along axis 1 """
-#     slice_ = get_slice(signal.x, x_range[0], x_range[1])
-#     return simpson(x=signal.x[slice_], y=signal.data[:, slice_], axis=1)

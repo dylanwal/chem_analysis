@@ -89,7 +89,7 @@ import chem_analysis as ca
 
 def main():
     cal_RI = ca.sec.ConventionalCalibration(lambda time: 10 ** (-0.6 * time + 10.644),
-                                    mw_bounds=(160, 1_090_000), name="RI calibration")
+                                            mw_bounds=(160, 1_090_000), name="RI calibration")
 
     # loading data
     file_path = pathlib.Path(r"data//SEC.csv")
@@ -98,14 +98,15 @@ def main():
 
     # processing
     sec_signal.processor.add(
-      ca.processing.baseline.ImprovedAsymmetricLeastSquared(lambda_=1e6, p=0.15)
+        ca.processing.baseline.ImprovedAsymmetricLeastSquared(lambda_=1e6, p=0.15)
     )
 
     # analysis
     peak = ca.analysis.peak_picking.find_peak_largest(sec_signal,
                                                       mask=ca.processing.weigths.Spans((10, 12.2), invert=True)
                                                       )
-    result = ca.analysis.integration.rolling_ball(peak, n=45, min_height=0.05, n_points_with_pos_slope=1)
+    result = chem_analysis.analysis.peaks.integration.rolling_ball(peak, n=45, min_height=0.05,
+                                                                   n_points_with_pos_slope=1)
 
     # plotting
     fig = go.Figure(layout=ca.plotting.PlotlyConfig.plotly_layout())
@@ -134,6 +135,12 @@ if __name__ == '__main__':
 **Only showing 4 of 28 stats calculated for SEC peak
 
 ![sec_data_analysis.png](https://github.com/dylanwal/chem_analysis/tree/develop/dev/sec_data_analysis.png)
+
+
+## Important philosophy for working with the code base
+* Both `signal` and `x, y` options are available for all processing methods.
+  * `Signal` are merely a convince object that can be bringing important information into analysis and plotting
+* 'Spans' are 'x' values and 'Slices' are index values. The default is to prefer 'Spans'
 
 ## Contributing
 
