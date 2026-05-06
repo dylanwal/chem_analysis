@@ -185,6 +185,16 @@ class UnifyMethodExpandInterpolate(UnifyMethod):
 
         return x, z
 
+def merge_duplicates(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    # Find unique x values and an index map (inverse)
+    # unique_x: the sorted unique values
+    # inverse: an array of indices to reconstruct the original array from unique_x
+    unique_x, inverse = np.unique(x, return_inverse=True)
+
+    # Use np.bincount to sum y values that share the same index in 'inverse'
+    merged_y = np.bincount(inverse, weights=y)
+
+    return unique_x, merged_y
 
 class UnifyMethodMS(UnifyMethod):
     """
@@ -210,7 +220,9 @@ class UnifyMethodMS(UnifyMethod):
         x = self.get_x(signals)
         z = np.zeros((len(signals), len(x)), dtype=signals[0].y.dtype)
         for i, sig in enumerate(signals):
-            z[i, :] = ca_math.map_discrete_x_axis(x, sig.x.astype(x.dtype), sig.y)
+            x_old = np.round(sig.x)
+            x_old, y_old = merge_duplicates(x_old, sig.y)
+            z[i, :] = ca_math.map_discrete_x_axis(x, x_old.astype(x.dtype), y_old)
         return x, z
 
 

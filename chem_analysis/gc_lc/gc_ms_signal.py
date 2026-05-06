@@ -4,8 +4,9 @@ import numpy as np
 
 from chem_analysis.base_obj.signal_ import Signal
 from chem_analysis.gc_lc.gc_parameters import GCParameters
+from chem_analysis.mass_spec.ms_signal import MSSignal
 from chem_analysis.mass_spec.ms_signal_2D import MSSignal2D
-
+from chem_analysis.utils.math import get_slice
 
 class GCMSSignal(Signal):
     """
@@ -33,3 +34,9 @@ class GCMSSignal(Signal):
         super().__init__(x, y, x_label, y_label, name, id_)
         self.parameters = parameters
         self.ms_raw = ms
+
+    def extract_ms(self, x_low: float, x_high: float) -> MSSignal:
+        slice_ = get_slice(self.x, x_low, x_high)
+        ms2d = self.ms_raw.z[slice_]
+        y = np.mean(ms2d, axis=0, dtype=ms2d.dtype)
+        return MSSignal(self.ms_raw.x, y, parameters=self.parameters, name=f"extract from {self.name}")

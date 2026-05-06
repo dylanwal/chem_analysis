@@ -1,17 +1,14 @@
-import numpy as np
-import plotly.graph_objects as go
+import rxn
+print(rxn.__file__)
 
-def main():
-    x = np.arange(11)
-    y = np.array([0,1,2,3,4,5,4,3,2,1,0])
-    y += -10
+print(help(rxn))
+table = rxn.data_structure
+print(help(table))
+print(table.PERIODIC_TABLE.print_table())
+element = table.PERIODIC_TABLE[10]
+print(element.atomic_mass)
+# print(element.isotope_most_abundant_mass())
+print(help(element))
 
-    print(np.trapezoid(x=x, y=y))
-    print(np.trapezoid(x=x, y=y) - 0.5*(x[-1] - x[0]) *(y[0] + y[-1]))
-
-    fig = go.Figure()
-    fig.add_scatter(x=x, y=y, mode='markers')
-    fig.show("browser")
-
-if __name__ == "__main__":
-    main()
+result = rxn.calculators.find_combinations([("C",0, 10),("O",0,10),("H",0, 10)], 100, 0.5)
+print(result)

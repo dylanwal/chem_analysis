@@ -1,11 +1,12 @@
 import copy
+from typing import Sequence
 
 import numpy as np
 
 from chem_analysis.mass_spec import MSSignal
 
 
-def unify_mz(*args: MSSignal, fill_to_zero: bool = True) -> list[MSSignal]:
+def unify_mz(args: Sequence[MSSignal], fill_to_zero: bool = True) -> list[MSSignal]:
     """
 
     Parameters
